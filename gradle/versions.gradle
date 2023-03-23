@@ -39,6 +39,7 @@ dependencyManagement {
       entry 'util'
       entry 'crypto'
       entry 'rlp'
+      entry 'core'
     }
     dependency 'org.hyperledger.besu:besu-datatypes:23.1.1'
     dependency 'org.hyperledger.besu:evm:23.1.1'
