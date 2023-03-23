@@ -14,8 +14,11 @@
 package net.consensys.shomei;
 
 import java.util.Objects;
+import java.util.function.BiConsumer;
 
-public class ZkValue<T> {
+import org.hyperledger.besu.ethereum.rlp.RLPOutput;
+
+public class ZkValue<T> { // TODO maybe use directly BonsaiValue from Besu
   private T prior;
   private T updated;
   private boolean cleared;
@@ -57,6 +60,25 @@ public class ZkValue<T> {
 
   public boolean isCleared() {
     return cleared;
+  }
+
+  public void writeRlp(final RLPOutput output, final BiConsumer<RLPOutput, T> writer) {
+    output.startList();
+    writeInnerRlp(output, writer);
+    output.endList();
+  }
+
+  public void writeInnerRlp(final RLPOutput output, final BiConsumer<RLPOutput, T> writer) {
+    if (prior == null) {
+      output.writeNull();
+    } else {
+      writer.accept(output, prior);
+    }
+    if (updated == null) {
+      output.writeNull();
+    } else {
+      writer.accept(output, updated);
+    }
   }
 
   @Override

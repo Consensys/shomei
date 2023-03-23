@@ -16,19 +16,15 @@ package net.consensys.shomei.worldview;
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.ZkValue;
 import net.consensys.shomei.trielog.TrieLogAccountValue;
+import net.consensys.shomei.trielog.TrieLogLayer;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.bonsai.TrieLogLayer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,8 +32,6 @@ public class ZkEvmWorldStateUpdateAccumulator {
   private static final Logger LOG = LoggerFactory.getLogger(ZkEvmWorldStateUpdateAccumulator.class);
 
   private final Map<Address, ZkValue<ZkAccount>> accountsToUpdate = new ConcurrentHashMap<>();
-  private final Map<Address, ZkValue<Bytes>> codeToUpdate = new ConcurrentHashMap<>();
-  private final Set<Address> storageToClear = Collections.synchronizedSet(new HashSet<>());
 
   private final Map<Address, Map<Hash, ZkValue<UInt256>>> storageToUpdate =
       new ConcurrentHashMap<>();
@@ -50,14 +44,6 @@ public class ZkEvmWorldStateUpdateAccumulator {
 
   public Map<Address, ZkValue<ZkAccount>> getAccountsToUpdate() {
     return accountsToUpdate;
-  }
-
-  public Map<Address, ZkValue<Bytes>> getCodeToUpdate() {
-    return codeToUpdate;
-  }
-
-  public Set<Address> getStorageToClear() {
-    return storageToClear;
   }
 
   public Map<Address, Map<Hash, ZkValue<UInt256>>> getStorageToUpdate() {
@@ -226,9 +212,7 @@ public class ZkEvmWorldStateUpdateAccumulator {
   }
 
   public void reset() {
-    storageToClear.clear();
     storageToUpdate.clear();
-    codeToUpdate.clear();
     accountsToUpdate.clear();
     resetAccumulatorStateChanged();
   }
