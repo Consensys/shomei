@@ -13,22 +13,26 @@
 
 package net.consensys.shomei;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import net.consensys.shomei.worldview.ZKEvmWorldState;
 
-import org.apache.tuweni.bytes.Bytes32;
+import java.util.Optional;
+
 import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
-import org.junit.Test;
 
-public class ZkAccountTest {
+public class ZkWorldStateProvider {
 
-  @Test
-  public void testHashZeroAccount() {
-    final ZkAccount zkAccount =
-        new ZkAccount(Hash.ZERO, 0, Wei.ZERO, Hash.ZERO, Hash.ZERO, Hash.ZERO, 0L, false);
-    assertThat(Hash.hash(zkAccount.serializeAccount()))
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "868e09d528a16744c1f38ea3c10cc2251e01a456434f91172247695087d129b7"));
+  private final ZKEvmWorldState persistedState;
+
+  public ZkWorldStateProvider(final ZKEvmWorldState persistedState) {
+    this.persistedState = persistedState;
+  }
+
+  public Optional<ZKEvmWorldState> loadState(final Hash blockHash) {
+    if (persistedState.getBlockHash().equals(blockHash)) {
+      return Optional.of(persistedState);
+    } else {
+      // rolling
+      return Optional.empty();
+    }
   }
 }

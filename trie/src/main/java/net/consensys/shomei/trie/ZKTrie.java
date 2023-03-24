@@ -13,6 +13,8 @@
 
 package net.consensys.shomei.trie;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import net.consensys.shomei.trie.model.StateLeafValue;
 import net.consensys.shomei.trie.node.EmptyLeafNode;
 import net.consensys.shomei.trie.storage.InMemoryLeafIndexManager;
@@ -201,12 +203,13 @@ public class ZKTrie implements MerkleTrie<Bytes, Bytes> {
 
   @Override
   public void put(final Bytes key, final Bytes value) {
-    putValue(HashProvider.keccak256(key), HashProvider.keccak256(value));
+    checkArgument(key.size() == Bytes32.SIZE);
+    putValue(Bytes32.wrap(key), HashProvider.mimc(value));
   }
 
-  @VisibleForTesting
-  protected void removeValue(final Bytes key) {
-
+  @Override
+  public void remove(final Bytes key) {
+    checkArgument(key.size() == Bytes32.SIZE);
     final LeafIndexLoader.Range nearestKeys =
         leafIndexLoader.getNearestKeys(key); // find HKey- and HKey+
     // Check if hash(k) exist
@@ -235,11 +238,6 @@ public class ZKTrie implements MerkleTrie<Bytes, Bytes> {
       // remove hash(k)
       state.removePath(keyPathToDelete, state.getRemoveVisitor());
     }
-  }
-
-  @Override
-  public void remove(final Bytes key) {
-    removeValue(HashProvider.keccak256(key));
   }
 
   public void commit() {

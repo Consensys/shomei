@@ -47,6 +47,15 @@ public class TrieLogAccountValue {
     this.codeSize = codeSize;
   }
 
+  public TrieLogAccountValue(final ZkAccount zkAccount) {
+    this.nonce = zkAccount.getNonce();
+    this.balance = zkAccount.getBalance();
+    this.storageRoot = zkAccount.getStorageRoot();
+    this.codeHash = zkAccount.getCodeHash();
+    this.mimcCodeHash = zkAccount.getMimcCodeHash();
+    this.codeSize = zkAccount.getCodeSize();
+  }
+
   /**
    * The account nonce, that is the number of transactions sent from that account.
    *
@@ -123,7 +132,7 @@ public class TrieLogAccountValue {
     Bytes32 mimcCodeHash;
     long codeSize;
     if (in.nextIsNull()) {
-      storageRoot = ZkAccount.EMPTY_STORAGE_ROOT;
+      storageRoot = ZkAccount.EMPTY_TRIE_ROOT;
       in.skipNext();
     } else {
       storageRoot = in.readBytes32();
