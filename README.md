@@ -8,7 +8,7 @@ This component communicates with Besu in order to maintain and update the zkevm 
 
 ### Install Prerequisites
 
-* Java 13
+* Java 17
 
 ### Build and Test
 

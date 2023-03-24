@@ -16,6 +16,7 @@ dependencies {
     implementation project(':util')
     implementation project(':crypto')
 
+    implementation 'org.hyperledger.besu:besu-datatypes'
     implementation 'org.hyperledger.besu.internal:trie'
     implementation 'org.hyperledger.besu.internal:crypto'
     implementation 'org.hyperledger.besu.internal:rlp'
