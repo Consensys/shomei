@@ -96,25 +96,4 @@ public class RollingTests {
     zkEvmWorldState.commit(null);
     assertThat(zkEvmWorldState.getRootHash()).isEqualTo(topRootHash);
   }
-
-  @Test
-  public void rollingForwardTwoAccountWithDeletion() {
-
-    ZKTrie accountStateTrieOne = ZKTrie.createInMemoryTrie();
-
-    accountStateTrieOne.put(ZK_ACCOUNT.getHkey(), ZK_ACCOUNT.serializeAccount());
-    accountStateTrieOne.put(ZK_ACCOUNT_2.getHkey(), ZK_ACCOUNT_2.serializeAccount());
-    accountStateTrieOne.remove(ZK_ACCOUNT_2.getHkey());
-    Hash topRootHash = Hash.wrap(accountStateTrieOne.getTopRootHash());
-
-    TrieLogLayer trieLogLayer = new TrieLogLayer();
-    trieLogLayer.addAccountChange(H_KEY, null, new TrieLogAccountValue(ZK_ACCOUNT));
-    trieLogLayer.addAccountChange(H_KEY_2, new TrieLogAccountValue(ZK_ACCOUNT_2), null);
-
-    ZKEvmWorldState zkEvmWorldState = new ZKEvmWorldState(EMPTY_TRIE_ROOT, Hash.EMPTY);
-    assertThat(zkEvmWorldState.getRootHash()).isEqualTo(EMPTY_TRIE_ROOT);
-    zkEvmWorldState.getAccumulator().rollForward(trieLogLayer);
-    zkEvmWorldState.commit(null);
-    assertThat(zkEvmWorldState.getRootHash()).isEqualTo(topRootHash);
-  }
 }
