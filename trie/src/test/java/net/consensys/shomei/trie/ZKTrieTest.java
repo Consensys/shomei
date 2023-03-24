@@ -128,7 +128,7 @@ public class ZKTrieTest {
             Bytes.fromHexString(
                 "29d47648b374fb18e31fe50dc4ca65bdea4f1cd7664075f4ef52da18138304ab"));
 
-    zkTrie.removeValue(dumKey);
+    zkTrie.remove(dumKey);
 
     assertThat(zkTrie.getRootHash())
         .isEqualTo(
