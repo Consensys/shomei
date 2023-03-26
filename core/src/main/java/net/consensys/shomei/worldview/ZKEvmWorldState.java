@@ -13,6 +13,7 @@
 
 package net.consensys.shomei.worldview;
 
+import com.google.common.annotations.VisibleForTesting;
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.ZkValue;
 import net.consensys.shomei.trie.ZKTrie;
@@ -58,6 +59,8 @@ public class ZKEvmWorldState {
     blockHash = maybeBlockHeader.map(BlockHeader::getHash).orElse(null);
     accumulator.reset();
     // persist
+
+    // TODO: sup brah
   }
 
   private Hash calculateRootHash() {
@@ -69,6 +72,7 @@ public class ZKEvmWorldState {
               final Map<Hash, ZkValue<UInt256, UInt256>> storageToUpdate =
                   accumulator.getStorageToUpdate().get(hkey);
               if (storageToUpdate != null) {
+                // load the account storage trie
                 final ZKTrie zkStorageTrie = loadStorageTrie(accountValue);
                 final Hash targetStorageRootHash =
                     Optional.ofNullable(accountValue.getUpdated())
@@ -116,6 +120,7 @@ public class ZKEvmWorldState {
     return blockHash;
   }
 
+  @VisibleForTesting
   public ZkEvmWorldStateUpdateAccumulator getAccumulator() {
     return accumulator;
   }

@@ -52,6 +52,7 @@ dependencyManagement {
       entry 'tuweni-units'
       entry 'tuweni-bytes'
     }
+    dependency 'org.rocksdb:rocksdbjni:8.0.0'
 
     dependency 'io.opentelemetry:opentelemetry-api:1.19.0'
 
