@@ -1,5 +1,5 @@
 /*
- * Copyright Hyperledger Besu Contributors.
+ * ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,59 +15,86 @@
 package net.consensys.shomei.services.storage.rocksdb;
 
 
-import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
-import org.rocksdb.ColumnFamilyDescriptor;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import com.google.common.base.Suppliers;
 import org.rocksdb.ColumnFamilyHandle;
-import org.rocksdb.OptimisticTransactionDB;
 import org.rocksdb.RocksDBException;
-import services.storage.StorageException;
+import services.storage.SegmentIdentifier;
 
 /** The RocksDb segment identifier. */
-public class RocksDBSegmentIdentifier {
+public class RocksDBSegmentIdentifier implements SegmentIdentifier {
 
-  private final OptimisticTransactionDB db;
-  private final AtomicReference<ColumnFamilyHandle> reference;
+  public enum SegmentNames {
+    DEFAULT("default"), // default rocksdb segment
+    ZK_ACCOUNT_TRIE("ZK_ACCOUNT_TRIE"),
+    ZK_ACCOUNT_STORAGE_TRIE("ZK_ACCOUNT_STORAGE_TRIE"),
+    ZK_FLAT_ACCOUNTS("ZK_FLAT_ACCOUNTS"),
+    ZK_TRIE_LOG("ZK_TRIE_LOG");
+
+    private final byte[] segmentId;
+    SegmentNames(String segmentName) {
+      this.segmentId = segmentName.getBytes(UTF_8);
+    }
+
+    RocksDBSegmentIdentifier getSegmentIdentifier() {
+      return new RocksDBSegmentIdentifier(this);
+    }
+
+    public byte[] getId() {
+      return segmentId;
+    }
+    public static SegmentNames fromId(byte[] segmentId) {
+      return EnumSet.allOf(SegmentNames.class)
+          .stream()
+          .filter(z -> Arrays.equals(z.getId(), segmentId))
+          .findFirst()
+          .orElseThrow(() -> new RuntimeException("Unknown segment id"));
+    }
+  }
+
+  private static final Map<SegmentNames, RocksDBSegmentIdentifier> ALL_SEGMENTS =
+      EnumSet.allOf(SegmentNames.class).stream()
+          .collect(Collectors.toMap(s -> s, SegmentNames::getSegmentIdentifier));
+
+  private final SegmentNames segmentName;
 
   /**
    * Instantiates a new RocksDb segment identifier.
    *
-   * @param db the db
-   * @param columnFamilyHandle the column family handle
+   * @param segmentName the segment name
    */
   public RocksDBSegmentIdentifier(
-      final OptimisticTransactionDB db, final ColumnFamilyHandle columnFamilyHandle) {
-    this.db = db;
-    this.reference = new AtomicReference<>(columnFamilyHandle);
+      final SegmentNames segmentName) {
+    this.segmentName = segmentName;
   }
 
-  /** Reset. */
-  public void reset() {
-    reference.getAndUpdate(
-        oldHandle -> {
-          try {
-            ColumnFamilyDescriptor descriptor =
-                new ColumnFamilyDescriptor(
-                    oldHandle.getName(), oldHandle.getDescriptor().getOptions());
-            db.dropColumnFamily(oldHandle);
-            ColumnFamilyHandle newHandle = db.createColumnFamily(descriptor);
-            oldHandle.close();
-            return newHandle;
-          } catch (final RocksDBException e) {
-            throw new StorageException(e);
-          }
-        });
+  @Override
+  public String getName() {
+    return segmentName.name();
   }
 
-  /**
-   * Get column family handle.
-   *
-   * @return the column family handle
-   */
-  public ColumnFamilyHandle get() {
-    return reference.get();
+  @Override
+  public byte[] getId() {
+    return segmentName.getId();
   }
+
+  public static RocksDBSegmentIdentifier fromHandle(ColumnFamilyHandle handle) {
+    try {
+      return ALL_SEGMENTS.get(SegmentNames.fromId(handle.getName()));
+    } catch (RocksDBException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
 
   @Override
   public boolean equals(final Object o) {
@@ -78,11 +105,14 @@ public class RocksDBSegmentIdentifier {
       return false;
     }
     RocksDBSegmentIdentifier that = (RocksDBSegmentIdentifier) o;
-    return Objects.equals(reference.get(), that.reference.get());
+    return Objects.equals(this.segmentName, that.segmentName);
   }
 
   @Override
   public int hashCode() {
-    return reference.get().hashCode();
+    return this.segmentName.hashCode();
   }
+
+
+
 }

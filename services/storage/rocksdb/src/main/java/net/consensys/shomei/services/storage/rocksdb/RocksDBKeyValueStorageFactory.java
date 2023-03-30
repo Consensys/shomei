@@ -15,10 +15,14 @@
 package net.consensys.shomei.services.storage.rocksdb;
 
 
-import java.util.List;
-import java.util.function.Supplier;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.EnumSet;
+import java.util.Optional;
+import java.util.Set;
 
 import net.consensys.shomei.config.ShomeiConfig;
+import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBFactoryConfiguration;
@@ -32,57 +36,53 @@ import services.storage.StorageException;
 /** The Rocks db key value storage factory. */
 public class RocksDBKeyValueStorageFactory implements KeyValueStorageFactory {
 
-  private static final Logger LOG = LoggerFactory.getLogger(RocksDBKeyValueStorageFactory.class);
-  private static final String NAME = "rocksdb";
-
-  private RocksDBColumnarKeyValueStorage rocksDBStorage;
+  private RocksDBSegmentedStorage rocksDBStorage;
   private RocksDBConfiguration rocksDBConfiguration;
 
-  private final Supplier<RocksDBFactoryConfiguration> configuration;
-  private final List<SegmentIdentifier> segments;
+  private final RocksDBFactoryConfiguration configuration;
+  private final Set<SegmentNames> segmentNames;
 
   /**
    * Instantiates a new RocksDb key value storage factory.
    *
    * @param configuration the configuration
-   * @param segments the segments
    */
   public RocksDBKeyValueStorageFactory(
-      final Supplier<RocksDBFactoryConfiguration> configuration,
-      final List<SegmentIdentifier> segments) {
-    this.configuration = configuration;
-    this.segments = segments;
+      final RocksDBFactoryConfiguration configuration) {
+    this(configuration, EnumSet.allOf(SegmentNames.class));
   }
 
-  @Override
-  public String getName() {
-    return NAME;
+  public RocksDBKeyValueStorageFactory(
+      final RocksDBFactoryConfiguration configuration,
+      final Set<SegmentNames> segmentNames) {
+    this.configuration = configuration;
+    this.segmentNames = segmentNames;
   }
 
   @Override
   public KeyValueStorage create(
-      final SegmentIdentifier segment,
+      final SegmentIdentifier segmentId,
       final ShomeiConfig shomeiConfig)
       throws StorageException {
 
-    rocksDBConfiguration =
-        RocksDBConfigurationBuilder.from(configuration.get())
-            .databaseDir(shomeiConfig.getStoragePath())
-            .build();
-          if (rocksDBStorage == null) {
+    RocksDBSegmentIdentifier rocksSegmentId = Optional.of(segmentId)
+        .filter(z -> z instanceof RocksDBSegmentIdentifier)
+        .map(RocksDBSegmentIdentifier.class::cast)
+        .orElseThrow(() -> new StorageException("Invalid segment type specified for RocksDB storage: " +
+            segmentId.getClass().getSimpleName()));
 
+          if (rocksDBStorage == null) {
+            rocksDBConfiguration =
+                RocksDBConfigurationBuilder.from(configuration)
+                    .databaseDir(shomeiConfig.getStoragePath())
+                    .build();
             rocksDBStorage =
-                new RocksDBColumnarKeyValueStorage(
+                new RocksDBSegmentedStorage(
                     rocksDBConfiguration,
-                    segments);
+                    segmentNames);
           }
-          final RocksDBSegmentIdentifier rocksSegment =
-              rocksDBStorage.getSegmentIdentifierByName(segment);
-          return new SegmentedKeyValueStorageAdapter<>(
-              segment, rocksDBStorage, () -> rocksDBStorage.takeSnapshot(rocksSegment));
+          return rocksDBStorage.getKeyValueStorageForSegment(rocksSegmentId);
         }
-    }
-  }
 
   /**
    * Storage path.
@@ -92,10 +92,6 @@ public class RocksDBKeyValueStorageFactory implements KeyValueStorageFactory {
    */
   protected Path storagePath(final ShomeiConfig shomeiConfig) {
     return shomeiConfig.getStoragePath();
-  }
-
-  private boolean requiresInit() {
-    return rocksDBStorage == null && unsegmentedStorage == null;
   }
 
   @Override

@@ -17,11 +17,17 @@ package net.consensys.shomei.services.storage.rocksdb.configuration;
 /** The RocksDb factory configuration. */
 public class RocksDBFactoryConfiguration {
 
+  public static final RocksDBFactoryConfiguration DEFAULT_ROCKSDB_CONFIG =
+      new RocksDBFactoryConfiguration(
+          RocksDBCLIOptions.DEFAULT_MAX_OPEN_FILES,
+          RocksDBCLIOptions.DEFAULT_MAX_BACKGROUND_COMPACTIONS,
+          RocksDBCLIOptions.DEFAULT_BACKGROUND_THREAD_COUNT,
+          RocksDBCLIOptions.DEFAULT_CACHE_CAPACITY);
+
   private final int maxOpenFiles;
   private final int maxBackgroundCompactions;
   private final int backgroundThreadCount;
   private final long cacheCapacity;
-  private final boolean isHighSpec;
 
   /**
    * Instantiates a new RocksDb factory configuration.
@@ -30,19 +36,16 @@ public class RocksDBFactoryConfiguration {
    * @param maxBackgroundCompactions the max background compactions
    * @param backgroundThreadCount the background thread count
    * @param cacheCapacity the cache capacity
-   * @param isHighSpec the is high spec
    */
   public RocksDBFactoryConfiguration(
       final int maxOpenFiles,
       final int maxBackgroundCompactions,
       final int backgroundThreadCount,
-      final long cacheCapacity,
-      final boolean isHighSpec) {
+      final long cacheCapacity) {
     this.maxBackgroundCompactions = maxBackgroundCompactions;
     this.backgroundThreadCount = backgroundThreadCount;
     this.maxOpenFiles = maxOpenFiles;
     this.cacheCapacity = cacheCapacity;
-    this.isHighSpec = isHighSpec;
   }
 
   /**
@@ -81,12 +84,4 @@ public class RocksDBFactoryConfiguration {
     return cacheCapacity;
   }
 
-  /**
-   * Is high spec.
-   *
-   * @return the boolean
-   */
-  public boolean isHighSpec() {
-    return isHighSpec;
-  }
 }

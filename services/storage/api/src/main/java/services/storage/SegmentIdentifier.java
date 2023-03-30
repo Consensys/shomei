@@ -34,14 +34,4 @@ public interface SegmentIdentifier {
    */
   byte[] getId();
 
-  /**
-   * Not all segments are in all DB versions. This queries the segment to see if it is in the DB
-   * version.
-   *
-   * @param version Version of the DB
-   * @return true if the segment is in that DB version
-   */
-  default boolean includeInDatabaseVersion(final int version) {
-    return true;
-  }
 }

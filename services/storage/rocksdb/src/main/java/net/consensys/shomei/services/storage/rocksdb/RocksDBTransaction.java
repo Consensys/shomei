@@ -1,5 +1,5 @@
 /*
- * Copyright Hyperledger Besu Contributors.
+ * ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -83,14 +83,15 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
   }
 
   @Override
-  public void put(final byte[] key, final byte[] value) {
+  public RocksDBTransaction put(final byte[] key, final byte[] value) {
     if (isClosed.get()) {
-      LOG.debug("Attempted to access closed snapshot");
-      return;
+      LOG.debug("Attempted to write to closed transaction");
+      throw new StorageException("Attempted to access closed transaction");
     }
 
     try {
       innerTx.put(columnFamilyHandle, key, value);
+      return this;
     } catch (final RocksDBException e) {
       if (e.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE)) {
         LOG.error(e.getMessage());
@@ -101,13 +102,14 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
   }
 
   @Override
-  public void remove(final byte[] key) {
+  public RocksDBTransaction remove(final byte[] key) {
     if (isClosed.get()) {
-      LOG.debug("Attempted to access closed snapshot");
-      return;
+      LOG.debug("Attempted to write to closed transaction");
+      throw new StorageException("Attempted to access closed transaction");
     }
     try {
       innerTx.delete(columnFamilyHandle, key);
+      return this;
     } catch (final RocksDBException e) {
       if (e.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE)) {
         LOG.error(e.getMessage());
@@ -141,9 +143,18 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
 
   @Override
   public void commit() throws StorageException {
-    // no-op
+    try {
+      innerTx.commit();
+    } catch (final RocksDBException e) {
+      if (e.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE)) {
+        LOG.error(e.getMessage());
+        System.exit(0);
+      }
+      throw new StorageException(e);
+    } finally {
+      close();
+    }
   }
-
   @Override
   public void rollback() {
     try {
@@ -176,6 +187,11 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
       super(db, columnFamilyHandle);
       this.snapshot = db.getSnapshot();
       this.readOptions.setSnapshot(snapshot);
+    }
+
+    @Override
+    public void commit() throws StorageException {
+      //no-op
     }
 
     @Override

@@ -80,15 +80,6 @@ public class RocksDBCLIOptions {
       description = "Number of RocksDB background threads (default: ${DEFAULT-VALUE})")
   int backgroundThreadCount;
 
-  /** The Is high spec. */
-  @CommandLine.Option(
-      names = {IS_HIGH_SPEC},
-      hidden = true,
-      paramLabel = "<BOOLEAN>",
-      description =
-          "Use this flag to boost Besu performance if you have a 16 GiB RAM hardware or more (default: ${DEFAULT-VALUE})")
-  boolean isHighSpec;
-
   private RocksDBCLIOptions() {}
 
   /**
@@ -122,16 +113,7 @@ public class RocksDBCLIOptions {
    */
   public RocksDBFactoryConfiguration toDomainObject() {
     return new RocksDBFactoryConfiguration(
-        maxOpenFiles, maxBackgroundCompactions, backgroundThreadCount, cacheCapacity, isHighSpec);
-  }
-
-  /**
-   * Is high spec.
-   *
-   * @return the boolean
-   */
-  public boolean isHighSpec() {
-    return isHighSpec;
+        maxOpenFiles, maxBackgroundCompactions, backgroundThreadCount, cacheCapacity);
   }
 
   @Override
@@ -141,7 +123,6 @@ public class RocksDBCLIOptions {
         .add("cacheCapacity", cacheCapacity)
         .add("maxBackgroundCompactions", maxBackgroundCompactions)
         .add("backgroundThreadCount", backgroundThreadCount)
-        .add("isHighSpec", isHighSpec)
         .toString();
   }
 }

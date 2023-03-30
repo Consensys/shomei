@@ -26,14 +26,14 @@ public interface KeyValueStorageTransaction {
    * @param key the given value is to be associated with.
    * @param value associated with the specified key.
    */
-  void put(byte[] key, byte[] value);
+  KeyValueStorageTransaction put(byte[] key, byte[] value);
 
   /**
    * When the given key is present, the key and mapped value will be removed from storage.
    *
    * @param key the key and mapped value that will be removed.
    */
-  void remove(byte[] key);
+  KeyValueStorageTransaction remove(byte[] key);
 
   /**
    * Performs an atomic commit of all the operations queued in the transaction.
