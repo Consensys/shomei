@@ -13,7 +13,6 @@
 
 package net.consensys.shomei.worldview;
 
-import com.google.common.annotations.VisibleForTesting;
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.ZkValue;
 import net.consensys.shomei.trie.ZKTrie;
@@ -25,6 +24,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Address;

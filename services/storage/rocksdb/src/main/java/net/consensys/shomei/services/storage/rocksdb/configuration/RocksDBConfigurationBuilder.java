@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -9,14 +9,12 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
- *
- * SPDX-License-Identifier: Apache-2.0
  */
+
 package net.consensys.shomei.services.storage.rocksdb.configuration;
 
 import static net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBCLIOptions.DEFAULT_BACKGROUND_THREAD_COUNT;
 import static net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBCLIOptions.DEFAULT_CACHE_CAPACITY;
-import static net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBCLIOptions.DEFAULT_IS_HIGH_SPEC;
 import static net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBCLIOptions.DEFAULT_MAX_BACKGROUND_COMPACTIONS;
 import static net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBCLIOptions.DEFAULT_MAX_OPEN_FILES;
 
@@ -107,10 +105,6 @@ public class RocksDBConfigurationBuilder {
    */
   public RocksDBConfiguration build() {
     return new RocksDBConfiguration(
-        databaseDir,
-        maxOpenFiles,
-        maxBackgroundCompactions,
-        backgroundThreadCount,
-        cacheCapacity);
+        databaseDir, maxOpenFiles, maxBackgroundCompactions, backgroundThreadCount, cacheCapacity);
   }
 }

@@ -9,14 +9,13 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
- *
- * SPDX-License-Identifier: Apache-2.0
  */
+
 package net.consensys.shomei.services.storage.rocksdb;
 
-import static java.util.stream.Collectors.toUnmodifiableSet;
+import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames;
+import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -26,12 +25,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames;
-import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;
 import org.rocksdb.ColumnFamilyDescriptor;
@@ -74,7 +70,7 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
   private final TransactionDBOptions txOptions;
   private final OptimisticTransactionDB db;
   private final AtomicBoolean closed = new AtomicBoolean(false);
-  //TODO: concurrent hashmap and move truncation into outer class
+  // TODO: concurrent hashmap and move truncation into outer class
   private final Map<RocksDBSegmentIdentifier, RocksDBSegment> columnHandlesByName;
   private final WriteOptions tryDeleteOptions =
       new WriteOptions().setNoSlowdown(true).setIgnoreMissingColumnFamilies(true);
@@ -85,8 +81,7 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
    * @param configuration the configuration
    * @throws StorageException the storage exception
    */
-  public RocksDBSegmentedStorage(
-      final RocksDBConfiguration configuration) {
+  public RocksDBSegmentedStorage(final RocksDBConfiguration configuration) {
     this(configuration, EnumSet.allOf(SegmentNames.class));
   }
 
@@ -98,14 +93,13 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
    * @throws StorageException the storage exception
    */
   public RocksDBSegmentedStorage(
-      final RocksDBConfiguration configuration,
-      final Set<SegmentNames> segmentNames)
+      final RocksDBConfiguration configuration, final Set<SegmentNames> segmentNames)
       throws StorageException {
 
     try {
       final List<ColumnFamilyDescriptor> columnDescriptors =
-            segmentNames.stream()
-                .map(
+          segmentNames.stream()
+              .map(
                   segment ->
                       new ColumnFamilyDescriptor(
                           Optional.of(segment)
@@ -128,8 +122,7 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
               .setStatistics(stats)
               .setCreateMissingColumnFamilies(true)
               .setEnv(
-                  Env.getDefault()
-                      .setBackgroundThreads(configuration.getBackgroundThreadCount()));
+                  Env.getDefault().setBackgroundThreads(configuration.getBackgroundThreadCount()));
 
       txOptions = new TransactionDBOptions();
       final List<ColumnFamilyHandle> columnHandles = new ArrayList<>(columnDescriptors.size());
@@ -137,10 +130,9 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
           OptimisticTransactionDB.open(
               options, configuration.getDatabaseDir().toString(), columnDescriptors, columnHandles);
 
-      columnHandlesByName = columnHandles.stream()
-          .collect(Collectors.toMap(
-              RocksDBSegmentIdentifier::fromHandle,
-              RocksDBSegment::new));
+      columnHandlesByName =
+          columnHandles.stream()
+              .collect(Collectors.toMap(RocksDBSegmentIdentifier::fromHandle, RocksDBSegment::new));
 
     } catch (final RocksDBException | RuntimeException e) {
       throw new StorageException(e);
@@ -187,17 +179,16 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
     }
   }
 
-  public SnappableKeyValueStorage getKeyValueStorageForSegment(final RocksDBSegmentIdentifier segmentId) {
+  public SnappableKeyValueStorage getKeyValueStorageForSegment(
+      final RocksDBSegmentIdentifier segmentId) {
     return new RocksDBKeyValueSegment(columnHandlesByName.get(segmentId));
   }
-
 
   class RocksDBSegment {
 
     private final AtomicReference<ColumnFamilyHandle> reference;
 
-    RocksDBSegment(
-        ColumnFamilyHandle handle) {
+    RocksDBSegment(ColumnFamilyHandle handle) {
       this.reference = new AtomicReference<>(handle);
     }
 
@@ -276,6 +267,7 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
     RocksDBTransaction createSnapshotTransaction() {
       return new RocksDBTransaction.RocksDBSnapshotTransaction(db, getHandle());
     }
+
     @Override
     public boolean equals(final Object o) {
       if (this == o) {
@@ -293,5 +285,4 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
       return reference.get().hashCode();
     }
   }
-
 }

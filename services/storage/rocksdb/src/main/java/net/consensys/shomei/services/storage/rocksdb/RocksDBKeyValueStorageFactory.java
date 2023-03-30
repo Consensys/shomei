@@ -9,11 +9,15 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
- *
- * SPDX-License-Identifier: Apache-2.0
  */
+
 package net.consensys.shomei.services.storage.rocksdb;
 
+import net.consensys.shomei.config.ShomeiConfig;
+import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames;
+import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
+import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
+import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBFactoryConfiguration;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -21,14 +25,6 @@ import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
 
-import net.consensys.shomei.config.ShomeiConfig;
-import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames;
-import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
-import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
-import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBFactoryConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import services.storage.KeyValueStorage;
 import services.storage.KeyValueStorageFactory;
 import services.storage.SegmentIdentifier;
 import services.storage.SnappableKeyValueStorage;
@@ -48,42 +44,39 @@ public class RocksDBKeyValueStorageFactory implements KeyValueStorageFactory {
    *
    * @param configuration the configuration
    */
-  public RocksDBKeyValueStorageFactory(
-      final RocksDBFactoryConfiguration configuration) {
+  public RocksDBKeyValueStorageFactory(final RocksDBFactoryConfiguration configuration) {
     this(configuration, EnumSet.allOf(SegmentNames.class));
   }
 
   public RocksDBKeyValueStorageFactory(
-      final RocksDBFactoryConfiguration configuration,
-      final Set<SegmentNames> segmentNames) {
+      final RocksDBFactoryConfiguration configuration, final Set<SegmentNames> segmentNames) {
     this.configuration = configuration;
     this.segmentNames = segmentNames;
   }
 
   @Override
   public SnappableKeyValueStorage create(
-      final SegmentIdentifier segmentId,
-      final ShomeiConfig shomeiConfig)
-      throws StorageException {
+      final SegmentIdentifier segmentId, final ShomeiConfig shomeiConfig) throws StorageException {
 
-    RocksDBSegmentIdentifier rocksSegmentId = Optional.of(segmentId)
-        .filter(z -> z instanceof RocksDBSegmentIdentifier)
-        .map(RocksDBSegmentIdentifier.class::cast)
-        .orElseThrow(() -> new StorageException("Invalid segment type specified for RocksDB storage: " +
-            segmentId.getClass().getSimpleName()));
+    RocksDBSegmentIdentifier rocksSegmentId =
+        Optional.of(segmentId)
+            .filter(z -> z instanceof RocksDBSegmentIdentifier)
+            .map(RocksDBSegmentIdentifier.class::cast)
+            .orElseThrow(
+                () ->
+                    new StorageException(
+                        "Invalid segment type specified for RocksDB storage: "
+                            + segmentId.getClass().getSimpleName()));
 
-          if (rocksDBStorage == null) {
-            rocksDBConfiguration =
-                RocksDBConfigurationBuilder.from(configuration)
-                    .databaseDir(shomeiConfig.getStoragePath())
-                    .build();
-            rocksDBStorage =
-                new RocksDBSegmentedStorage(
-                    rocksDBConfiguration,
-                    segmentNames);
-          }
-          return rocksDBStorage.getKeyValueStorageForSegment(rocksSegmentId);
-        }
+    if (rocksDBStorage == null) {
+      rocksDBConfiguration =
+          RocksDBConfigurationBuilder.from(configuration)
+              .databaseDir(shomeiConfig.getStoragePath())
+              .build();
+      rocksDBStorage = new RocksDBSegmentedStorage(rocksDBConfiguration, segmentNames);
+    }
+    return rocksDBStorage.getKeyValueStorageForSegment(rocksSegmentId);
+  }
 
   /**
    * Storage path.

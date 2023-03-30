@@ -1,5 +1,5 @@
 /*
- * ConsenSys Software Inc., 2023
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -9,23 +9,18 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
- *
- * SPDX-License-Identifier: Apache-2.0
  */
-package net.consensys.shomei.services.storage.rocksdb;
 
+package net.consensys.shomei.services.storage.rocksdb;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import com.google.common.base.Suppliers;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 import services.storage.SegmentIdentifier;
@@ -41,6 +36,7 @@ public class RocksDBSegmentIdentifier implements SegmentIdentifier {
     ZK_TRIE_LOG("ZK_TRIE_LOG");
 
     private final byte[] segmentId;
+
     SegmentNames(String segmentName) {
       this.segmentId = segmentName.getBytes(UTF_8);
     }
@@ -52,9 +48,9 @@ public class RocksDBSegmentIdentifier implements SegmentIdentifier {
     public byte[] getId() {
       return segmentId;
     }
+
     public static SegmentNames fromId(byte[] segmentId) {
-      return EnumSet.allOf(SegmentNames.class)
-          .stream()
+      return EnumSet.allOf(SegmentNames.class).stream()
           .filter(z -> Arrays.equals(z.getId(), segmentId))
           .findFirst()
           .orElseThrow(() -> new RuntimeException("Unknown segment id"));
@@ -72,8 +68,7 @@ public class RocksDBSegmentIdentifier implements SegmentIdentifier {
    *
    * @param segmentName the segment name
    */
-  public RocksDBSegmentIdentifier(
-      final SegmentNames segmentName) {
+  public RocksDBSegmentIdentifier(final SegmentNames segmentName) {
     this.segmentName = segmentName;
   }
 
@@ -95,7 +90,6 @@ public class RocksDBSegmentIdentifier implements SegmentIdentifier {
     }
   }
 
-
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -112,7 +106,4 @@ public class RocksDBSegmentIdentifier implements SegmentIdentifier {
   public int hashCode() {
     return this.segmentName.hashCode();
   }
-
-
-
 }

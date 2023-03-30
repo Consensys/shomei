@@ -1,5 +1,5 @@
 /*
- * ConsenSys Software Inc., 2023
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -9,12 +9,9 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
- *
- * SPDX-License-Identifier: Apache-2.0
- *
  */
-package net.consensys.shomei.services.storage.rocksdb;
 
+package net.consensys.shomei.services.storage.rocksdb;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -53,8 +50,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
    * @param columnFamilyHandle the column family handle
    */
   public RocksDBTransaction(
-      final OptimisticTransactionDB db,
-      final ColumnFamilyHandle columnFamilyHandle) {
+      final OptimisticTransactionDB db, final ColumnFamilyHandle columnFamilyHandle) {
 
     this.db = db;
     this.columnFamilyHandle = columnFamilyHandle;
@@ -155,6 +151,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
       close();
     }
   }
+
   @Override
   public void rollback() {
     try {
@@ -182,8 +179,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
     private final Snapshot snapshot;
 
     public RocksDBSnapshotTransaction(
-        final OptimisticTransactionDB db,
-        final ColumnFamilyHandle columnFamilyHandle) {
+        final OptimisticTransactionDB db, final ColumnFamilyHandle columnFamilyHandle) {
       super(db, columnFamilyHandle);
       this.snapshot = db.getSnapshot();
       this.readOptions.setSnapshot(snapshot);
@@ -191,7 +187,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
 
     @Override
     public void commit() throws StorageException {
-      //no-op
+      // no-op
     }
 
     @Override
