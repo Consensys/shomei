@@ -91,7 +91,7 @@ public class RocksDBKeyValueSnapshot implements KeyValueStorage {
   }
 
   @Override
-  public void clear() {
+  public void truncate() {
     throw new UnsupportedOperationException("RocksDBKeyValueSnapshot does not support clear");
   }
 
@@ -111,7 +111,7 @@ public class RocksDBKeyValueSnapshot implements KeyValueStorage {
   private void throwIfClosed() {
     if (closed.get()) {
       LOG.error("Attempting to use a closed RocksDBKeyValueSegment");
-      throw new IllegalStateException("Storage has been closed");
+      throw new StorageException("Snapshot has been closed");
     }
   }
 }

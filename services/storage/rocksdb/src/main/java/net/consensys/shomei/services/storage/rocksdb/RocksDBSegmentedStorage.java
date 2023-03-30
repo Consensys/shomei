@@ -166,7 +166,7 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
   private void throwIfClosed() {
     if (closed.get()) {
       LOG.error("Attempting to use a closed RocksDbKeyValueStorage");
-      throw new IllegalStateException("Storage has been closed");
+      throw new StorageException("Storage has been closed");
     }
   }
 
@@ -181,6 +181,7 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
 
   public SnappableKeyValueStorage getKeyValueStorageForSegment(
       final RocksDBSegmentIdentifier segmentId) {
+    throwIfClosed();
     return new RocksDBKeyValueSegment(columnHandlesByName.get(segmentId));
   }
 
@@ -261,10 +262,12 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
     }
 
     public KeyValueStorage takeSnapshot() {
+      throwIfClosed();
       return new RocksDBKeyValueSnapshot(this);
     }
 
     RocksDBTransaction createSnapshotTransaction() {
+      throwIfClosed();
       return new RocksDBTransaction.RocksDBSnapshotTransaction(db, getHandle());
     }
 

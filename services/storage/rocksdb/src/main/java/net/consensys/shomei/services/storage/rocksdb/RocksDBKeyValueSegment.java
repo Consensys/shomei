@@ -41,7 +41,7 @@ public class RocksDBKeyValueSegment implements SnappableKeyValueStorage {
   }
 
   @Override
-  public void clear() throws StorageException {
+  public void truncate() throws StorageException {
     segment.truncate();
   }
 

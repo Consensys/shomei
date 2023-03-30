@@ -24,7 +24,10 @@ import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import services.storage.KeyValueStorageFactory;
 import services.storage.SegmentIdentifier;
 import services.storage.SnappableKeyValueStorage;
@@ -32,9 +35,11 @@ import services.storage.StorageException;
 
 /** The Rocks db key value storage factory. */
 public class RocksDBKeyValueStorageFactory implements KeyValueStorageFactory {
+  private static final Logger LOG = LoggerFactory.getLogger(RocksDBKeyValueStorageFactory.class);
 
   private RocksDBSegmentedStorage rocksDBStorage;
   private RocksDBConfiguration rocksDBConfiguration;
+  private final AtomicBoolean closed = new AtomicBoolean(false);
 
   private final RocksDBFactoryConfiguration configuration;
   private final Set<SegmentNames> segmentNames;
@@ -57,7 +62,7 @@ public class RocksDBKeyValueStorageFactory implements KeyValueStorageFactory {
   @Override
   public SnappableKeyValueStorage create(
       final SegmentIdentifier segmentId, final ShomeiConfig shomeiConfig) throws StorageException {
-
+    throwIfClosed();
     RocksDBSegmentIdentifier rocksSegmentId =
         Optional.of(segmentId)
             .filter(z -> z instanceof RocksDBSegmentIdentifier)
@@ -92,6 +97,13 @@ public class RocksDBKeyValueStorageFactory implements KeyValueStorageFactory {
   public void close() throws IOException {
     if (rocksDBStorage != null) {
       rocksDBStorage.close();
+    }
+  }
+
+  private void throwIfClosed() {
+    if (closed.get()) {
+      LOG.error("Attempting to use a closed RocksDbKeyValueStorage");
+      throw new StorageException("Storage has been closed");
     }
   }
 }

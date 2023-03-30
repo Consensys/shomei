@@ -34,7 +34,7 @@ public interface KeyValueStorage extends Closeable {
    *
    * @throws StorageException problem encountered when attempting to clear storage.
    */
-  void clear() throws StorageException;
+  void truncate() throws StorageException;
 
   /**
    * Whether the key-value storage contains the given key.
