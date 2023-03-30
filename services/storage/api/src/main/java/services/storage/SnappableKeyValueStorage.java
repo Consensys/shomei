@@ -15,6 +15,8 @@
  */
 package services.storage;
 
+import services.storage.KeyValueStorage;
+
 /** The interface Snappable key value storage. */
 public interface SnappableKeyValueStorage extends KeyValueStorage {
 
@@ -23,5 +25,5 @@ public interface SnappableKeyValueStorage extends KeyValueStorage {
    *
    * @return the snapped key value storage
    */
-  SnappedKeyValueStorage takeSnapshot();
+  KeyValueStorage takeSnapshot();
 }

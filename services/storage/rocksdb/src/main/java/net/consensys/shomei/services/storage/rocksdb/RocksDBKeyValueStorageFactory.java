@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import services.storage.KeyValueStorage;
 import services.storage.KeyValueStorageFactory;
 import services.storage.SegmentIdentifier;
+import services.storage.SnappableKeyValueStorage;
 import services.storage.StorageException;
 
 /** The Rocks db key value storage factory. */
@@ -60,7 +61,7 @@ public class RocksDBKeyValueStorageFactory implements KeyValueStorageFactory {
   }
 
   @Override
-  public KeyValueStorage create(
+  public SnappableKeyValueStorage create(
       final SegmentIdentifier segmentId,
       final ShomeiConfig shomeiConfig)
       throws StorageException {

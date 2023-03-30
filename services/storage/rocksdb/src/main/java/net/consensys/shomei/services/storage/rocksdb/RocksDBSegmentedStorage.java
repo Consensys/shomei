@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys AG.
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -54,7 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import services.storage.KeyValueStorage;
 import services.storage.KeyValueStorageTransaction;
-import services.storage.SnappedKeyValueStorage;
+import services.storage.SnappableKeyValueStorage;
 import services.storage.StorageException;
 
 /** The RocksDb columnar key value storage. */
@@ -74,11 +74,10 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
   private final TransactionDBOptions txOptions;
   private final OptimisticTransactionDB db;
   private final AtomicBoolean closed = new AtomicBoolean(false);
+  //TODO: concurrent hashmap and move truncation into outer class
   private final Map<RocksDBSegmentIdentifier, RocksDBSegment> columnHandlesByName;
   private final WriteOptions tryDeleteOptions =
       new WriteOptions().setNoSlowdown(true).setIgnoreMissingColumnFamilies(true);
-  private final ReadOptions readOptions = new ReadOptions().setVerifyChecksums(false);
-
 
   /**
    * Instantiates a new Rocks db columnar key value storage.
@@ -159,19 +158,6 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
         .setBlockSize(ROCKSDB_BLOCK_SIZE);
   }
 
-  /**
-   * Take snapshot RocksDb columnar key value snapshot.
-   *
-   * @param segmentIdentifier the segment identifier to snapshot
-   * @return the RocksDb columnar key value snapshot
-   * @throws StorageException the storage exception
-   */
-  public RocksDBKeyValueStorage takeSnapshot(final RocksDBSegmentIdentifier segmentIdentifier)
-      throws StorageException {
-    throwIfClosed();
-    return new RocksDBKeyValueStorage(new RocksDBKeyValueSnapshot(columnHandlesByName.get(segmentIdentifier)));
-  }
-
   @Override
   public void close() {
     if (closed.compareAndSet(false, true)) {
@@ -201,21 +187,23 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
     }
   }
 
-  public KeyValueStorage getKeyValueStorageForSegment(final RocksDBSegmentIdentifier segment) {
-    return new RocksDBKeyValueStorage(new RocksDBKeyValueSegment(columnHandlesByName.get(segment)));
+  public SnappableKeyValueStorage getKeyValueStorageForSegment(final RocksDBSegmentIdentifier segmentId) {
+    return new RocksDBKeyValueSegment(columnHandlesByName.get(segmentId));
   }
 
 
-  static class RocksDBSegment {
+  class RocksDBSegment {
 
     private final AtomicReference<ColumnFamilyHandle> reference;
 
-    RocksDBSegment(ColumnFamilyHandle columnFamilyHandle) {
-      this.reference = new AtomicReference<>(columnFamilyHandle);
+    RocksDBSegment(
+        ColumnFamilyHandle handle) {
+      this.reference = new AtomicReference<>(handle);
     }
 
     /** Truncate. */
-    void truncate(OptimisticTransactionDB db) {
+    void truncate() {
+      throwIfClosed();
       reference.getAndUpdate(
           oldHandle -> {
             try {
@@ -236,6 +224,58 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
       return reference.get();
     }
 
+    public Optional<byte[]> get(final ReadOptions readOptions, final byte[] key) {
+      throwIfClosed();
+
+      try {
+        return Optional.ofNullable(db.get(this.getHandle(), readOptions, key));
+      } catch (final RocksDBException e) {
+        throw new StorageException(e);
+      }
+    }
+
+    public Stream<KeyValueStorage.KeyValuePair> stream() {
+      throwIfClosed();
+      final RocksIterator rocksIterator = db.newIterator();
+      rocksIterator.seekToFirst();
+      return RocksDbIterator.create(rocksIterator).toStream();
+    }
+
+    public Stream<byte[]> streamKeys() {
+      throwIfClosed();
+      final RocksIterator rocksIterator = db.newIterator();
+      rocksIterator.seekToFirst();
+      return RocksDbIterator.create(rocksIterator).toStreamKeys();
+    }
+
+    public boolean tryDelete(final byte[] key) {
+      throwIfClosed();
+      try {
+        db.delete(tryDeleteOptions, key);
+        return true;
+      } catch (RocksDBException e) {
+        if (e.getStatus().getCode() == Status.Code.Incomplete) {
+          return false;
+        } else {
+          throw new StorageException(e);
+        }
+      }
+    }
+
+    public KeyValueStorageTransaction startTransaction() {
+      throwIfClosed();
+      final WriteOptions options = new WriteOptions();
+      options.setIgnoreMissingColumnFamilies(true);
+      return new RocksDBTransaction(db, getHandle());
+    }
+
+    public KeyValueStorage takeSnapshot() {
+      return new RocksDBKeyValueSnapshot(this);
+    }
+
+    RocksDBTransaction createSnapshotTransaction() {
+      return new RocksDBTransaction.RocksDBSnapshotTransaction(db, getHandle());
+    }
     @Override
     public boolean equals(final Object o) {
       if (this == o) {
@@ -251,210 +291,6 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
     @Override
     public int hashCode() {
       return reference.get().hashCode();
-    }
-
-  }
-  class RocksDBKeyValueSegment implements KeyValueStorage {
-
-    private static final Logger LOG = LoggerFactory.getLogger(RocksDBKeyValueSegment.class);
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final RocksDBSegment segmentHandle;
-
-    /**
-     * Instantiates a new Segmented key value storage adapter.
-     *
-     * @param segmentHandle the segment
-     */
-    public RocksDBKeyValueSegment(
-        final RocksDBSegment segmentHandle) {
-      this.segmentHandle = segmentHandle;
-    }
-
-
-    @Override
-    public void clear() throws StorageException {
-      throwIfClosed();
-      segmentHandle.truncate(db);
-    }
-
-    @Override
-    public boolean containsKey(final byte[] key) throws StorageException {
-      return get(key).isPresent();
-    }
-
-    @Override
-    public Optional<byte[]> get(final byte[] key) throws StorageException {
-      throwIfClosed();
-
-      try {
-        return Optional.ofNullable(db.get(segmentHandle.getHandle(), readOptions, key));
-      } catch (final RocksDBException e) {
-        throw new StorageException(e);
-      }
-    }
-
-    @Override
-    public Set<byte[]> getAllKeysThat(final Predicate<byte[]> returnCondition) {
-      return stream()
-          .filter(pair -> returnCondition.test(pair.key()))
-          .map(KeyValuePair::key)
-          .collect(toUnmodifiableSet());
-    }
-
-    @Override
-    public Stream<KeyValuePair> stream() {
-      throwIfClosed();
-      final RocksIterator rocksIterator = db.newIterator();
-      rocksIterator.seekToFirst();
-      return RocksDbIterator.create(rocksIterator).toStream();
-    }
-
-    @Override
-    public Stream<byte[]> streamKeys() {
-      throwIfClosed();
-      final RocksIterator rocksIterator = db.newIterator();
-      rocksIterator.seekToFirst();
-      return RocksDbIterator.create(rocksIterator).toStreamKeys();
-    }
-
-    @Override
-    public Set<byte[]> getAllValuesFromKeysThat(final Predicate<byte[]> returnCondition) {
-      return stream()
-          .filter(pair -> returnCondition.test(pair.key()))
-          .map(KeyValuePair::value)
-          .collect(toUnmodifiableSet());
-    }
-
-    @Override
-    public boolean tryDelete(final byte[] key) {
-      throwIfClosed();
-      try {
-        db.delete(tryDeleteOptions, key);
-        return true;
-      } catch (RocksDBException e) {
-        if (e.getStatus().getCode() == Status.Code.Incomplete) {
-          return false;
-        } else {
-          throw new StorageException(e);
-        }
-      }
-    }
-
-    @Override
-    public KeyValueStorageTransaction startTransaction() throws StorageException {
-      throwIfClosed();
-      final WriteOptions options = new WriteOptions();
-      options.setIgnoreMissingColumnFamilies(true);
-      return new RocksDBTransaction(db, segmentHandle.getHandle());
-    }
-
-    @Override
-    public void close() {
-      if (closed.compareAndSet(false, true)) {
-        tryDeleteOptions.close();
-        options.close();
-        db.close();
-      }
-    }
-
-    private void throwIfClosed() {
-      if (closed.get()) {
-        LOG.error("Attempting to use a closed RocksDBKeyValueSegment");
-        throw new IllegalStateException("Storage has been closed");
-      }
-    }
-  }
-  class RocksDBKeyValueSnapshot implements SnappedKeyValueStorage {
-
-    /** The Snap tx. */
-    final RocksDBTransaction snapTx;
-
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-
-    /**
-     * Instantiates a new RocksDb columnar key value snapshot.
-     *
-     * @param segment the segment
-     */
-    RocksDBKeyValueSnapshot(
-        final RocksDBSegment segment) {
-      this.snapTx = new RocksDBTransaction.RocksDBSnapshotTransaction(db, segment.getHandle());
-    }
-
-    @Override
-    public Optional<byte[]> get(final byte[] key) throws StorageException {
-      throwIfClosed();
-      return snapTx.get(key);
-    }
-
-    @Override
-    public Stream<KeyValuePair> stream() {
-      throwIfClosed();
-      return snapTx.stream();
-    }
-
-    @Override
-    public Stream<byte[]> streamKeys() {
-      throwIfClosed();
-      return snapTx.streamKeys();
-    }
-
-    @Override
-    public boolean tryDelete(final byte[] key) throws StorageException {
-      throwIfClosed();
-      snapTx.remove(key);
-      return true;
-    }
-
-    @Override
-    public Set<byte[]> getAllKeysThat(final Predicate<byte[]> returnCondition) {
-      return streamKeys().filter(returnCondition).collect(toUnmodifiableSet());
-    }
-
-    @Override
-    public Set<byte[]> getAllValuesFromKeysThat(final Predicate<byte[]> returnCondition) {
-      return stream()
-          .filter(pair -> returnCondition.test(pair.key()))
-          .map(KeyValuePair::value)
-          .collect(toUnmodifiableSet());
-    }
-
-    @Override
-    public KeyValueStorageTransaction startTransaction() throws StorageException {
-      // The use of a transaction on a transaction based key value store is dubious
-      // at best.  return our snapshot transaction instead.
-      return snapTx;
-    }
-
-    @Override
-    public void clear() {
-      throw new UnsupportedOperationException(
-          "RocksDBKeyValueSnapshot does not support clear");
-    }
-
-    @Override
-    public boolean containsKey(final byte[] key) throws StorageException {
-      throwIfClosed();
-      return snapTx.get(key).isPresent();
-    }
-
-    @Override
-    public void close() throws IOException {
-      if (closed.compareAndSet(false, true)) {
-        snapTx.close();
-      }
-    }
-
-    private void throwIfClosed() {
-      if (closed.get()) {
-        LOG.error("Attempting to use a closed RocksDBKeyValueSegment");
-        throw new IllegalStateException("Storage has been closed");
-      }
-    }
-
-    @Override
-    public KeyValueStorageTransaction getSnapshotTransaction() {
-      return snapTx;
     }
   }
 
