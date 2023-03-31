@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -59,6 +60,8 @@ public class ZKEvmWorldState {
     blockHash = maybeBlockHeader.map(BlockHeader::getHash).orElse(null);
     accumulator.reset();
     // persist
+
+    // TODO: sup brah
   }
 
   private Hash calculateRootHash() {
@@ -70,6 +73,7 @@ public class ZKEvmWorldState {
               final Map<Hash, ZkValue<UInt256, UInt256>> storageToUpdate =
                   accumulator.getStorageToUpdate().get(hkey);
               if (storageToUpdate != null) {
+                // load the account storage trie
                 final ZKTrie zkStorageTrie = loadStorageTrie(accountValue);
                 final Hash targetStorageRootHash =
                     Optional.ofNullable(accountValue.getUpdated())
@@ -117,6 +121,7 @@ public class ZKEvmWorldState {
     return blockHash;
   }
 
+  @VisibleForTesting
   public ZkEvmWorldStateUpdateAccumulator getAccumulator() {
     return accumulator;
   }

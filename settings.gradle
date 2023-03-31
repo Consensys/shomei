@@ -5,4 +5,13 @@ include 'rpc'
 include 'trie'
 include 'core'
 include 'crypto'
+include 'services'
+
+include 'services:storage'
+findProject(':services:storage')?.name = 'storage'
+include 'services:storage:api'
+findProject(':services:storage:api')?.name = 'api'
+include 'services:storage:rocksdb'
+findProject(':services:storage:rocksdb')?.name = 'rocksdb'
+include 'config'
 

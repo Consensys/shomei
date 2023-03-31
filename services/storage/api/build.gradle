@@ -1,0 +1,23 @@
+
+apply plugin: 'java-library'
+
+jar {
+    archiveBaseName = 'shomei-storage-api'
+    manifest {
+        attributes(
+                'Specification-Title': archiveBaseName,
+                'Specification-Version': project.version,
+                'Implementation-Title': archiveBaseName,
+                'Implementation-Version': calculateVersion()
+        )
+    }
+}
+dependencies {
+    implementation project(':config')
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}
