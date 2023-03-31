@@ -85,6 +85,15 @@ public class StoredSparseMerkleTrie {
     this.root = root.accept(getPutVisitor(value), path);
   }
 
+  public void put(final Hash key, final Bytes path, final Bytes value) {
+    checkNotNull(path);
+    checkNotNull(value);
+    final PutVisitor<Bytes> putVisitor = getPutVisitor(value);
+    this.root = root.accept(putVisitor, path);
+    maybeProofFactory.ifPresent(
+        proofFactory -> proofFactory.generateAndSaveProofForKey(key, putVisitor.getProof()));
+  }
+
   public void remove(final Bytes path) {
     checkNotNull(path);
     this.root = root.accept(getRemoveVisitor(), path);

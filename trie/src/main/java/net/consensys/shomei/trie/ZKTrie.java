@@ -111,13 +111,15 @@ public class ZKTrie {
 
   public void setHeadAndTail() {
     // head
-    final Long headIndex = pathResolver.getAndIncrementNextFreeLeafIndex();
+    final Long headIndex = pathResolver.getNextFreeLeafNodeIndex();
     leafIndexManager.putKeyIndex(StateLeafValue.HEAD.getHkey(), headIndex);
     state.put(pathResolver.getLeafPath(headIndex), StateLeafValue.HEAD.getEncodesBytes());
+    pathResolver.incrementNextFreeLeafNodeIndex();
     // tail
-    final Long tailIndex = pathResolver.getAndIncrementNextFreeLeafIndex();
+    final Long tailIndex = pathResolver.getNextFreeLeafNodeIndex();
     leafIndexManager.putKeyIndex(StateLeafValue.TAIL.getHkey(), tailIndex);
     state.put(pathResolver.getLeafPath(tailIndex), StateLeafValue.TAIL.getEncodesBytes());
+    pathResolver.incrementNextFreeLeafNodeIndex();
   }
 
   public Bytes32 getRootHash() {
@@ -141,24 +143,19 @@ public class ZKTrie {
 
   @VisibleForTesting
   protected void putValue(final Hash key, final Bytes32 value) {
-    final LeafIndexLoader.Range nearestKeys =
-        leafIndexManager.getNearestKeys(key); // find HKey- and HKey+
-    // Check if hash(k) exist
+    // GET the openings HKEY-,  hash(k) , HKEY+
+    final LeafIndexLoader.Range nearestKeys = leafIndexManager.getNearestKeys(key);
+    // CHECK if hash(k) exist
     if (nearestKeys.getMiddleNodeKey().isEmpty()) {
-      // HKey-
+      // GET path of HKey-
       final Bytes nearestKeyPath =
           pathResolver.getLeafPath(nearestKeys.getLeftNodeIndex().toLong());
-      // HKey+
+      // GET path of HKey+
       final Bytes nearestNextKeyPath =
           pathResolver.getLeafPath(nearestKeys.getRightNodeIndex().toLong());
-      // PUT hash(k) with HKey- for Prev and HKey+ for next
-      final long nextFreeNode = pathResolver.getAndIncrementNextFreeLeafIndex();
-      final Bytes newKeyPath = pathResolver.getLeafPath(nextFreeNode);
-      leafIndexManager.putKeyIndex(key, nextFreeNode);
-      final StateLeafValue newKey =
-          new StateLeafValue(
-              nearestKeys.getLeftNodeIndex(), nearestKeys.getRightNodeIndex(), key, value);
-      state.put(newKeyPath, newKey.getEncodesBytes());
+
+      // FIND next free node
+      final long nextFreeNode = pathResolver.getNextFreeLeafNodeIndex();
 
       // UPDATE HKey- with hash(k) for next
       final StateLeafValue leftKey =
@@ -166,7 +163,15 @@ public class ZKTrie {
               .map(StateLeafValue::readFrom)
               .orElseThrow();
       leftKey.setNextLeaf(UInt256.valueOf(nextFreeNode));
-      state.put(nearestKeyPath, leftKey.getEncodesBytes());
+      state.put(nearestKeys.getLeftNodeKey(), nearestKeyPath, leftKey.getEncodesBytes());
+
+      // PUT hash(k) with HKey- for Prev and HKey+ for next
+      final Bytes newKeyPath = pathResolver.getLeafPath(nextFreeNode);
+      leafIndexManager.putKeyIndex(key, nextFreeNode);
+      final StateLeafValue newKey =
+          new StateLeafValue(
+              nearestKeys.getLeftNodeIndex(), nearestKeys.getRightNodeIndex(), key, value);
+      state.put(key, newKeyPath, newKey.getEncodesBytes());
 
       // UPDATE HKey+ with hash(k) for prev
       final StateLeafValue rightKey =
@@ -174,14 +179,18 @@ public class ZKTrie {
               .map(StateLeafValue::readFrom)
               .orElseThrow();
       rightKey.setPrevLeaf(UInt256.valueOf(nextFreeNode));
-      state.put(nearestNextKeyPath, rightKey.getEncodesBytes());
+      state.put(nearestKeys.getRightNodeKey(), nearestNextKeyPath, rightKey.getEncodesBytes());
+
+      // UPDATE NEXT FREE NODE
+      pathResolver.incrementNextFreeLeafNodeIndex();
+
     } else {
       final Bytes updatedKeyPath =
           pathResolver.getLeafPath(nearestKeys.getMiddleNodeIndex().orElseThrow().toLong());
       final StateLeafValue updatedKey =
           get(key, updatedKeyPath).map(StateLeafValue::readFrom).orElseThrow();
       updatedKey.setValue(value);
-      state.put(updatedKeyPath, updatedKey.getEncodesBytes());
+      state.put(key, updatedKeyPath, updatedKey.getEncodesBytes());
     }
   }
 
@@ -194,40 +203,40 @@ public class ZKTrie {
     checkArgument(key.size() == Bytes32.SIZE);
     final LeafIndexLoader.Range nearestKeys =
         leafIndexManager.getNearestKeys(key); // find HKey- and HKey+
-    // Check if hash(k) exist
+    // CHECK if hash(k) exist
     if (nearestKeys.getMiddleNodeIndex().isPresent()) {
       final UInt256 prevIndex = nearestKeys.getLeftNodeIndex();
       final UInt256 nextIndex = nearestKeys.getRightNodeIndex();
-      // HKey-
+
+      // UPDATE HKey- with HKey+ for next
       final Bytes prevKeyPath = pathResolver.getLeafPath(prevIndex.toLong());
       final StateLeafValue prevKey =
           get(nearestKeys.getLeftNodeKey(), prevKeyPath)
               .map(StateLeafValue::readFrom)
               .orElseThrow();
       prevKey.setNextLeaf(nextIndex);
-      state.put(prevKeyPath, prevKey.getEncodesBytes());
+      state.put(nearestKeys.getLeftNodeKey(), prevKeyPath, prevKey.getEncodesBytes());
 
-      // hash(k)
+      // REMOVE hash(k)
       final Bytes keyPathToDelete =
           pathResolver.getLeafPath(nearestKeys.getMiddleNodeIndex().orElseThrow().toLong());
       leafIndexManager.removeKeyIndex(key);
-      get(nearestKeys.getMiddleNodeKey().orElseThrow(), keyPathToDelete); // for the proof
-      // remove hash(k)
+      get(key, keyPathToDelete); // read for the proof
       state.remove(keyPathToDelete);
 
-      // HKey+
+      // UPDATE HKey+ with HKey- for prev
       final Bytes nextKeyPath = pathResolver.getLeafPath(nextIndex.toLong());
       final StateLeafValue nextKey =
           get(nearestKeys.getRightNodeKey(), nextKeyPath)
               .map(StateLeafValue::readFrom)
               .orElseThrow();
       nextKey.setPrevLeaf(prevIndex);
-      state.put(nextKeyPath, nextKey.getEncodesBytes());
+      state.put(nearestKeys.getRightNodeKey(), nextKeyPath, nextKey.getEncodesBytes());
     }
   }
 
   public void decrementNextFreeNode() {
-    pathResolver.getAndDecrementNextFreeLeafNodeIndex();
+    pathResolver.decrementNextFreeLeafNodeIndex();
   }
 
   public void commit() {

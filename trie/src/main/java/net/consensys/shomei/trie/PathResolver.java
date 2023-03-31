@@ -37,25 +37,7 @@ public class PathResolver {
     this.trie = trie;
   }
 
-  public Long getAndDecrementNextFreeLeafNodeIndex() {
-    final long foundFreeNode = getNextFreeLeafIndex();
-    nextFreeNode = foundFreeNode - 1;
-    trie.put(getNextFreeNodePath(), formatNodeIndex(nextFreeNode));
-    return foundFreeNode;
-  }
-
-  public Bytes getAndIncrementNextFreeLeafPath() {
-    return getLeafPath(getAndIncrementNextFreeLeafIndex());
-  }
-
-  public Long getAndIncrementNextFreeLeafIndex() {
-    final long foundFreeNode = getNextFreeLeafIndex();
-    nextFreeNode = foundFreeNode + 1;
-    trie.put(getNextFreeNodePath(), formatNodeIndex(nextFreeNode));
-    return foundFreeNode;
-  }
-
-  private Long getNextFreeLeafIndex() {
+  public Long getNextFreeLeafNodeIndex() {
     if (nextFreeNode == null) {
       nextFreeNode =
           trie.get(getNextFreeNodePath())
@@ -63,6 +45,24 @@ public class PathResolver {
               .orElse(0L);
     }
     return nextFreeNode;
+  }
+
+  public Bytes getNextFreeLeafNodePath() {
+    return getLeafPath(getNextFreeLeafNodeIndex());
+  }
+
+  public Long incrementNextFreeLeafNodeIndex() {
+    final long foundFreeNode = getNextFreeLeafNodeIndex();
+    nextFreeNode = foundFreeNode + 1;
+    trie.put(getNextFreeNodePath(), formatNodeIndex(nextFreeNode));
+    return foundFreeNode;
+  }
+
+  public Long decrementNextFreeLeafNodeIndex() {
+    final long foundFreeNode = getNextFreeLeafNodeIndex();
+    nextFreeNode = foundFreeNode - 1;
+    trie.put(getNextFreeNodePath(), formatNodeIndex(nextFreeNode));
+    return foundFreeNode;
   }
 
   public Bytes geRootPath() {
