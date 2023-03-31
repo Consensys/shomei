@@ -19,6 +19,7 @@ import net.consensys.shomei.trie.model.StateLeafValue;
 import net.consensys.shomei.trie.node.EmptyLeafNode;
 import net.consensys.shomei.trie.storage.LeafIndexLoader;
 import net.consensys.shomei.trie.storage.LeafIndexManager;
+import net.consensys.shomei.trie.visitor.CommitVisitor;
 import net.consensys.zkevm.HashProvider;
 
 import java.util.Collections;
@@ -26,26 +27,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.ethereum.trie.CommitVisitor;
-import org.hyperledger.besu.ethereum.trie.MerkleTrie;
+import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.trie.Node;
 import org.hyperledger.besu.ethereum.trie.NodeLoader;
 import org.hyperledger.besu.ethereum.trie.NodeUpdater;
-import org.hyperledger.besu.ethereum.trie.PathNodeVisitor;
-import org.hyperledger.besu.ethereum.trie.Proof;
-import org.hyperledger.besu.ethereum.trie.TrieIterator;
 
-public class ZKTrie implements MerkleTrie<Bytes, Bytes> {
+public class ZKTrie {
 
   private static final int ZK_TRIE_DEPTH = 40;
 
@@ -121,38 +113,38 @@ public class ZKTrie implements MerkleTrie<Bytes, Bytes> {
     // head
     final Long headIndex = pathResolver.getAndIncrementNextFreeLeafIndex();
     leafIndexManager.putKeyIndex(StateLeafValue.HEAD.getHkey(), headIndex);
-    state.putPath(pathResolver.getLeafPath(headIndex), StateLeafValue.HEAD.getEncodesBytes());
+    state.put(pathResolver.getLeafPath(headIndex), StateLeafValue.HEAD.getEncodesBytes());
     // tail
     final Long tailIndex = pathResolver.getAndIncrementNextFreeLeafIndex();
     leafIndexManager.putKeyIndex(StateLeafValue.TAIL.getHkey(), tailIndex);
-    state.putPath(pathResolver.getLeafPath(tailIndex), StateLeafValue.TAIL.getEncodesBytes());
+    state.put(pathResolver.getLeafPath(tailIndex), StateLeafValue.TAIL.getEncodesBytes());
   }
 
-  @Override
   public Bytes32 getRootHash() {
-    return state.getNodePath(pathResolver.geRootPath()).getHash();
+    return state.getNode(pathResolver.geRootPath()).getHash();
   }
 
   public Bytes32 getTopRootHash() {
     return state.getRootHash();
   }
 
-  @Override
-  public Optional<Bytes> get(final Bytes key) {
-    return leafIndexManager.getKeyIndex(key).map(pathResolver::getLeafPath).flatMap(state::getPath);
+  public Optional<Bytes> get(final Hash key) {
+    return leafIndexManager
+        .getKeyIndex(key)
+        .map(pathResolver::getLeafPath)
+        .flatMap(path -> get(key, path));
   }
 
-  @Override
-  public Optional<Bytes> getPath(final Bytes path) {
-    return state.getPath(path);
+  public Optional<Bytes> get(final Hash hkey, final Bytes path) {
+    return state.get(hkey, path);
   }
 
   @VisibleForTesting
-  protected void putValue(final Bytes32 key, final Bytes32 value) {
+  protected void putValue(final Hash key, final Bytes32 value) {
     final LeafIndexLoader.Range nearestKeys =
         leafIndexManager.getNearestKeys(key); // find HKey- and HKey+
     // Check if hash(k) exist
-    if (!nearestKeys.getLeftNodeKey().equals(key)) {
+    if (nearestKeys.getMiddleNodeKey().isEmpty()) {
       // HKey-
       final Bytes nearestKeyPath =
           pathResolver.getLeafPath(nearestKeys.getLeftNodeIndex().toLong());
@@ -165,69 +157,72 @@ public class ZKTrie implements MerkleTrie<Bytes, Bytes> {
       leafIndexManager.putKeyIndex(key, nextFreeNode);
       final StateLeafValue newKey =
           new StateLeafValue(
-              nearestKeys.getLeftNodeIndex(),
-              nearestKeys.getRightNodeIndex(),
-              Bytes32.wrap(key),
-              value);
-      state.putPath(newKeyPath, newKey.getEncodesBytes());
+              nearestKeys.getLeftNodeIndex(), nearestKeys.getRightNodeIndex(), key, value);
+      state.put(newKeyPath, newKey.getEncodesBytes());
 
       // UPDATE HKey- with hash(k) for next
       final StateLeafValue leftKey =
-          getPath(nearestKeyPath).map(StateLeafValue::readFrom).orElseThrow();
+          get(nearestKeys.getLeftNodeKey(), nearestKeyPath)
+              .map(StateLeafValue::readFrom)
+              .orElseThrow();
       leftKey.setNextLeaf(UInt256.valueOf(nextFreeNode));
-      state.putPath(nearestKeyPath, leftKey.getEncodesBytes());
+      state.put(nearestKeyPath, leftKey.getEncodesBytes());
 
       // UPDATE HKey+ with hash(k) for prev
       final StateLeafValue rightKey =
-          getPath(nearestNextKeyPath).map(StateLeafValue::readFrom).orElseThrow();
+          get(nearestKeys.getRightNodeKey(), nearestNextKeyPath)
+              .map(StateLeafValue::readFrom)
+              .orElseThrow();
       rightKey.setPrevLeaf(UInt256.valueOf(nextFreeNode));
-      state.putPath(nearestNextKeyPath, rightKey.getEncodesBytes());
+      state.put(nearestNextKeyPath, rightKey.getEncodesBytes());
     } else {
       final Bytes updatedKeyPath =
-          pathResolver.getLeafPath(nearestKeys.getLeftNodeIndex().toLong());
+          pathResolver.getLeafPath(nearestKeys.getMiddleNodeIndex().orElseThrow().toLong());
       final StateLeafValue updatedKey =
-          getPath(updatedKeyPath).map(StateLeafValue::readFrom).orElseThrow();
+          get(key, updatedKeyPath).map(StateLeafValue::readFrom).orElseThrow();
       updatedKey.setValue(value);
-      state.putPath(updatedKeyPath, updatedKey.getEncodesBytes());
+      state.put(updatedKeyPath, updatedKey.getEncodesBytes());
     }
   }
 
-  @Override
-  public void put(final Bytes key, final Bytes value) {
+  public void put(final Hash key, final Bytes value) {
     checkArgument(key.size() == Bytes32.SIZE);
-    putValue(Bytes32.wrap(key), HashProvider.mimc(value));
+    putValue(key, HashProvider.mimc(value));
   }
 
-  @Override
-  public void remove(final Bytes key) {
+  public void remove(final Hash key) {
     checkArgument(key.size() == Bytes32.SIZE);
     final LeafIndexLoader.Range nearestKeys =
         leafIndexManager.getNearestKeys(key); // find HKey- and HKey+
     // Check if hash(k) exist
-    if (nearestKeys.getLeftNodeKey().equals(key)) {
+    if (nearestKeys.getMiddleNodeIndex().isPresent()) {
+      final UInt256 prevIndex = nearestKeys.getLeftNodeIndex();
+      final UInt256 nextIndex = nearestKeys.getRightNodeIndex();
+      // HKey-
+      final Bytes prevKeyPath = pathResolver.getLeafPath(prevIndex.toLong());
+      final StateLeafValue prevKey =
+          get(nearestKeys.getLeftNodeKey(), prevKeyPath)
+              .map(StateLeafValue::readFrom)
+              .orElseThrow();
+      prevKey.setNextLeaf(nextIndex);
+      state.put(prevKeyPath, prevKey.getEncodesBytes());
+
       // hash(k)
       final Bytes keyPathToDelete =
-          pathResolver.getLeafPath(nearestKeys.getLeftNodeIndex().toLong());
+          pathResolver.getLeafPath(nearestKeys.getMiddleNodeIndex().orElseThrow().toLong());
       leafIndexManager.removeKeyIndex(key);
-      final StateLeafValue keyToDelete =
-          getPath(keyPathToDelete).map(StateLeafValue::readFrom).orElseThrow();
-
-      // HKey-
-      final Bytes prevKeyPath = pathResolver.getLeafPath(keyToDelete.getPrevLeaf().toLong());
-      final StateLeafValue prevKey =
-          getPath(prevKeyPath).map(StateLeafValue::readFrom).orElseThrow();
-      prevKey.setNextLeaf(keyToDelete.getNextLeaf());
-      state.putPath(prevKeyPath, prevKey.getEncodesBytes());
+      get(nearestKeys.getMiddleNodeKey().orElseThrow(), keyPathToDelete); // for the proof
+      // remove hash(k)
+      state.remove(keyPathToDelete);
 
       // HKey+
-      final Bytes nextKeyPath = pathResolver.getLeafPath(keyToDelete.getNextLeaf().toLong());
+      final Bytes nextKeyPath = pathResolver.getLeafPath(nextIndex.toLong());
       final StateLeafValue nextKey =
-          getPath(nextKeyPath).map(StateLeafValue::readFrom).orElseThrow();
-      nextKey.setPrevLeaf(keyToDelete.getPrevLeaf());
-      state.putPath(nextKeyPath, nextKey.getEncodesBytes());
-
-      // remove hash(k)
-      state.removePath(keyPathToDelete, state.getRemoveVisitor());
+          get(nearestKeys.getRightNodeKey(), nextKeyPath)
+              .map(StateLeafValue::readFrom)
+              .orElseThrow();
+      nextKey.setPrevLeaf(prevIndex);
+      state.put(nextKeyPath, nextKey.getEncodesBytes());
     }
   }
 
@@ -239,59 +234,11 @@ public class ZKTrie implements MerkleTrie<Bytes, Bytes> {
     state.commit(nodeUpdater);
   }
 
-  @Override
   public void commit(final NodeUpdater nodeUpdater) {
     state.commit(nodeUpdater);
   }
 
-  @Override
   public void commit(final NodeUpdater nodeUpdater, final CommitVisitor<Bytes> commitVisitor) {
     state.commit(nodeUpdater, commitVisitor);
-  }
-
-  @Override
-  public Map<Bytes32, Bytes> entriesFrom(final Bytes32 startKeyHash, final int limit) {
-    throw new NotImplementedException("not yet available in sparse merkle trie");
-  }
-
-  @Override
-  public Map<Bytes32, Bytes> entriesFrom(final Function<Node<Bytes>, Map<Bytes32, Bytes>> handler) {
-    throw new NotImplementedException("not yet available in sparse merkle trie");
-  }
-
-  @Override
-  public void visitAll(final Consumer<Node<Bytes>> nodeConsumer) {
-    throw new NotImplementedException("not yet available in sparse merkle trie");
-  }
-
-  @Override
-  public CompletableFuture<Void> visitAll(
-      final Consumer<Node<Bytes>> nodeConsumer, final ExecutorService executorService) {
-    throw new NotImplementedException("not yet available in sparse merkle trie");
-  }
-
-  @Override
-  public void put(final Bytes key, final PathNodeVisitor<Bytes> putVisitor) {
-    throw new NotImplementedException("not yet available in sparse merkle trie");
-  }
-
-  @Override
-  public void putPath(final Bytes path, final Bytes value) {
-    throw new NotImplementedException("not yet available in sparse merkle trie");
-  }
-
-  @Override
-  public void removePath(final Bytes path, final PathNodeVisitor<Bytes> pathNodeVisitor) {
-    throw new NotImplementedException("not yet available in sparse merkle trie");
-  }
-
-  @Override
-  public Proof<Bytes> getValueWithProof(final Bytes key) {
-    throw new NotImplementedException("not yet available in sparse merkle trie");
-  }
-
-  @Override
-  public void visitLeafs(final TrieIterator.LeafHandler<Bytes> handler) {
-    throw new NotImplementedException("not yet available in sparse merkle trie");
   }
 }

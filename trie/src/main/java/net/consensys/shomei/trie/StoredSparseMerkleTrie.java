@@ -15,80 +15,108 @@ package net.consensys.shomei.trie;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import net.consensys.shomei.trie.visitor.CommitVisitor;
 import net.consensys.shomei.trie.visitor.GetVisitor;
 import net.consensys.shomei.trie.visitor.PutVisitor;
 import net.consensys.shomei.trie.visitor.RemoveVisitor;
 
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.ethereum.trie.MerkleStorage;
+import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.trie.MerkleTrie;
 import org.hyperledger.besu.ethereum.trie.Node;
+import org.hyperledger.besu.ethereum.trie.NodeFactory;
 import org.hyperledger.besu.ethereum.trie.NodeLoader;
-import org.hyperledger.besu.ethereum.trie.PathNodeVisitor;
-import org.hyperledger.besu.ethereum.trie.StoredMerkleTrie;
+import org.hyperledger.besu.ethereum.trie.NodeUpdater;
+import org.hyperledger.besu.ethereum.trie.NullNode;
+import org.hyperledger.besu.ethereum.trie.StoredNode;
 
-/** A {@link MerkleTrie} that persists trie nodes to a {@link MerkleStorage} key/value store. */
-public class StoredSparseMerkleTrie extends StoredMerkleTrie<Bytes, Bytes>
-    implements MerkleTrie<Bytes, Bytes> {
+/** A {@link StoredSparseMerkleTrie} that persists trie nodes to a key/value store. */
+public class StoredSparseMerkleTrie {
 
-  private final GetVisitor<Bytes> getVisitor = new GetVisitor<>();
+  protected final NodeFactory<Bytes> nodeFactory;
 
-  public StoredSparseMerkleTrie(
-      final NodeLoader nodeLoader,
-      final Function<Bytes, Bytes> valueSerializer,
-      final Function<Bytes, Bytes> valueDeserializer) {
-    super(new StoredNodeFactory(nodeLoader, valueSerializer, valueDeserializer));
-  }
+  protected final Optional<ProofFactory<Bytes>> maybeProofFactory;
 
-  public StoredSparseMerkleTrie(
-      final NodeLoader nodeLoader,
-      final Bytes32 rootHash,
-      final Bytes rootLocation,
-      final Function<Bytes, Bytes> valueSerializer,
-      final Function<Bytes, Bytes> valueDeserializer) {
-    super(
-        new StoredNodeFactory(nodeLoader, valueSerializer, valueDeserializer),
-        rootHash,
-        rootLocation);
-  }
+  protected Node<Bytes> root;
 
   public StoredSparseMerkleTrie(
       final NodeLoader nodeLoader,
       final Bytes32 rootHash,
       final Function<Bytes, Bytes> valueSerializer,
       final Function<Bytes, Bytes> valueDeserializer) {
-    super(new StoredNodeFactory(nodeLoader, valueSerializer, valueDeserializer), rootHash);
+    this.nodeFactory = new StoredNodeFactory(nodeLoader, valueSerializer, valueDeserializer);
+    this.maybeProofFactory = Optional.of(new ProofFactory<>());
+    this.root =
+        rootHash.equals(MerkleTrie.EMPTY_TRIE_NODE_HASH)
+            ? NullNode.instance()
+            : new StoredNode<>(nodeFactory, Bytes.EMPTY, rootHash);
   }
 
-  public StoredSparseMerkleTrie(final StoredNodeFactory nodeFactory, final Bytes32 rootHash) {
-    super(nodeFactory, rootHash);
+  public Bytes32 getRootHash() {
+    return root.getHash();
   }
 
-  /*@Override
-  public void remove(final K key) {
-    super.put(key, //0 leaf);
-  }*/
-
-  public Node<Bytes> getNodePath(final Bytes path) {
+  public Node<Bytes> getNode(final Bytes path) {
     checkNotNull(path);
     return root.accept(getGetVisitor(), path);
   }
 
-  @Override
-  public PathNodeVisitor<Bytes> getGetVisitor() {
-    return getVisitor;
+  public Optional<Bytes> get(final Bytes path) {
+    checkNotNull(path);
+    return root.accept(getGetVisitor(), path).getValue();
   }
 
-  @Override
-  public PathNodeVisitor<Bytes> getRemoveVisitor() {
+  public Optional<Bytes> get(final Hash key, final Bytes path) {
+    checkNotNull(path);
+    final GetVisitor<Bytes> getVisitor = getGetVisitor();
+    final Optional<Bytes> value = root.accept(getVisitor, path).getValue();
+    maybeProofFactory.ifPresent(
+        proofFactory -> proofFactory.generateAndSaveProofForKey(key, getVisitor.getProof()));
+    return value;
+  }
+
+  public void put(final Bytes path, final Bytes value) {
+    checkNotNull(path);
+    checkNotNull(value);
+    this.root = root.accept(getPutVisitor(value), path);
+  }
+
+  public void remove(final Bytes path) {
+    checkNotNull(path);
+    this.root = root.accept(getRemoveVisitor(), path);
+  }
+
+  public void commit(final NodeUpdater nodeUpdater) {
+    commit(nodeUpdater, new CommitVisitor<>(nodeUpdater));
+  }
+
+  public void commit(final NodeUpdater nodeUpdater, final CommitVisitor<Bytes> commitVisitor) {
+    root.accept(Bytes.EMPTY, commitVisitor);
+    // Make sure root node was stored
+    if (root.isDirty() && root.getEncodedBytesRef().size() < 32) {
+      nodeUpdater.store(Bytes.EMPTY, root.getHash(), root.getEncodedBytesRef());
+    }
+    // Reset root so dirty nodes can be garbage collected
+    final Bytes32 rootHash = root.getHash();
+    this.root =
+        rootHash.equals(MerkleTrie.EMPTY_TRIE_NODE_HASH)
+            ? NullNode.instance()
+            : new StoredNode<>(nodeFactory, Bytes.EMPTY, rootHash);
+  }
+
+  public GetVisitor<Bytes> getGetVisitor() {
+    return new GetVisitor<>();
+  }
+
+  public RemoveVisitor<Bytes> getRemoveVisitor() {
     return new RemoveVisitor<>();
   }
 
-  @Override
-  public PathNodeVisitor<Bytes> getPutVisitor(final Bytes value) {
+  public PutVisitor<Bytes> getPutVisitor(final Bytes value) {
     return new PutVisitor<>(nodeFactory, value);
   }
 }

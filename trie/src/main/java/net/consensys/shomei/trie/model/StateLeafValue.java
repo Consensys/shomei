@@ -20,21 +20,22 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.datatypes.Hash;
 
 /** Represents the raw values associated with a leaf in the flat database. */
 public class StateLeafValue {
 
   public static final StateLeafValue HEAD =
-      new StateLeafValue(UInt256.ZERO, UInt256.valueOf(1), Bytes32.ZERO, Bytes32.ZERO);
+      new StateLeafValue(UInt256.ZERO, UInt256.valueOf(1), Hash.wrap(Bytes32.ZERO), Bytes32.ZERO);
 
   public static final StateLeafValue TAIL =
       new StateLeafValue(
           UInt256.ZERO,
           UInt256.valueOf(1),
-          Bytes32.fromHexString("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
+          Hash.fromHexString("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"),
           Bytes32.ZERO);
 
-  private final Bytes32 hkey;
+  private final Hash hkey;
 
   private Bytes value;
 
@@ -42,7 +43,7 @@ public class StateLeafValue {
 
   private UInt256 nextLeaf;
 
-  public StateLeafValue(final Bytes32 hkey, final UInt256 value) {
+  public StateLeafValue(final Hash hkey, final UInt256 value) {
     this.hkey = hkey;
     this.value = value;
     this.prevLeaf = UInt256.ZERO;
@@ -50,7 +51,7 @@ public class StateLeafValue {
   }
 
   public StateLeafValue(
-      final UInt256 prevLeaf, final UInt256 nextLeaf, final Bytes32 hkey, final Bytes value) {
+      final UInt256 prevLeaf, final UInt256 nextLeaf, final Hash hkey, final Bytes value) {
     this.hkey = hkey;
     this.value = value;
     this.prevLeaf = prevLeaf;
@@ -80,7 +81,7 @@ public class StateLeafValue {
     this.nextLeaf = nextLeaf;
   }
 
-  public Bytes32 getHkey() {
+  public Hash getHkey() {
     return hkey;
   }
 
@@ -119,7 +120,7 @@ public class StateLeafValue {
             new StateLeafValue(
                 bytesInput.readUInt256(),
                 bytesInput.readUInt256(),
-                bytesInput.readBytes32(),
+                Hash.wrap(bytesInput.readBytes32()),
                 bytesInput.readBytes32()));
   }
 

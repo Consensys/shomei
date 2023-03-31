@@ -22,6 +22,7 @@ import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.datatypes.Hash;
 
 public class LeafIndexManager implements LeafIndexLoader, LeafIndexUpdater {
 
@@ -36,40 +37,48 @@ public class LeafIndexManager implements LeafIndexLoader, LeafIndexUpdater {
   }
 
   @Override
-  public Optional<Long> getKeyIndex(final Bytes key) {
+  public Optional<Long> getKeyIndex(final Hash key) {
     return Optional.ofNullable(flatDB.get(wrapKey(key))).map(UInt256::toLong);
   }
 
   @Override
-  public void putKeyIndex(final Bytes key, final Long index) {
+  public void putKeyIndex(final Hash key, final Long index) {
     flatDB.put(wrapKey(key), UInt256.valueOf(index));
   }
 
   @Override
-  public void removeKeyIndex(final Bytes key) {
+  public void removeKeyIndex(final Hash key) {
     flatDB.remove(wrapKey(key));
   }
 
   @Override
-  public Range getNearestKeys(final Bytes key) {
+  public Range getNearestKeys(final Hash key) {
+
     final Bytes wrappedKey = wrapKey(key);
     final Iterator<Map.Entry<Bytes, UInt256>> iterator = flatDB.entrySet().iterator();
     Map.Entry<Bytes, UInt256> next = Map.entry(Bytes32.ZERO, UInt256.ZERO);
-    Map.Entry<Bytes, UInt256> nearest = next;
-    while (iterator.hasNext() && next.getKey().compareTo(wrappedKey) <= 0) {
-      nearest = next;
+    Map.Entry<Bytes, UInt256> left = next;
+    Optional<Map.Entry<Bytes, UInt256>> maybeMiddle = Optional.empty();
+    int compKeyResult;
+    while (iterator.hasNext() && (compKeyResult = next.getKey().compareTo(wrappedKey)) <= 0) {
+      if (compKeyResult == 0) {
+        maybeMiddle = Optional.of(next);
+      } else {
+        left = next;
+      }
       next = iterator.next();
     }
     return new Range(
-        Map.entry(unwrapKey(nearest.getKey()), nearest.getValue()),
+        Map.entry(unwrapKey(left.getKey()), left.getValue()),
+        maybeMiddle.map(middle -> Map.entry(unwrapKey(middle.getKey()), middle.getValue())),
         Map.entry(unwrapKey(next.getKey()), next.getValue()));
   }
 
-  public Bytes wrapKey(final Bytes key) {
+  public Bytes wrapKey(final Hash key) {
     return key;
   }
 
-  public Bytes unwrapKey(final Bytes key) {
-    return key;
+  public Hash unwrapKey(final Bytes key) {
+    return Hash.wrap(Bytes32.wrap(key));
   }
 }

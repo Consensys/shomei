@@ -109,10 +109,6 @@ public class ZkEvmWorldStateUpdateAccumulator {
       final TrieLogAccountValue expectedValue,
       final TrieLogAccountValue replacementValue,
       final boolean isRollforward) {
-    if (Objects.equals(expectedValue, replacementValue)) {
-      // non-change, a cached read.
-      return;
-    }
     ZkValue<Address, ZkAccount> accountValue = accountsToUpdate.get(hkey);
     if (accountValue == null && expectedValue != null) {
       accountValue =
@@ -144,11 +140,7 @@ public class ZkEvmWorldStateUpdateAccumulator {
             "Address=" + hkey + " Prior Value in Rolling Change");
       }
       if (replacementValue == null) {
-        if (accountValue.getPrior() == null) {
-          accountsToUpdate.remove(hkey);
-        } else {
-          accountValue.setUpdated(null);
-        }
+        accountValue.setUpdated(null);
       } else {
         accountValue.setUpdated(new ZkAccount(hkey, address, replacementValue));
       }
@@ -163,10 +155,6 @@ public class ZkEvmWorldStateUpdateAccumulator {
       final UInt256 expectedValue,
       final UInt256 replacementValue,
       final boolean isRollforward) {
-    if (Objects.equals(expectedValue, replacementValue)) {
-      // non-change, a cached read.
-      return;
-    }
     if (replacementValue == null && expectedValue != null && expectedValue.isZero()) {
       // corner case on deletes, non-change
       return;
@@ -174,7 +162,11 @@ public class ZkEvmWorldStateUpdateAccumulator {
     final Map<Hash, ZkValue<UInt256, UInt256>> storageMap = storageToUpdate.get(hkey);
     ZkValue<UInt256, UInt256> slotValue = storageMap == null ? null : storageMap.get(storageHash);
     if (slotValue == null && expectedValue != null) {
-      slotValue = new ZkValue<>(storageKey, expectedValue, expectedValue);
+      slotValue =
+          new ZkValue<>(
+              storageKey,
+              expectedValue.isZero() ? null : expectedValue,
+              expectedValue.isZero() ? null : expectedValue);
       storageToUpdate
           .computeIfAbsent(hkey, slotHash -> new ConcurrentHashMap<>())
           .put(storageHash, slotValue);
@@ -203,29 +195,9 @@ public class ZkEvmWorldStateUpdateAccumulator {
                 expectedValue == null ? "null" : expectedValue.toShortHexString(),
                 existingSlotValue == null ? "null" : existingSlotValue.toShortHexString()));
       }
-      if (replacementValue == null && slotValue.getPrior() == null) {
-        final Map<Hash, ZkValue<UInt256, UInt256>> thisStorageUpdate =
-            maybeCreateStorageMap(storageMap, hkey);
-        thisStorageUpdate.remove(storageHash);
-        if (thisStorageUpdate.isEmpty()) {
-          storageToUpdate.remove(hkey);
-        }
-      } else {
-        slotValue.setUpdated(replacementValue);
-      }
+      slotValue.setUpdated(replacementValue);
     }
     slotValue.setRollforward(isRollforward);
-  }
-
-  private Map<Hash, ZkValue<UInt256, UInt256>> maybeCreateStorageMap(
-      final Map<Hash, ZkValue<UInt256, UInt256>> storageMap, final Hash hkey) {
-    if (storageMap == null) {
-      Map<Hash, ZkValue<UInt256, UInt256>> newMap = new ConcurrentHashMap<>();
-      storageToUpdate.put(hkey, newMap);
-      return newMap;
-    } else {
-      return storageMap;
-    }
   }
 
   private boolean isSlotEquals(final UInt256 expectedValue, final UInt256 existingSlotValue) {

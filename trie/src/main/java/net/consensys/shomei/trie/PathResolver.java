@@ -20,8 +20,6 @@ import java.math.BigInteger;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes32;
-import org.hyperledger.besu.ethereum.trie.MerkleTrie;
-import org.hyperledger.besu.ethereum.trie.StoredMerkleTrie;
 
 @SuppressWarnings({"DoNotInvokeMessageDigestDirectly", "unused"})
 public class PathResolver {
@@ -30,11 +28,11 @@ public class PathResolver {
   private static final Bytes SUB_TRIE_ROOT_PATH = Bytes.of(1);
 
   private final int trieDepth;
-  private final MerkleTrie<Bytes, Bytes> trie;
+  private final StoredSparseMerkleTrie trie;
 
   private Long nextFreeNode;
 
-  public PathResolver(final int trieDepth, final StoredMerkleTrie<Bytes, Bytes> trie) {
+  public PathResolver(final int trieDepth, final StoredSparseMerkleTrie trie) {
     this.trieDepth = trieDepth;
     this.trie = trie;
   }
@@ -42,7 +40,7 @@ public class PathResolver {
   public Long getAndDecrementNextFreeLeafNodeIndex() {
     final long foundFreeNode = getNextFreeLeafIndex();
     nextFreeNode = foundFreeNode - 1;
-    trie.putPath(getNextFreeNodePath(), formatNodeIndex(nextFreeNode));
+    trie.put(getNextFreeNodePath(), formatNodeIndex(nextFreeNode));
     return foundFreeNode;
   }
 
@@ -53,14 +51,14 @@ public class PathResolver {
   public Long getAndIncrementNextFreeLeafIndex() {
     final long foundFreeNode = getNextFreeLeafIndex();
     nextFreeNode = foundFreeNode + 1;
-    trie.putPath(getNextFreeNodePath(), formatNodeIndex(nextFreeNode));
+    trie.put(getNextFreeNodePath(), formatNodeIndex(nextFreeNode));
     return foundFreeNode;
   }
 
   private Long getNextFreeLeafIndex() {
     if (nextFreeNode == null) {
       nextFreeNode =
-          trie.getPath(getNextFreeNodePath())
+          trie.get(getNextFreeNodePath())
               .map(bytes -> new BigInteger(bytes.toArrayUnsafe()).longValue())
               .orElse(0L);
     }

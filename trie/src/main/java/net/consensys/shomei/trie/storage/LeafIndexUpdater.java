@@ -13,11 +13,11 @@
 
 package net.consensys.shomei.trie.storage;
 
-import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.datatypes.Hash;
 
 public interface LeafIndexUpdater {
 
-  void putKeyIndex(Bytes key, Long index);
+  void putKeyIndex(Hash key, Long index);
 
-  void removeKeyIndex(Bytes key);
+  void removeKeyIndex(Hash key);
 }

@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.datatypes.Hash;
 import org.junit.Test;
 
 public class ZKTrieTest {
@@ -113,7 +114,7 @@ public class ZKTrieTest {
   public void testInsertionAndDeleteRootHash() {
     final ZKTrie zkTrie = ZKTrie.createInMemoryTrie();
 
-    final Bytes32 dumKey = createDumKey(58);
+    final Hash dumKey = createDumKey(58);
 
     zkTrie.putValue(dumKey, createDumValue(41));
 

@@ -30,7 +30,7 @@ public class PutVisitor<V> implements PathNodeVisitor<V> {
   private final NodeFactory<V> nodeFactory;
   private final V value;
 
-  List<Node<Bytes>> proof = new ArrayList<>();
+  private final List<Node<V>> proof = new ArrayList<>();
 
   public PutVisitor(final NodeFactory<V> nodeFactory, final V value) {
     this.nodeFactory = nodeFactory;
@@ -40,6 +40,7 @@ public class PutVisitor<V> implements PathNodeVisitor<V> {
   @Override
   public Node<V> visit(final BranchNode<V> branchNode, final Bytes path) {
     final byte childIndex = path.get(0);
+    proof.add(branchNode.child((byte) (childIndex ^ 1)));
     final Node<V> updatedChild = branchNode.child(childIndex).accept(this, path.slice(1));
     return branchNode.replaceChild(childIndex, updatedChild);
   }
@@ -60,6 +61,10 @@ public class PutVisitor<V> implements PathNodeVisitor<V> {
   @Override
   public Node<V> visit(final NullNode<V> nullNode, final Bytes path) {
     return nodeFactory.createLeaf(path, value);
+  }
+
+  public List<Node<V>> getProof() {
+    return proof;
   }
 
   @Override

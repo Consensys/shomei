@@ -25,6 +25,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
@@ -140,13 +141,13 @@ public class ZKEvmWorldState {
     final LeafIndexManager leafIndexManager =
         new LeafIndexManager(flatDB) {
           @Override
-          public Bytes wrapKey(final Bytes key) {
+          public Bytes wrapKey(final Hash key) {
             return Bytes.concatenate(zkAccount.getKey(), key);
           }
 
           @Override
-          public Bytes unwrapKey(final Bytes key) {
-            return key.slice(zkAccount.getKey().size());
+          public Hash unwrapKey(final Bytes key) {
+            return Hash.wrap(Bytes32.wrap(key.slice(zkAccount.getKey().size())));
           }
         };
     if (zkAccount.getPrior() == null
