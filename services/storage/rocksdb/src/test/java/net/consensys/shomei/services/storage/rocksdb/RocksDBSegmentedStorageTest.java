@@ -26,14 +26,11 @@ import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfig
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import services.storage.KeyValueStorage;
 import services.storage.SnappableKeyValueStorage;
 import services.storage.StorageException;
 
@@ -208,7 +205,6 @@ public class RocksDBSegmentedStorageTest {
     assertThat(trieSegment.get(key)).isEmpty();
     // assert present in snapshot2 storage:
     assertThat(snapshot2.get(key)).contains(value);
-
 
     snapshot.close();
     snapshot2.close();

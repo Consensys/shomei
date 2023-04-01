@@ -29,7 +29,6 @@ import org.rocksdb.Transaction;
 import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import services.storage.KeyValueStorage;
 import services.storage.KeyValueStorage.KeyValuePair;
 import services.storage.KeyValueStorageTransaction;
 import services.storage.StorageException;
@@ -82,8 +81,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
     throwIfClosed();
 
     try {
-      RocksIterator iterator = innerTx
-          .getIterator(readOptions, columnFamilyHandle);
+      RocksIterator iterator = innerTx.getIterator(readOptions, columnFamilyHandle);
       iterator.seekForPrev(key);
 
       return Optional.of(iterator)

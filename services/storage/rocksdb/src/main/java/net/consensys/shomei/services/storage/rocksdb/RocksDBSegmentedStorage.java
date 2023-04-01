@@ -290,7 +290,8 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
       return reference.get().hashCode();
     }
 
-    public Optional<Iterator<KeyValueStorage.KeyValuePair>> getNearestTo(final ReadOptions readOptions, final byte[] key) {
+    public Optional<Iterator<KeyValueStorage.KeyValuePair>> getNearestTo(
+        final ReadOptions readOptions, final byte[] key) {
       throwIfClosed();
 
       try {

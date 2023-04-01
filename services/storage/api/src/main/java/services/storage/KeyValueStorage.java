@@ -63,7 +63,7 @@ public interface KeyValueStorage extends Closeable {
    *
    * @param key the key to search for.
    * @return the closest value to the given key, or empty if no value is less than or equal to the
-   *    given key.
+   *     given key.
    * @throws StorageException problem encountered during the retrieval attempt.
    */
   Optional<Iterator<KeyValuePair>> getNearestTo(byte[] key) throws StorageException;
