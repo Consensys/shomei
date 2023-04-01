@@ -13,10 +13,12 @@
 
 package net.consensys.shomei.services.storage.rocksdb;
 
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
+import org.rocksdb.AbstractRocksIterator;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.OptimisticTransactionDB;
 import org.rocksdb.ReadOptions;
@@ -28,6 +30,7 @@ import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import services.storage.KeyValueStorage;
+import services.storage.KeyValueStorage.KeyValuePair;
 import services.storage.KeyValueStorageTransaction;
 import services.storage.StorageException;
 
@@ -66,10 +69,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
    * @return the optional data
    */
   public Optional<byte[]> get(final byte[] key) {
-    if (isClosed.get()) {
-      LOG.debug("Attempted to access closed snapshot");
-      return Optional.empty();
-    }
+    throwIfClosed();
 
     try {
       return Optional.ofNullable(innerTx.get(columnFamilyHandle, readOptions, key));
@@ -78,12 +78,25 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
     }
   }
 
+  public Optional<Iterator<KeyValuePair>> getNearestTo(byte[] key) {
+    throwIfClosed();
+
+    try {
+      RocksIterator iterator = innerTx
+          .getIterator(readOptions, columnFamilyHandle);
+      iterator.seekForPrev(key);
+
+      return Optional.of(iterator)
+          .filter(AbstractRocksIterator::isValid)
+          .map(RocksDBIterator::createForPrev);
+    } catch (final Throwable t) {
+      throw new StorageException(t);
+    }
+  }
+
   @Override
   public RocksDBTransaction put(final byte[] key, final byte[] value) {
-    if (isClosed.get()) {
-      LOG.debug("Attempted to write to closed transaction");
-      throw new StorageException("Attempted to access closed transaction");
-    }
+    throwIfClosed();
 
     try {
       innerTx.put(columnFamilyHandle, key, value);
@@ -99,10 +112,8 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
 
   @Override
   public RocksDBTransaction remove(final byte[] key) {
-    if (isClosed.get()) {
-      LOG.debug("Attempted to write to closed transaction");
-      throw new StorageException("Attempted to access closed transaction");
-    }
+    throwIfClosed();
+
     try {
       innerTx.delete(columnFamilyHandle, key);
       return this;
@@ -120,10 +131,12 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
    *
    * @return the stream
    */
-  public Stream<KeyValueStorage.KeyValuePair> stream() {
-    final RocksIterator rocksIterator = db.newIterator(columnFamilyHandle, readOptions);
+  public Stream<KeyValuePair> stream() {
+    throwIfClosed();
+
+    final RocksIterator rocksIterator = innerTx.getIterator(readOptions, columnFamilyHandle);
     rocksIterator.seekToFirst();
-    return RocksDbIterator.create(rocksIterator).toStream();
+    return RocksDBIterator.create(rocksIterator).toStream();
   }
 
   /**
@@ -132,13 +145,16 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
    * @return the stream
    */
   public Stream<byte[]> streamKeys() {
-    final RocksIterator rocksIterator = db.newIterator(columnFamilyHandle, readOptions);
+    throwIfClosed();
+
+    final RocksIterator rocksIterator = innerTx.getIterator(readOptions, columnFamilyHandle);
     rocksIterator.seekToFirst();
-    return RocksDbIterator.create(rocksIterator).toStreamKeys();
+    return RocksDBIterator.create(rocksIterator).toStreamKeys();
   }
 
   @Override
   public void commit() throws StorageException {
+    throwIfClosed();
     try {
       innerTx.commit();
     } catch (final RocksDBException e) {
@@ -164,6 +180,13 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
       throw new StorageException(e);
     } finally {
       close();
+    }
+  }
+
+  void throwIfClosed() {
+    if (isClosed.get()) {
+      LOG.debug("Attempted to access closed snapshot");
+      throw new StorageException("Attempted to access closed transaction");
     }
   }
 

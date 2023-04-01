@@ -26,6 +26,7 @@ import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfig
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.BeforeEach;
@@ -183,6 +184,78 @@ public class RocksDBSegmentedStorageTest {
 
     // assert key deleted
     assertThat(trieSegment.get(key)).isEmpty();
+    factory.close();
+  }
+
+  @Test
+  public void assertSelfForGetNearestToTest() throws IOException {
+    var trieSegment = getKeyValueStorage(ZK_ACCOUNT_TRIE.getSegmentIdentifier());
+
+    trieSegment.startTransaction().put(key, value).commit();
+
+    // assert key present
+    assertThat(trieSegment.get(key)).contains(value);
+
+    var iter = trieSegment.getNearestTo(key);
+    assertThat(iter).isPresent();
+    assertThat(iter.get().hasNext()).isTrue();
+    var kv = iter.get().next();
+
+    assertThat(kv.key()).isEqualTo(key);
+    assertThat(kv.value()).isEqualTo(value);
+
+    factory.close();
+  }
+
+  @Test
+  public void assertPrevForGetNearestToTest() throws IOException {
+    var trieSegment = getKeyValueStorage(ZK_ACCOUNT_TRIE.getSegmentIdentifier());
+    var prevKey = "key0".getBytes(UTF_8);
+    trieSegment.startTransaction().put(prevKey, value).commit();
+
+    // assert key present
+    assertThat(trieSegment.get(prevKey)).contains(value);
+    assertThat(trieSegment.get(key)).isEmpty();
+
+    var iter = trieSegment.getNearestTo(key);
+    assertThat(iter).isPresent();
+    assertThat(iter.get().hasNext()).isTrue();
+    var kv = iter.get().next();
+
+    assertThat(kv.key()).isEqualTo(prevKey);
+    assertThat(kv.value()).isEqualTo(value);
+
+    factory.close();
+  }
+
+  @Test
+  public void assertThisAndPrevForGetNearestToTest() throws IOException {
+    var trieSegment = getKeyValueStorage(ZK_ACCOUNT_TRIE.getSegmentIdentifier());
+    var prevKey = "key0".getBytes(UTF_8);
+    var prevValue = "value0".getBytes(UTF_8);
+
+    trieSegment.startTransaction().put(prevKey, prevValue).commit();
+    trieSegment.startTransaction().put(key, value).commit();
+
+    // assert keys present
+    assertThat(trieSegment.get(prevKey)).contains(prevValue);
+    assertThat(trieSegment.get(key)).contains(value);
+
+    // assert iter first value is key
+    var iter = trieSegment.getNearestTo(key);
+    assertThat(iter).isPresent();
+    assertThat(iter.get().hasNext()).isTrue();
+    var kv = iter.get().next();
+
+    assertThat(kv.key()).isEqualTo(key);
+    assertThat(kv.value()).isEqualTo(value);
+
+    assertThat(iter.get().hasNext()).isTrue();
+    kv = iter.get().next();
+
+    assertThat(kv.key()).isEqualTo(prevKey);
+    assertThat(kv.value()).isEqualTo(prevValue);
+    assertThat(iter.get().hasNext()).isFalse();
     factory.close();
   }
 

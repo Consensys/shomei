@@ -15,6 +15,7 @@ package net.consensys.shomei.services.storage.rocksdb;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -56,6 +57,11 @@ public class RocksDBKeyValueSegment implements SnappableKeyValueStorage {
   }
 
   @Override
+  public Optional<Iterator<KeyValuePair>> getNearestTo(final byte[] key) throws StorageException {
+    return segment.getNearestTo(readOptions, key);
+  }
+
+  @Override
   public Set<byte[]> getAllKeysThat(final Predicate<byte[]> returnCondition) {
     return stream()
         .filter(pair -> returnCondition.test(pair.key()))
@@ -65,12 +71,12 @@ public class RocksDBKeyValueSegment implements SnappableKeyValueStorage {
 
   @Override
   public Stream<KeyValuePair> stream() {
-    return segment.stream();
+    return segment.stream(readOptions);
   }
 
   @Override
   public Stream<byte[]> streamKeys() {
-    return segment.streamKeys();
+    return segment.streamKeys(readOptions);
   }
 
   @Override
