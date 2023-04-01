@@ -27,11 +27,13 @@ import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfig
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import services.storage.KeyValueStorage;
 import services.storage.SnappableKeyValueStorage;
 import services.storage.StorageException;
 
@@ -184,6 +186,32 @@ public class RocksDBSegmentedStorageTest {
 
     // assert key deleted
     assertThat(trieSegment.get(key)).isEmpty();
+    factory.close();
+  }
+
+  @Test
+  public void assertStreamReadsThroughSnapshot() throws IOException {
+    var trieSegment = getKeyValueStorage(ZK_ACCOUNT_TRIE.getSegmentIdentifier());
+    var snapshot = trieSegment.takeSnapshot();
+
+    trieSegment.startTransaction().put(key, value).commit();
+    // assert key present
+    assertThat(trieSegment.get(key)).contains(value);
+    // assert key not present in snapshot
+    assertThat(snapshot.get(key)).isEmpty();
+
+    // snapshot2 with key present
+    var snapshot2 = trieSegment.takeSnapshot();
+
+    trieSegment.startTransaction().remove(key).commit();
+    // assert deleted in segment storage
+    assertThat(trieSegment.get(key)).isEmpty();
+    // assert present in snapshot2 storage:
+    assertThat(snapshot2.get(key)).contains(value);
+
+
+    snapshot.close();
+    snapshot2.close();
     factory.close();
   }
 
