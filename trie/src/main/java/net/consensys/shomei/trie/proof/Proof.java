@@ -11,24 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.shomei.trie;
+package net.consensys.shomei.trie.proof;
 
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.trie.Node;
 
-public class ProofFactory<V> {
+public class Proof {
 
-  final Map<Hash, List<Node<V>>> proofs;
+  public long leafIndex;
+  public List<Node<Bytes>> siblings;
 
-  public ProofFactory() {
-    this.proofs = new ConcurrentHashMap<>();
+  public Proof(final long leafIndex, final List<Node<Bytes>> siblings) {
+    this.leafIndex = leafIndex;
+    this.siblings = siblings;
   }
 
-  public void generateAndSaveProofForKey(final Hash key, List<Node<V>> proofs) {
-    this.proofs.put(key, proofs);
+  public long getLeafIndex() {
+    return leafIndex;
+  }
+
+  public List<Node<Bytes>> getSiblings() {
+    return siblings;
   }
 }

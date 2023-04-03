@@ -20,6 +20,7 @@ import net.consensys.shomei.trie.visitor.GetVisitor;
 import net.consensys.shomei.trie.visitor.PutVisitor;
 import net.consensys.shomei.trie.visitor.RemoveVisitor;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -39,8 +40,6 @@ public class StoredSparseMerkleTrie {
 
   protected final NodeFactory<Bytes> nodeFactory;
 
-  protected final Optional<ProofFactory<Bytes>> maybeProofFactory;
-
   protected Node<Bytes> root;
 
   public StoredSparseMerkleTrie(
@@ -49,7 +48,6 @@ public class StoredSparseMerkleTrie {
       final Function<Bytes, Bytes> valueSerializer,
       final Function<Bytes, Bytes> valueDeserializer) {
     this.nodeFactory = new StoredNodeFactory(nodeLoader, valueSerializer, valueDeserializer);
-    this.maybeProofFactory = Optional.of(new ProofFactory<>());
     this.root =
         rootHash.equals(MerkleTrie.EMPTY_TRIE_NODE_HASH)
             ? NullNode.instance()
@@ -70,33 +68,30 @@ public class StoredSparseMerkleTrie {
     return root.accept(getGetVisitor(), path).getValue();
   }
 
-  public Optional<Bytes> get(final Hash key, final Bytes path) {
-    checkNotNull(path);
-    final GetVisitor<Bytes> getVisitor = getGetVisitor();
-    final Optional<Bytes> value = root.accept(getVisitor, path).getValue();
-    maybeProofFactory.ifPresent(
-        proofFactory -> proofFactory.generateAndSaveProofForKey(key, getVisitor.getProof()));
-    return value;
-  }
-
   public void put(final Bytes path, final Bytes value) {
     checkNotNull(path);
     checkNotNull(value);
     this.root = root.accept(getPutVisitor(value), path);
   }
 
-  public void put(final Hash key, final Bytes path, final Bytes value) {
+  public List<Node<Bytes>> putAndProve(final Hash key, final Bytes path, final Bytes value) {
     checkNotNull(path);
     checkNotNull(value);
     final PutVisitor<Bytes> putVisitor = getPutVisitor(value);
     this.root = root.accept(putVisitor, path);
-    maybeProofFactory.ifPresent(
-        proofFactory -> proofFactory.generateAndSaveProofForKey(key, putVisitor.getProof()));
+    return putVisitor.getProof();
   }
 
   public void remove(final Bytes path) {
     checkNotNull(path);
     this.root = root.accept(getRemoveVisitor(), path);
+  }
+
+  public List<Node<Bytes>> removeAndProve(final Hash key, final Bytes path) {
+    checkNotNull(path);
+    final RemoveVisitor<Bytes> removeVisitor = getRemoveVisitor();
+    this.root = root.accept(removeVisitor, path);
+    return removeVisitor.getProof();
   }
 
   public void commit(final NodeUpdater nodeUpdater) {

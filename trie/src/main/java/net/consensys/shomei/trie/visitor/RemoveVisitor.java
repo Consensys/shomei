@@ -15,6 +15,9 @@ package net.consensys.shomei.trie.visitor;
 
 import net.consensys.shomei.trie.node.EmptyLeafNode;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
 import org.hyperledger.besu.ethereum.trie.Node;
@@ -24,16 +27,14 @@ import org.hyperledger.besu.ethereum.trie.patricia.BranchNode;
 import org.hyperledger.besu.ethereum.trie.patricia.ExtensionNode;
 import org.hyperledger.besu.ethereum.trie.patricia.LeafNode;
 
-public class RemoveVisitor<V> extends org.hyperledger.besu.ethereum.trie.patricia.RemoveVisitor<V>
-    implements PathNodeVisitor<V> {
+public class RemoveVisitor<V> implements PathNodeVisitor<V> {
 
-  public RemoveVisitor() {
-    super(false);
-  }
+  private final List<Node<V>> proof = new ArrayList<>();
 
   @Override
   public Node<V> visit(final BranchNode<V> branchNode, final Bytes path) {
     final byte childIndex = path.get(0);
+    proof.add(branchNode.child((byte) (childIndex ^ 1)));
     final Node<V> updatedChild = branchNode.child(childIndex).accept(this, path.slice(1));
     return branchNode.replaceChild(childIndex, updatedChild);
   }
@@ -46,6 +47,10 @@ public class RemoveVisitor<V> extends org.hyperledger.besu.ethereum.trie.patrici
   @Override
   public Node<V> visit(final NullNode<V> nullNode, final Bytes path) {
     return EmptyLeafNode.instance();
+  }
+
+  public List<Node<V>> getProof() {
+    return proof;
   }
 
   @Override

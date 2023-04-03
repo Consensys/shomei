@@ -21,14 +21,13 @@ import java.util.TreeMap;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Hash;
 
 public class LeafIndexManager implements LeafIndexLoader, LeafIndexUpdater {
 
-  TreeMap<Bytes, UInt256> flatDB;
+  TreeMap<Bytes, Long> flatDB;
 
-  public LeafIndexManager(final TreeMap<Bytes, UInt256> flatDB) {
+  public LeafIndexManager(final TreeMap<Bytes, Long> flatDB) {
     this.flatDB = flatDB;
   }
 
@@ -38,12 +37,12 @@ public class LeafIndexManager implements LeafIndexLoader, LeafIndexUpdater {
 
   @Override
   public Optional<Long> getKeyIndex(final Hash key) {
-    return Optional.ofNullable(flatDB.get(wrapKey(key))).map(UInt256::toLong);
+    return Optional.ofNullable(flatDB.get(wrapKey(key)));
   }
 
   @Override
   public void putKeyIndex(final Hash key, final Long index) {
-    flatDB.put(wrapKey(key), UInt256.valueOf(index));
+    flatDB.put(wrapKey(key), index);
   }
 
   @Override
@@ -55,10 +54,10 @@ public class LeafIndexManager implements LeafIndexLoader, LeafIndexUpdater {
   public Range getNearestKeys(final Hash key) {
 
     final Bytes wrappedKey = wrapKey(key);
-    final Iterator<Map.Entry<Bytes, UInt256>> iterator = flatDB.entrySet().iterator();
-    Map.Entry<Bytes, UInt256> next = Map.entry(Bytes32.ZERO, UInt256.ZERO);
-    Map.Entry<Bytes, UInt256> left = next;
-    Optional<Map.Entry<Bytes, UInt256>> maybeMiddle = Optional.empty();
+    final Iterator<Map.Entry<Bytes, Long>> iterator = flatDB.entrySet().iterator();
+    Map.Entry<Bytes, Long> next = Map.entry(Bytes32.ZERO, 0L);
+    Map.Entry<Bytes, Long> left = next;
+    Optional<Map.Entry<Bytes, Long>> maybeMiddle = Optional.empty();
     int compKeyResult;
     while (iterator.hasNext() && (compKeyResult = next.getKey().compareTo(wrappedKey)) <= 0) {
       if (compKeyResult == 0) {

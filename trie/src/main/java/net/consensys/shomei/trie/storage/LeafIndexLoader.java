@@ -16,7 +16,6 @@ package net.consensys.shomei.trie.storage;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Hash;
 
 public interface LeafIndexLoader {
@@ -26,22 +25,21 @@ public interface LeafIndexLoader {
   Range getNearestKeys(Hash key);
 
   class Range {
-    private final Map.Entry<Hash, UInt256> leftNode;
+    private final Map.Entry<Hash, Long> leftNode;
 
-    private final Optional<Map.Entry<Hash, UInt256>> middleNode;
-    private final Map.Entry<Hash, UInt256> rightNode;
+    private final Optional<Map.Entry<Hash, Long>> centerNode;
+    private final Map.Entry<Hash, Long> rightNode;
 
     public Range(
-        final Map.Entry<Hash, UInt256> leftNode,
-        final Optional<Map.Entry<Hash, UInt256>> middleNode,
-        final Map.Entry<Hash, UInt256> rightNode) {
+        final Map.Entry<Hash, Long> leftNode,
+        final Optional<Map.Entry<Hash, Long>> centerNode,
+        final Map.Entry<Hash, Long> rightNode) {
       this.leftNode = leftNode;
-      this.middleNode = middleNode;
+      this.centerNode = centerNode;
       this.rightNode = rightNode;
     }
 
-    public Range(
-        final Map.Entry<Hash, UInt256> leftNode, final Map.Entry<Hash, UInt256> rightNode) {
+    public Range(final Map.Entry<Hash, Long> leftNode, final Map.Entry<Hash, Long> rightNode) {
       this(leftNode, Optional.empty(), rightNode);
     }
 
@@ -49,23 +47,23 @@ public interface LeafIndexLoader {
       return leftNode.getKey();
     }
 
-    public Optional<Hash> getMiddleNodeKey() {
-      return middleNode.map(Map.Entry::getKey);
+    public Optional<Hash> getCenterNodeKey() {
+      return centerNode.map(Map.Entry::getKey);
     }
 
     public Hash getRightNodeKey() {
       return rightNode.getKey();
     }
 
-    public UInt256 getLeftNodeIndex() {
+    public Long getLeftNodeIndex() {
       return leftNode.getValue();
     }
 
-    public Optional<UInt256> getMiddleNodeIndex() {
-      return middleNode.map(Map.Entry::getValue);
+    public Optional<Long> getCenterNodeIndex() {
+      return centerNode.map(Map.Entry::getValue);
     }
 
-    public UInt256 getRightNodeIndex() {
+    public Long getRightNodeIndex() {
       return rightNode.getValue();
     }
   }

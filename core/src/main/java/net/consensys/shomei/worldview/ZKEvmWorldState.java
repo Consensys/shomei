@@ -44,7 +44,7 @@ public class ZKEvmWorldState {
 
   // TODO change with rocksdb
 
-  final TreeMap<Bytes, UInt256> flatDB = new TreeMap<>(Comparator.naturalOrder());
+  final TreeMap<Bytes, Long> flatDB = new TreeMap<>(Comparator.naturalOrder());
   private final Map<Bytes, Bytes> storage = new ConcurrentHashMap<>();
 
   public ZKEvmWorldState(final Hash rootHash, final Hash blockHash) {
@@ -87,9 +87,9 @@ public class ZKEvmWorldState {
                         zkStorageTrie.decrementNextFreeNode();
                       }
                       if (storageValue.getUpdated() == null) {
-                        zkStorageTrie.remove(slotKeyHash);
+                        zkStorageTrie.removeAndProve(slotKeyHash);
                       } else {
-                        zkStorageTrie.put(slotKeyHash, storageValue.getUpdated());
+                        zkStorageTrie.putAndProve(slotKeyHash, storageValue.getUpdated());
                       }
                     });
                 if (!zkStorageTrie.getTopRootHash().equals(targetStorageRootHash)) {
@@ -102,9 +102,9 @@ public class ZKEvmWorldState {
                 zkAccountTrie.decrementNextFreeNode();
               }
               if (accountValue.getUpdated() == null) {
-                zkAccountTrie.remove(accountValue.getPrior().getHkey());
+                zkAccountTrie.removeAndProve(accountValue.getPrior().getHkey());
               } else {
-                zkAccountTrie.put(
+                zkAccountTrie.putAndProve(
                     accountValue.getUpdated().getHkey(),
                     accountValue.getUpdated().serializeAccount());
               }
