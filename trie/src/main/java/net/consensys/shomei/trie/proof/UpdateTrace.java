@@ -28,7 +28,7 @@ public class UpdateTrace implements Trace {
   public Bytes newValue;
 
   // Value of the leaf opening before being modified
-  public Bytes oldOpen;
+  public Bytes priorUpdatedLeaf;
 
   public UpdateTrace(final Node<Bytes> oldRoot) {
     this.oldRoot = oldRoot;
@@ -78,11 +78,11 @@ public class UpdateTrace implements Trace {
     this.newValue = newValue;
   }
 
-  public Bytes getOldOpen() {
-    return oldOpen;
+  public Bytes getPriorUpdatedLeaf() {
+    return priorUpdatedLeaf;
   }
 
-  public void setOldOpen(final Bytes oldOpen) {
-    this.oldOpen = oldOpen;
+  public void setPriorUpdatedLeaf(final Bytes priorUpdatedLeaf) {
+    this.priorUpdatedLeaf = priorUpdatedLeaf;
   }
 }

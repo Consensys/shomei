@@ -170,7 +170,7 @@ public class ZKTrie {
           get(nearestKeys.getLeftNodeKey(), leftKeyPath)
               .map(StateLeafValue::readFrom)
               .orElseThrow();
-      insertionTrace.setOldOpenMinus(leftKey.getEncodesBytes());
+      insertionTrace.setPriorLeftLeaf(leftKey.getEncodesBytes());
       leftKey.setNextLeaf(UInt256.valueOf(nextFreeNode));
 
       // PREPARE proof for HKEY -
@@ -197,7 +197,7 @@ public class ZKTrie {
           get(nearestKeys.getRightNodeKey(), rightKeyPath)
               .map(StateLeafValue::readFrom)
               .orElseThrow();
-      insertionTrace.setOldOpenPlus(rightKey.getEncodesBytes());
+      insertionTrace.setPriorRightLeaf(rightKey.getEncodesBytes());
       leftKey.setNextLeaf(UInt256.valueOf(nextFreeNode));
       rightKey.setPrevLeaf(UInt256.valueOf(nextFreeNode));
 
@@ -227,7 +227,7 @@ public class ZKTrie {
       final StateLeafValue updatedKey =
           get(key, updatedKeyPath).map(StateLeafValue::readFrom).orElseThrow();
       updateTrace.setOldValue(updatedKey.getValue());
-      updateTrace.setOldOpen(updatedKey.getEncodesBytes());
+      updateTrace.setPriorUpdatedLeaf(updatedKey.getEncodesBytes());
       // UPDATE VALUE
       updatedKey.setValue(HashProvider.mimc(value));
       updateTrace.setNewValue(updatedKey.getValue());
@@ -262,7 +262,7 @@ public class ZKTrie {
           get(nearestKeys.getLeftNodeKey(), leftKeyPath)
               .map(StateLeafValue::readFrom)
               .orElseThrow();
-      deleteTrace.setOldOpenMinus(leftKey.getEncodesBytes());
+      deleteTrace.setPriorLeftLeaf(leftKey.getEncodesBytes());
       leftKey.setNextLeaf(UInt256.valueOf(rightIndex));
 
       final List<Node<Bytes>> leftSiblings =
@@ -284,7 +284,7 @@ public class ZKTrie {
           get(nearestKeys.getRightNodeKey(), rightKeyPath)
               .map(StateLeafValue::readFrom)
               .orElseThrow();
-      deleteTrace.setOldOpenPlus(rightKey.getEncodesBytes());
+      deleteTrace.setPriorRightLeaf(rightKey.getEncodesBytes());
       rightKey.setPrevLeaf(UInt256.valueOf(leftIndex));
       final List<Node<Bytes>> rightSiblings =
           state.putAndProve(

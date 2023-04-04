@@ -81,7 +81,7 @@ public class ZKEvmWorldState {
                         .orElse(ZkAccount.EMPTY_TRIE_ROOT);
                 storageToUpdate.forEach(
                     (slotKeyHash, storageValue) -> {
-                      if (!storageValue.isRollforward()
+                      if (!storageValue.isRollforward() // rollbackward
                           && (storageValue.getUpdated() == null
                               || storageValue.getPrior() == null)) {
                         zkStorageTrie.decrementNextFreeNode();
@@ -97,7 +97,7 @@ public class ZKEvmWorldState {
                 }
                 zkStorageTrie.commit();
               }
-              if (!accountValue.isRollforward()
+              if (!accountValue.isRollforward() // rollbackward
                   && (accountValue.getUpdated() == null || accountValue.getPrior() == null)) {
                 zkAccountTrie.decrementNextFreeNode();
               }

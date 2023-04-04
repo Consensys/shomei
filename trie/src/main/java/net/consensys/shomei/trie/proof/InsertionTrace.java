@@ -29,8 +29,8 @@ public class InsertionTrace implements Trace {
   public Bytes value;
 
   // Value of the leaf opening before being modified
-  public Bytes oldOpenMinus;
-  public Bytes oldOpenPlus;
+  public Bytes priorLeftLeaf;
+  public Bytes priorRightLeaf;
 
   public InsertionTrace(final Node<Bytes> oldRoot) {
     this.oldRoot = oldRoot;
@@ -88,19 +88,19 @@ public class InsertionTrace implements Trace {
     return value;
   }
 
-  public Bytes getOldOpenMinus() {
-    return oldOpenMinus;
+  public Bytes getPriorLeftLeaf() {
+    return priorLeftLeaf;
   }
 
-  public Bytes getOldOpenPlus() {
-    return oldOpenPlus;
+  public Bytes getPriorRightLeaf() {
+    return priorRightLeaf;
   }
 
-  public void setOldOpenMinus(final Bytes oldOpenMinus) {
-    this.oldOpenMinus = oldOpenMinus;
+  public void setPriorLeftLeaf(final Bytes priorLeftLeaf) {
+    this.priorLeftLeaf = priorLeftLeaf;
   }
 
-  public void setOldOpenPlus(final Bytes oldOpenPlus) {
-    this.oldOpenPlus = oldOpenPlus;
+  public void setPriorRightLeaf(final Bytes priorRightLeaf) {
+    this.priorRightLeaf = priorRightLeaf;
   }
 }

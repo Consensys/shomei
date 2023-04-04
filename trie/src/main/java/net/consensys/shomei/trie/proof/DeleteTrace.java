@@ -28,9 +28,9 @@ public class DeleteTrace implements Trace {
   public Bytes key;
 
   // Value of the leaf opening before being modified
-  public Bytes oldOpenMinus;
-  public Bytes oldDeletedOpen;
-  public Bytes oldOpenPlus;
+  public Bytes priorLeftLeaf;
+  public Bytes priorDeletedLeaf;
+  public Bytes priorRightLeaf;
 
   public DeleteTrace(final Node<Bytes> oldRoot) {
     this.oldRoot = oldRoot;
@@ -80,27 +80,27 @@ public class DeleteTrace implements Trace {
     this.key = key;
   }
 
-  public Bytes getOldOpenMinus() {
-    return oldOpenMinus;
+  public Bytes getPriorLeftLeaf() {
+    return priorLeftLeaf;
   }
 
-  public void setOldOpenMinus(final Bytes oldOpenMinus) {
-    this.oldOpenMinus = oldOpenMinus;
+  public void setPriorLeftLeaf(final Bytes priorLeftLeaf) {
+    this.priorLeftLeaf = priorLeftLeaf;
   }
 
-  public Bytes getOldDeletedOpen() {
-    return oldDeletedOpen;
+  public Bytes getPriorDeletedLeaf() {
+    return priorDeletedLeaf;
   }
 
-  public void setOldDeletedOpen(final Bytes oldDeletedOpen) {
-    this.oldDeletedOpen = oldDeletedOpen;
+  public void setPriorDeletedLeaf(final Bytes priorDeletedLeaf) {
+    this.priorDeletedLeaf = priorDeletedLeaf;
   }
 
-  public Bytes getOldOpenPlus() {
-    return oldOpenPlus;
+  public Bytes getPriorRightLeaf() {
+    return priorRightLeaf;
   }
 
-  public void setOldOpenPlus(final Bytes oldOpenPlus) {
-    this.oldOpenPlus = oldOpenPlus;
+  public void setPriorRightLeaf(final Bytes priorRightLeaf) {
+    this.priorRightLeaf = priorRightLeaf;
   }
 }
