@@ -243,8 +243,8 @@ public class RocksDBSegmentedStorageTest {
 
     var iter = trieSegment.getNearestTo(key);
     assertThat(iter).isPresent();
-    assertThat(iter.get().hasNext()).isTrue();
-    var kv = iter.get().next();
+    assertThat(iter.get().hasPrevious()).isTrue();
+    var kv = iter.get().previous();
 
     assertThat(kv.key()).isEqualTo(prevKey);
     assertThat(kv.value()).isEqualTo(value);
@@ -268,18 +268,102 @@ public class RocksDBSegmentedStorageTest {
     // assert iter first value is key
     var iter = trieSegment.getNearestTo(key);
     assertThat(iter).isPresent();
-    assertThat(iter.get().hasNext()).isTrue();
-    var kv = iter.get().next();
+    assertThat(iter.get().hasPrevious()).isTrue();
+    var kv = iter.get().previous();
 
     assertThat(kv.key()).isEqualTo(key);
     assertThat(kv.value()).isEqualTo(value);
 
-    assertThat(iter.get().hasNext()).isTrue();
-    kv = iter.get().next();
+    assertThat(iter.get().hasPrevious()).isTrue();
+    kv = iter.get().previous();
 
     assertThat(kv.key()).isEqualTo(prevKey);
     assertThat(kv.value()).isEqualTo(prevValue);
-    assertThat(iter.get().hasNext()).isFalse();
+    assertThat(iter.get().hasPrevious()).isFalse();
+    factory.close();
+  }
+
+  @Test
+  public void assertOpenRangeForGetNearestToTest() throws IOException {
+    var trieSegment = getKeyValueStorage(ZK_ACCOUNT_TRIE.getSegmentIdentifier());
+    var mockListHead = "0".getBytes(UTF_8);
+    var prevKey = "key0".getBytes(UTF_8);
+    var prevValue = "value0".getBytes(UTF_8);
+    var nearestNextKey = "key2".getBytes(UTF_8);
+    var nearestNextValue = "value2".getBytes(UTF_8);
+
+    trieSegment.startTransaction().put(mockListHead, mockListHead).commit();
+    trieSegment.startTransaction().put(prevKey, prevValue).commit();
+    trieSegment.startTransaction().put(nearestNextKey, nearestNextValue).commit();
+
+    // assert keys 0, 2, 3 present
+    assertThat(trieSegment.get(prevKey)).contains(prevValue);
+    assertThat(trieSegment.get(key)).isEmpty();
+    assertThat(trieSegment.get(nearestNextKey)).contains(nearestNextValue);
+
+    // assert iter first value is prevKey
+    var iter = trieSegment.getNearestTo(key);
+    assertThat(iter).isPresent();
+    assertThat(iter.get().hasPrevious()).isTrue();
+    var kv = iter.get().previous();
+    assertThat(kv.key()).isEqualTo(prevKey);
+    assertThat(kv.value()).isEqualTo(prevValue);
+
+    // move iterator past prevKeys
+    assertThat(iter.get().next().key()).isEqualTo(mockListHead);
+    assertThat(iter.get().next().key()).isEqualTo(prevKey);
+
+    //  assert nextKey is nearest next
+    var nextKv = iter.get().next();
+    assertThat(nextKv.key()).isEqualTo(nearestNextKey);
+    assertThat(nextKv.value()).isEqualTo(nearestNextValue);
+
+    factory.close();
+  }
+
+  @Test
+  public void assertClosedRangeForGetNearestToTest() throws IOException {
+    var trieSegment = getKeyValueStorage(ZK_ACCOUNT_TRIE.getSegmentIdentifier());
+    var mockListHead = "0".getBytes(UTF_8);
+
+    var prevKey = "key0".getBytes(UTF_8);
+    var prevValue = "value0".getBytes(UTF_8);
+    var nearestNextKey = "key2".getBytes(UTF_8);
+    var nearestNextValue = "value2".getBytes(UTF_8);
+
+    trieSegment.startTransaction().put(mockListHead, mockListHead).commit();
+    trieSegment.startTransaction().put(prevKey, prevValue).commit();
+    trieSegment.startTransaction().put(key, value).commit();
+    trieSegment.startTransaction().put(nearestNextKey, nearestNextValue).commit();
+
+    // assert keys 0, 2, 3 present
+    assertThat(trieSegment.get(prevKey)).contains(prevValue);
+    assertThat(trieSegment.get(key)).contains(value);
+    assertThat(trieSegment.get(nearestNextKey)).contains(nearestNextValue);
+
+    // get nearest key, exact match in this case, via prev()
+    var iter = trieSegment.getNearestTo(key);
+    assertThat(iter).isPresent();
+    assertThat(iter.get().hasPrevious()).isTrue();
+    var kv = iter.get().previous();
+    assertThat(kv.key()).isEqualTo(key);
+    assertThat(kv.value()).isEqualTo(value);
+
+    // assert that previous is now the prior key:
+    assertThat(iter.get().hasPrevious()).isTrue();
+    var previousKv = iter.get().previous();
+    assertThat(previousKv.key()).isEqualTo(prevKey);
+    assertThat(previousKv.value()).isEqualTo(prevValue);
+
+    // push the iterator back past the initial nearest:
+    assertThat(iter.get().next().key()).isEqualTo(mockListHead);
+    assertThat(iter.get().next().key()).isEqualTo(prevKey);
+    assertThat(iter.get().next().key()).isEqualTo(key);
+    assertThat(iter.get().hasNext()).isTrue();
+    var nextKv = iter.get().next();
+    assertThat(nextKv.key()).isEqualTo(nearestNextKey);
+    assertThat(nextKv.value()).isEqualTo(nearestNextValue);
+
     factory.close();
   }
 

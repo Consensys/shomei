@@ -15,6 +15,7 @@ package net.consensys.shomei.services.storage.rocksdb;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,39 +26,21 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import services.storage.BidirectionalIterator;
 import services.storage.KeyValueStorage.KeyValuePair;
 
-/** The Rocks db iterator. */
-public class RocksDBIterator implements Iterator<KeyValuePair>, AutoCloseable {
+public class RocksDBIterator implements BidirectionalIterator<KeyValuePair>, AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDBIterator.class);
 
   private final RocksIterator rocksIterator;
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
-  private final boolean reverse;
 
-  private RocksDBIterator(final RocksIterator rocksIterator, boolean reverse) {
+  private RocksDBIterator(final RocksIterator rocksIterator) {
     this.rocksIterator = rocksIterator;
-    this.reverse = reverse;
   }
 
-  /**
-   * Create RocksDb iterator.
-   *
-   * @param rocksIterator the rocks iterator
-   * @return the rocks db iterator
-   */
   public static RocksDBIterator create(final RocksIterator rocksIterator) {
-    return new RocksDBIterator(rocksIterator, false);
-  }
-
-  /**
-   * Create RocksDb iterator using prev instead of next
-   *
-   * @param rocksIterator the rocks iterator
-   * @return the rocks db iterator
-   */
-  public static RocksDBIterator createForPrev(final RocksIterator rocksIterator) {
-    return new RocksDBIterator(rocksIterator, true);
+    return new RocksDBIterator(rocksIterator);
   }
 
   @Override
@@ -69,33 +52,36 @@ public class RocksDBIterator implements Iterator<KeyValuePair>, AutoCloseable {
   @Override
   public KeyValuePair next() {
     assertOpen();
-    try {
-      rocksIterator.status();
-    } catch (final RocksDBException e) {
-      LOG.error(
-          String.format("%s encountered a problem while iterating.", getClass().getSimpleName()),
-          e);
-    }
+    checkStatus();
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
     final byte[] key = rocksIterator.key();
     final byte[] value = rocksIterator.value();
-    if (reverse) {
-      rocksIterator.prev();
-    } else {
-      rocksIterator.next();
-    }
+    rocksIterator.next();
     return new KeyValuePair(key, value);
   }
 
-  /**
-   * Next key.
-   *
-   * @return the byte [ ]
-   */
-  public byte[] nextKey() {
+  @Override
+  public boolean hasPrevious() {
     assertOpen();
+    return rocksIterator.isValid();
+  }
+
+  @Override
+  public KeyValuePair previous() {
+    assertOpen();
+    checkStatus();
+    if (!hasPrevious()) {
+      throw new NoSuchElementException();
+    }
+    final byte[] key = rocksIterator.key();
+    final byte[] value = rocksIterator.value();
+    rocksIterator.prev();
+    return new KeyValuePair(key, value);
+  }
+
+  private void checkStatus() {
     try {
       rocksIterator.status();
     } catch (final RocksDBException e) {
@@ -103,23 +89,8 @@ public class RocksDBIterator implements Iterator<KeyValuePair>, AutoCloseable {
           String.format("%s encountered a problem while iterating.", getClass().getSimpleName()),
           e);
     }
-    if (!hasNext()) {
-      throw new NoSuchElementException();
-    }
-    final byte[] key = rocksIterator.key();
-    if (reverse) {
-      rocksIterator.prev();
-    } else {
-      rocksIterator.next();
-    }
-    return key;
   }
 
-  /**
-   * To stream.
-   *
-   * @return the stream
-   */
   public Stream<KeyValuePair> toStream() {
     assertOpen();
     final Spliterator<KeyValuePair> spliterator =
@@ -151,7 +122,9 @@ public class RocksDBIterator implements Iterator<KeyValuePair>, AutoCloseable {
 
               @Override
               public byte[] next() {
-                return RocksDBIterator.this.nextKey();
+                return Optional.ofNullable(RocksDBIterator.this.next())
+                    .map(KeyValuePair::key)
+                    .orElse(null);
               }
             },
             Spliterator.IMMUTABLE

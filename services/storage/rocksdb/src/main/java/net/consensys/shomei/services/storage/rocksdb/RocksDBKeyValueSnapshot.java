@@ -16,7 +16,6 @@ package net.consensys.shomei.services.storage.rocksdb;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -25,6 +24,7 @@ import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import services.storage.BidirectionalIterator;
 import services.storage.KeyValueStorage;
 import services.storage.KeyValueStorageTransaction;
 import services.storage.StorageException;
@@ -53,7 +53,8 @@ public class RocksDBKeyValueSnapshot implements KeyValueStorage {
   }
 
   @Override
-  public Optional<Iterator<KeyValuePair>> getNearestTo(final byte[] key) throws StorageException {
+  public Optional<BidirectionalIterator<KeyValuePair>> getNearestTo(final byte[] key)
+      throws StorageException {
     return snapTx.getNearestTo(key);
   }
 

@@ -13,7 +13,6 @@
 
 package net.consensys.shomei.services.storage.rocksdb;
 
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
@@ -29,6 +28,7 @@ import org.rocksdb.Transaction;
 import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import services.storage.BidirectionalIterator;
 import services.storage.KeyValueStorage.KeyValuePair;
 import services.storage.KeyValueStorageTransaction;
 import services.storage.StorageException;
@@ -77,7 +77,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
     }
   }
 
-  public Optional<Iterator<KeyValuePair>> getNearestTo(byte[] key) {
+  public Optional<BidirectionalIterator<KeyValuePair>> getNearestTo(byte[] key) {
     throwIfClosed();
 
     try {
@@ -86,7 +86,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
 
       return Optional.of(iterator)
           .filter(AbstractRocksIterator::isValid)
-          .map(RocksDBIterator::createForPrev);
+          .map(RocksDBIterator::create);
     } catch (final Throwable t) {
       throw new StorageException(t);
     }

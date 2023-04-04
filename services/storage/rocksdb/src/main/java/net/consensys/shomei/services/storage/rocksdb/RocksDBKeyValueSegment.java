@@ -15,13 +15,13 @@ package net.consensys.shomei.services.storage.rocksdb;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.rocksdb.ReadOptions;
+import services.storage.BidirectionalIterator;
 import services.storage.KeyValueStorage;
 import services.storage.KeyValueStorageTransaction;
 import services.storage.SnappableKeyValueStorage;
@@ -57,7 +57,8 @@ public class RocksDBKeyValueSegment implements SnappableKeyValueStorage {
   }
 
   @Override
-  public Optional<Iterator<KeyValuePair>> getNearestTo(final byte[] key) throws StorageException {
+  public Optional<BidirectionalIterator<KeyValuePair>> getNearestTo(final byte[] key)
+      throws StorageException {
     return segment.getNearestTo(readOptions, key);
   }
 

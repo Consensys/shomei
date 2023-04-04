@@ -18,7 +18,6 @@ import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfig
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -50,6 +49,7 @@ import org.rocksdb.TransactionDBOptions;
 import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import services.storage.BidirectionalIterator;
 import services.storage.KeyValueStorage;
 import services.storage.KeyValueStorageTransaction;
 import services.storage.SnappableKeyValueStorage;
@@ -290,7 +290,7 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
       return reference.get().hashCode();
     }
 
-    public Optional<Iterator<KeyValueStorage.KeyValuePair>> getNearestTo(
+    public Optional<BidirectionalIterator<KeyValueStorage.KeyValuePair>> getNearestTo(
         final ReadOptions readOptions, final byte[] key) {
       throwIfClosed();
 
@@ -300,7 +300,7 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
 
         return Optional.of(iterator)
             .filter(AbstractRocksIterator::isValid)
-            .map(RocksDBIterator::createForPrev);
+            .map(RocksDBIterator::create);
       } catch (final Throwable t) {
         throw new StorageException(t);
       }

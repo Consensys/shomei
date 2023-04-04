@@ -14,7 +14,6 @@
 package services.storage;
 
 import java.io.Closeable;
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -66,7 +65,7 @@ public interface KeyValueStorage extends Closeable {
    *     given key.
    * @throws StorageException problem encountered during the retrieval attempt.
    */
-  Optional<Iterator<KeyValuePair>> getNearestTo(byte[] key) throws StorageException;
+  Optional<BidirectionalIterator<KeyValuePair>> getNearestTo(byte[] key) throws StorageException;
 
   /**
    * Returns a stream of all keys and values.
