@@ -9,6 +9,24 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
+ *
+ * The main components of the class are:
+ *
+ * 1. `accumulator`: A `ZkEvmWorldStateUpdateAccumulator` object that accumulates updates to accounts and storage slots.
+ * 2. `state`: A `State` object that holds the current state root hash and a list of traces for updating the state.
+ * 3. `blockNumber`: The current block number.
+ * 4. `blockHash`: The hash of the current block.
+ * 5. `zkEvmWorldStateStorage`: A `WorldStateStorage` object that provides an interface to the underlying storage system.
+ *
+ * The class provides several public methods:
+ *
+ * - `commit(long blockNumber, Hash blockHash)`: Commits the accumulated updates to the world state for a given block number and block hash.
+ * - `getStateRootHash()`: Returns the current state root hash.
+ * - `getBlockNumber()`: Returns the current block number.
+ * - `getBlockHash()`: Returns the current block hash.
+ * - `getLastTraces()`: Returns the last traces generated for updating the state.
+ *
+ * The class also contains several private helper methods for updating accounts and storage slots in the zkAccountTrie and zkStorageTrie.
  */
 
 package net.consensys.shomei.worldview;
@@ -41,17 +59,21 @@ import org.hyperledger.besu.datatypes.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+// ZKEvmWorldState represents the world state of a zkEVM (Zero-Knowledge Ethereum Virtual Machine).
 public class ZKEvmWorldState {
 
   private static final Logger LOG = LoggerFactory.getLogger(ZKEvmWorldState.class);
 
+  // Accumulates updates to accounts and storage slots.
   private final ZkEvmWorldStateUpdateAccumulator accumulator;
-
+  
+  // Holds the current state root hash and a list of traces for updating the state.
   private State state;
 
   private long blockNumber;
   private Hash blockHash;
 
+  // Provides an interface to the underlying storage system.
   private final WorldStateStorage zkEvmWorldStateStorage;
 
   public ZKEvmWorldState(final WorldStateStorage zkEvmWorldStateStorage) {
@@ -65,6 +87,7 @@ public class ZKEvmWorldState {
     this.zkEvmWorldStateStorage = zkEvmWorldStateStorage;
   }
 
+  // Commits the accumulated updates to the world state for a given block number and block hash.
   public void commit(final long blockNumber, final Hash blockHash) {
     LOG.atDebug()
         .setMessage("Commit world state for block number {} and block hash {}")
@@ -104,6 +127,7 @@ public class ZKEvmWorldState {
 
   record State(Hash stateRoot, List<Trace> traces) {}
 
+  // Generates a new state by updating accounts and their storage.  
   private State generateNewState(final Updater updater) {
     final ZKTrie zkAccountTrie =
         loadAccountTrie(createAccountProxy(zkEvmWorldStateStorage, updater));
@@ -112,7 +136,8 @@ public class ZKEvmWorldState {
     return new State(Hash.wrap(zkAccountTrie.getTopRootHash()), traces);
   }
 
-  private List<Trace> updateAccounts(final ZKTrie zkAccountTrie, final Updater updater) {
+ // Updates accounts in the zkAccountTrie.
+ private List<Trace> updateAccounts(final ZKTrie zkAccountTrie, final Updater updater) {
     final List<Trace> traces = new ArrayList<>();
     accumulator.getAccountsToUpdate().entrySet().stream()
         .sorted(Map.Entry.comparingByKey())
@@ -125,7 +150,8 @@ public class ZKEvmWorldState {
     return traces;
   }
 
-  private List<Trace> updateAccount(
+// Updates a single account in the zkAccountTrie.
+private List<Trace> updateAccount(
       final AccountKey accountKey,
       final ZkValue<ZkAccount> accountValue,
       final ZKTrie zkAccountTrie,
@@ -189,6 +215,7 @@ public class ZKEvmWorldState {
     return traces;
   }
 
+  // Reads storage slots for an account.  
   private List<Trace> readSlots(
       final AccountKey accountKey,
       final long accountLeafIndex,
@@ -219,6 +246,7 @@ public class ZKEvmWorldState {
     return traces;
   }
 
+  // Updates storage slots for an account.
   private List<Trace> updateSlots(
       final AccountKey accountKey,
       final long accountLeafIndex,
@@ -252,6 +280,7 @@ public class ZKEvmWorldState {
     return traces;
   }
 
+  // Updates a single storage slot for an account.
   private List<Trace> updateSlot(
       final ZkValue<ZkAccount> accountValue,
       final StorageSlotKey storageSlotKey,
@@ -304,6 +333,7 @@ public class ZKEvmWorldState {
     return accumulator;
   }
 
+  // Loads the account trie from the storage system.
   private ZKTrie loadAccountTrie(final StorageProxy storageProxy) {
     if (state.stateRoot.equals(EMPTY_TRIE_ROOT)) {
       return ZKTrie.createTrie(storageProxy);
@@ -312,6 +342,7 @@ public class ZKEvmWorldState {
     }
   }
 
+  // Loads the storage trie for an account.
   private ZKTrie loadStorageTrie(
       final ZkValue<ZkAccount> zkAccount,
       final boolean forceNewTrie,
