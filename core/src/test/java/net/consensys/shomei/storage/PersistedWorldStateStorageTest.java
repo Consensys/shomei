@@ -58,6 +58,7 @@ public class PersistedWorldStateStorageTest {
   @Test
   public void assertReadConsistentBeforeCommit() {
     mutateWorldStateStorage();
+    updater.commitTrieLog(); // trielogs do not read through transaction by default
     assertWorldStateStorage();
   }
 
@@ -65,6 +66,7 @@ public class PersistedWorldStateStorageTest {
   public void assertReadConsistentAfterCommit() {
     mutateWorldStateStorage();
     updater.commit();
+    updater.commitTrieLog();
     assertWorldStateStorage();
   }
 
@@ -72,6 +74,8 @@ public class PersistedWorldStateStorageTest {
   public void assertFreshUpdaterAfterCommit() {
     mutateWorldStateStorage();
     updater.commit();
+    updater.commitTrieLog();
+
     assertWorldStateStorage();
     var newTrieVal = Bytes.of("newval".getBytes(StandardCharsets.UTF_8));
 
