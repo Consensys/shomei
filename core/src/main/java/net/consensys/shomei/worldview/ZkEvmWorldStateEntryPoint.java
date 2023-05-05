@@ -36,6 +36,8 @@ public class ZkEvmWorldStateEntryPoint implements TrieLogObserver {
 
   private static final Logger LOG = LoggerFactory.getLogger(ZkEvmWorldStateEntryPoint.class);
 
+  private static final int INITIAL_SYNC_BLOCK_NUMBER_RANGE = 2500;
+
   private final ZKEvmWorldState currentWorldState;
 
   private final TrieLogLayerConverter trieLogLayerConverter;
@@ -97,11 +99,21 @@ public class ZkEvmWorldStateEntryPoint implements TrieLogObserver {
           if (currentWorldState
               .getBlockHash()
               .equals(Objects.requireNonNull(trieLogId.blockHash()))) {
-            LOG.atInfo()
-                .setMessage("Imported block {} ({})")
-                .addArgument(trieLogId.blockNumber())
-                .addArgument(trieLogId.blockHash())
-                .log();
+            if (trieLogId.isInitialSync()) {
+              if (trieLogId.blockNumber() % INITIAL_SYNC_BLOCK_NUMBER_RANGE == 0) {
+                LOG.atInfo()
+                    .setMessage("Block import progress: {}:{}")
+                    .addArgument(trieLogId.blockNumber())
+                    .addArgument(trieLogId.blockHash())
+                    .log();
+              }
+            } else {
+              LOG.atInfo()
+                  .setMessage("Imported block {} ({})")
+                  .addArgument(trieLogId.blockNumber())
+                  .addArgument(trieLogId.blockHash())
+                  .log();
+            }
           } else {
             LOG.atError()
                 .setMessage("Failed to import block {} ({})")
