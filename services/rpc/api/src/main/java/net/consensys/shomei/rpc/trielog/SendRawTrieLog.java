@@ -51,7 +51,7 @@ public class SendRawTrieLog implements JsonRpcMethod {
     try {
       final WorldStateRepository.WorldStateUpdater updater =
           (WorldStateRepository.WorldStateUpdater) worldStateStorage.updater();
-      updater.saveTrieLog(param.getBlockNumber(), Bytes.fromHexString(param.getTrieLog()));
+      updater.saveTrieLog(param.blockNumber(), Bytes.fromHexString(param.trieLog()));
       // updater.commit();
       trieLogObserver.onTrieLogAdded(param.getTrieLogIdentifier());
     } catch (RuntimeException e) {

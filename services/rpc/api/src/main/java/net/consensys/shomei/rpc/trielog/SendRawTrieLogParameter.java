@@ -19,42 +19,37 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hyperledger.besu.datatypes.Hash;
 
-public class SendRawTrieLogParameter {
-
-  private final Long blockNumber;
-
-  private final Hash blockHash;
-
-  private final String trieLog;
-
-  public Long getBlockNumber() {
-    return blockNumber;
-  }
-
-  public Hash getBlockHash() {
-    return blockHash;
-  }
-
-  public String getTrieLog() {
-    return trieLog;
-  }
+public record SendRawTrieLogParameter(
+    Long blockNumber, Hash blockHash, boolean isInitialSync, String trieLog) {
 
   public TrieLogIdentifier getTrieLogIdentifier() {
-    return new TrieLogIdentifier(blockNumber, blockHash);
+    return new TrieLogIdentifier(blockNumber, blockHash, isInitialSync);
   }
 
   @JsonCreator
   public SendRawTrieLogParameter(
       @JsonProperty("blockNumber") final Long blockNumber,
       @JsonProperty("blockHash") final Hash blockHash,
+      @JsonProperty("isSync") final boolean isInitialSync,
       @JsonProperty("trieLog") final String trieLog) {
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;
+    this.isInitialSync = isInitialSync;
     this.trieLog = trieLog;
   }
 
   @Override
   public String toString() {
-    return "blockNumber=" + blockNumber + ", blockHash=" + blockHash + ", trieLog=" + trieLog;
+    return "SendRawTrieLogParameter{"
+        + "blockNumber="
+        + blockNumber
+        + ", blockHash="
+        + blockHash
+        + ", isInitialSync="
+        + isInitialSync
+        + ", trieLog='"
+        + trieLog
+        + '\''
+        + '}';
   }
 }

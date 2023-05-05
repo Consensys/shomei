@@ -44,6 +44,7 @@ public class ZkEvmWorldStateEntryPoint implements TrieLogObserver {
 
   private final Queue<TrieLogIdentifier> blockQueue = new PriorityBlockingQueue<>();
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
   private volatile boolean isProcessing = false;
 
   public ZkEvmWorldStateEntryPoint(final WorldStateRepository worldStateStorage) {
@@ -59,16 +60,17 @@ public class ZkEvmWorldStateEntryPoint implements TrieLogObserver {
             .map(RLP::input)
             .map(trieLogLayerConverter::decodeTrieLog);
     if (trieLog.isPresent()) {
-      applyTrieLog(trieLogId.blockNumber(), trieLog.get());
+      applyTrieLog(trieLogId.blockNumber(), trieLogId.isInitialSync(), trieLog.get());
     } else {
       throw new MissingTrieLogException(trieLogId.blockNumber());
     }
   }
 
   @VisibleForTesting
-  public void applyTrieLog(final long newBlockNumber, final TrieLogLayer trieLogLayer) {
+  public void applyTrieLog(
+      final long newBlockNumber, final boolean syncing, final TrieLogLayer trieLogLayer) {
     currentWorldState.getAccumulator().rollForward(trieLogLayer);
-    currentWorldState.commit(newBlockNumber, trieLogLayer.getBlockHash());
+    currentWorldState.commit(newBlockNumber, trieLogLayer.getBlockHash(), syncing);
   }
 
   public Hash getCurrentRootHash() {

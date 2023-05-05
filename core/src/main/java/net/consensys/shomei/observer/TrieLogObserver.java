@@ -18,7 +18,7 @@ import org.hyperledger.besu.datatypes.Hash;
 public interface TrieLogObserver {
   void onTrieLogAdded(final TrieLogIdentifier trieLogId);
 
-  record TrieLogIdentifier(Long blockNumber, Hash blockHash)
+  record TrieLogIdentifier(Long blockNumber, Hash blockHash, boolean isInitialSync)
       implements Comparable<TrieLogIdentifier> {
 
     @Override

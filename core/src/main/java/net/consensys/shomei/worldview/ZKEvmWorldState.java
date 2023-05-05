@@ -42,6 +42,8 @@ import org.slf4j.LoggerFactory;
 
 public class ZKEvmWorldState {
 
+  private static final int INITIAL_SYNC_BLOCK_NUMBER_RANGE = 2500;
+
   private static final Logger LOG = LoggerFactory.getLogger(ZKEvmWorldState.class);
 
   private final ZkEvmWorldStateUpdateAccumulator accumulator;
@@ -64,7 +66,7 @@ public class ZKEvmWorldState {
     this.zkEvmWorldStateStorage = zkEvmWorldStateStorage;
   }
 
-  public void commit(final long blockNumber, final Hash blockHash) {
+  public void commit(final long blockNumber, final Hash blockHash, final boolean isInitialSync) {
     LOG.atDebug()
         .setMessage("Commit world state for block number {} and block hash {}")
         .addArgument(blockNumber)
@@ -80,21 +82,31 @@ public class ZKEvmWorldState {
     updater.setBlockHash(blockHash);
     updater.setBlockNumber(blockNumber);
     updater.saveZkStateRootHash(blockNumber, state.stateRoot);
-    updater.saveTrace(blockNumber, Trace.serialize(state.traces));
 
-    if (!state.traces.isEmpty()) {
-      LOG.atInfo()
-          .setMessage("Generated trace for block {}:{} in {} ms")
-          .addArgument(blockNumber)
-          .addArgument(blockHash)
-          .addArgument(System.currentTimeMillis() - start)
-          .log();
+    if (isInitialSync) { // if it is initial sync we are not generating all traces
+      if (blockNumber % INITIAL_SYNC_BLOCK_NUMBER_RANGE == 0) {
+        LOG.atInfo()
+            .setMessage("Block import progress: {}:{}")
+            .addArgument(blockNumber)
+            .addArgument(blockHash)
+            .log();
+      }
     } else {
-      LOG.atInfo()
-          .setMessage("Ignore empty trace for block {}:{}")
-          .addArgument(blockNumber)
-          .addArgument(blockHash)
-          .log();
+      updater.saveTrace(blockNumber, Trace.serialize(state.traces));
+      if (!state.traces.isEmpty()) {
+        LOG.atInfo()
+            .setMessage("Generated trace for block {}:{} in {} ms")
+            .addArgument(blockNumber)
+            .addArgument(blockHash)
+            .addArgument(System.currentTimeMillis() - start)
+            .log();
+      } else {
+        LOG.atInfo()
+            .setMessage("Ignore empty trace for block {}:{}")
+            .addArgument(blockNumber)
+            .addArgument(blockHash)
+            .log();
+      }
     }
     // persist
     updater.commit();
