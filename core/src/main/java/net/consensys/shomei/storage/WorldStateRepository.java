@@ -38,6 +38,10 @@ public interface WorldStateRepository extends TrieRepository {
 
   Optional<Bytes> getTrace(final long blockNumber);
 
+  WorldStateRepository saveTrieLog(final long blockNumber, final Bytes rawTrieLogLayer);
+
+  void commitTrieLogStorage();
+
   default void close() {
     // no-op
   }
@@ -47,8 +51,6 @@ public interface WorldStateRepository extends TrieRepository {
     void setBlockHash(final Hash blockHash);
 
     void setBlockNumber(final long blockNumber);
-
-    void saveTrieLog(final long blockNumber, final Bytes rawTrieLogLayer);
 
     void saveZkStateRootHash(long blockNumber, Hash stateRoot);
 

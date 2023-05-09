@@ -77,9 +77,14 @@ public class InMemoryWorldStateRepository extends InMemoryRepository
   }
 
   @Override
-  public void saveTrieLog(final long blockNumber, final Bytes rawTrieLogLayer) {
+  public InMemoryWorldStateRepository saveTrieLog(
+      final long blockNumber, final Bytes rawTrieLogLayer) {
     trieLogStorage.put(blockNumber, rawTrieLogLayer);
+    return this;
   }
+
+  @Override
+  public void commitTrieLogStorage() {}
 
   @Override
   public void saveZkStateRootHash(final long blockNumber, final Hash stateRoot) {

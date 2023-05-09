@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.primitives.Longs;
@@ -44,8 +43,12 @@ public class PersistedWorldStateRepository implements WorldStateRepository {
       this(storage, new AtomicReference<>(storage.startTransaction()));
     }
 
-    synchronized Optional<byte[]> get(byte[] key) {
+    synchronized Optional<byte[]> readThroughTx(byte[] key) {
       return txRef.getAcquire().get(key);
+    }
+
+    Optional<byte[]> get(byte[] key) {
+      return storage.get(key);
     }
 
     synchronized void put(byte[] key, byte[] value) {
@@ -75,8 +78,6 @@ public class PersistedWorldStateRepository implements WorldStateRepository {
   private final UpdateableStorage trieNodeStorage;
   private final UpdateableStorage traceStorage;
 
-  private final Map<Long, Bytes> trielog = new ConcurrentHashMap<>();
-
   static final String ZK_STATE_ROOT_PREFIX = "zkStateRoot";
 
   public PersistedWorldStateRepository(final RocksDBSegmentedStorage storage) {
@@ -98,7 +99,7 @@ public class PersistedWorldStateRepository implements WorldStateRepository {
   @Override
   public Optional<FlattenedLeaf> getFlatLeaf(final Bytes hkey) {
     return flatLeafStorage
-        .get(hkey.toArrayUnsafe())
+        .readThroughTx(hkey.toArrayUnsafe())
         .map(Bytes::wrap)
         .map(RLP::input)
         .map(FlattenedLeaf::readFrom);
@@ -154,26 +155,26 @@ public class PersistedWorldStateRepository implements WorldStateRepository {
 
   @Override
   public Optional<Bytes> getTrieLog(final long blockNumber) {
-    return Optional.ofNullable(trielog.remove(blockNumber)).map(Bytes::wrap);
+    return trieLogStorage.get(Longs.toByteArray(blockNumber)).map(Bytes::wrap);
   }
 
   @Override
   public Optional<Hash> getZkStateRootHash(final long blockNumber) {
     return traceStorage
-        .get((ZK_STATE_ROOT_PREFIX + blockNumber).getBytes(StandardCharsets.UTF_8))
+        .readThroughTx((ZK_STATE_ROOT_PREFIX + blockNumber).getBytes(StandardCharsets.UTF_8))
         .map(Bytes32::wrap)
         .map(Hash::wrap);
   }
 
   @Override
   public Optional<Bytes> getTrace(final long blockNumber) {
-    return traceStorage.get(Longs.toByteArray(blockNumber)).map(Bytes::wrap);
+    return traceStorage.readThroughTx(Longs.toByteArray(blockNumber)).map(Bytes::wrap);
   }
 
   @Override
   public Optional<Bytes> getTrieNode(final Bytes location, final Bytes nodeHash) {
     // TODO use location
-    return trieNodeStorage.get(location.toArrayUnsafe()).map(Bytes::wrap);
+    return trieNodeStorage.readThroughTx(location.toArrayUnsafe()).map(Bytes::wrap);
   }
 
   @Override
@@ -186,12 +187,24 @@ public class PersistedWorldStateRepository implements WorldStateRepository {
 
   @Override
   public Optional<Hash> getWorldStateBlockHash() {
-    return trieNodeStorage.get(WORLD_BLOCK_HASH_KEY).map(Bytes32::wrap).map(Hash::wrap);
+    return trieNodeStorage.readThroughTx(WORLD_BLOCK_HASH_KEY).map(Bytes32::wrap).map(Hash::wrap);
   }
 
   @Override
   public Optional<Long> getWorldStateBlockNumber() {
-    return trieNodeStorage.get(WORLD_BLOCK_NUMBER_KEY).map(Longs::fromByteArray);
+    return trieNodeStorage.readThroughTx(WORLD_BLOCK_NUMBER_KEY).map(Longs::fromByteArray);
+  }
+
+  @Override
+  public PersistedWorldStateRepository saveTrieLog(
+      final long blockNumber, final Bytes rawTrieLogLayer) {
+    trieLogStorage.put(Longs.toByteArray(blockNumber), rawTrieLogLayer.toArrayUnsafe());
+    return this;
+  }
+
+  @Override
+  public void commitTrieLogStorage() {
+    trieLogStorage.commit();
   }
 
   @Override
@@ -205,12 +218,6 @@ public class PersistedWorldStateRepository implements WorldStateRepository {
       @Override
       public void setBlockNumber(final long blockNumber) {
         trieNodeStorage.put(WORLD_BLOCK_NUMBER_KEY, Longs.toByteArray(blockNumber));
-      }
-
-      @Override
-      public void saveTrieLog(final long blockNumber, final Bytes rawTrieLogLayer) {
-        trielog.put(blockNumber, rawTrieLogLayer);
-        // trieLogStorage.put(Longs.toByteArray(blockNumber), rawTrieLogLayer.toArrayUnsafe());
       }
 
       @Override
