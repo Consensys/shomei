@@ -51,7 +51,6 @@ public class RollingBackwardTests {
     zkEvmWorldState.commit(0L, null, false);
     assertThat(zkEvmWorldState.getStateRootHash()).isNotEqualTo(DEFAULT_TRIE_ROOT);
 
-    System.out.println("rolllllllback");
     // rollbackward and reverting an account
     zkEvmWorldState.getAccumulator().rollBack(trieLog);
     zkEvmWorldState.commit(0L, null, false);
