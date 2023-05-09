@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.primitives.Longs;
@@ -42,12 +43,8 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
       this(storage, new AtomicReference<>(storage.startTransaction()));
     }
 
-    synchronized Optional<byte[]> readThroughTx(byte[] key) {
+    synchronized Optional<byte[]> get(byte[] key) {
       return txRef.getAcquire().get(key);
-    }
-
-    Optional<byte[]> get(byte[] key) {
-      return storage.get(key);
     }
 
     synchronized void put(byte[] key, byte[] value) {
@@ -77,6 +74,8 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
   private final UpdateableStorage trieNodeStorage;
   private final UpdateableStorage traceStorage;
 
+  private final Map<Long, Bytes> trielog = new ConcurrentHashMap<>();
+
   static final String ZK_STATE_ROOT_PREFIX = "zkStateRoot";
 
   public PersistedWorldStateStorage(final RocksDBSegmentedStorage storage) {
@@ -98,7 +97,7 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
   @Override
   public Optional<FlattenedLeaf> getFlatLeaf(final Bytes hkey) {
     return flatLeafStorage
-        .readThroughTx(hkey.toArrayUnsafe())
+        .get(hkey.toArrayUnsafe())
         .map(Bytes::wrap)
         .map(RLP::input)
         .map(FlattenedLeaf::readFrom);
@@ -154,43 +153,40 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
 
   @Override
   public Optional<Bytes> getTrieLog(final long blockNumber) {
-    return trieLogStorage.get(Longs.toByteArray(blockNumber)).map(Bytes::wrap);
+    return Optional.ofNullable(trielog.get(blockNumber)).map(Bytes::wrap);
   }
 
   @Override
   public Optional<Bytes> getZkStateRootHash(final long blockNumber) {
     return traceStorage
-        .readThroughTx((ZK_STATE_ROOT_PREFIX + blockNumber).getBytes(StandardCharsets.UTF_8))
+        .get((ZK_STATE_ROOT_PREFIX + blockNumber).getBytes(StandardCharsets.UTF_8))
         .map(Bytes::wrap);
   }
 
   @Override
   public Optional<Bytes> getTrace(final long blockNumber) {
-    return traceStorage.readThroughTx(Longs.toByteArray(blockNumber)).map(Bytes::wrap);
+    return traceStorage.get(Longs.toByteArray(blockNumber)).map(Bytes::wrap);
   }
 
   @Override
   public Optional<Bytes> getTrieNode(final Bytes location, final Bytes nodeHash) {
-    // TODO use locatio
-    return trieNodeStorage.readThroughTx(nodeHash.toArrayUnsafe()).map(Bytes::wrap);
+    // TODO use location
+    return trieNodeStorage.get(nodeHash.toArrayUnsafe()).map(Bytes::wrap);
   }
 
   @Override
   public Optional<Hash> getWorldStateRootHash() {
-    return trieNodeStorage
-        .readThroughTx(WORLD_STATE_ROOT_HASH_KEY)
-        .map(Bytes32::wrap)
-        .map(Hash::wrap);
+    return trieNodeStorage.get(WORLD_STATE_ROOT_HASH_KEY).map(Bytes32::wrap).map(Hash::wrap);
   }
 
   @Override
   public Optional<Hash> getWorldStateBlockHash() {
-    return trieNodeStorage.readThroughTx(WORLD_BLOCK_HASH_KEY).map(Bytes32::wrap).map(Hash::wrap);
+    return trieNodeStorage.get(WORLD_BLOCK_HASH_KEY).map(Bytes32::wrap).map(Hash::wrap);
   }
 
   @Override
   public Optional<Long> getWorldStateBlockNumber() {
-    return trieNodeStorage.readThroughTx(WORLD_BLOCK_NUMBER_KEY).map(Longs::fromByteArray);
+    return trieNodeStorage.get(WORLD_BLOCK_NUMBER_KEY).map(Longs::fromByteArray);
   }
 
   @Override
@@ -208,7 +204,8 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
 
       @Override
       public void saveTrieLog(final long blockNumber, final Bytes rawTrieLogLayer) {
-        trieLogStorage.put(Longs.toByteArray(blockNumber), rawTrieLogLayer.toArrayUnsafe());
+        trielog.put(blockNumber, rawTrieLogLayer);
+        // trieLogStorage.put(Longs.toByteArray(blockNumber), rawTrieLogLayer.toArrayUnsafe());
       }
 
       @Override
@@ -241,13 +238,9 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
       @Override
       public void commit() {
         flatLeafStorage.commit();
+        trieLogStorage.commit();
         trieNodeStorage.commit();
         traceStorage.commit();
-      }
-
-      @Override
-      public void commitTrieLog() {
-        trieLogStorage.commit();
       }
     };
   }

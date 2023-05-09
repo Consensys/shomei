@@ -58,7 +58,5 @@ public interface WorldStateStorage extends StorageProxy {
     void saveZkStateRootHash(long blockNumber, Bytes stateRoot);
 
     void saveTrace(final long blockNumber, final Bytes rawTrace);
-
-    void commitTrieLog();
   }
 }

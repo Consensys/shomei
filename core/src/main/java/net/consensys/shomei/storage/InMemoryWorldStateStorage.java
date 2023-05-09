@@ -93,9 +93,4 @@ public class InMemoryWorldStateStorage extends InMemoryStorage
   public void saveTrace(final long blockNumber, final Bytes rawTrace) {
     traces.put(blockNumber, rawTrace);
   }
-
-  @Override
-  public void commitTrieLog() {
-    // no-op
-  }
 }
