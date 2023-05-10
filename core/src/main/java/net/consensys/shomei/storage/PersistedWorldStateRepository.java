@@ -250,7 +250,6 @@ public class PersistedWorldStateRepository implements WorldStateRepository {
       @Override
       public void commit() {
         flatLeafStorage.commit();
-        trieLogStorage.commit();
         trieNodeStorage.commit();
         traceStorage.commit();
       }
