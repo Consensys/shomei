@@ -162,7 +162,7 @@ jobs:
           distribution: 'adopt'
       - name: Publish Docker Image
         run: |
-          echo "${{ secrets.DOCKER_PAT }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          echo "${{ secrets.DOCKER_PASSWORD_RW }}" | docker login --username "${{ secrets.DOCKER_USER_RW }}" --password-stdin
           ./gradlew --no-daemon dockerUpload
 
   publishDockerArm64:
@@ -183,5 +183,5 @@ jobs:
           architecture: aarch64
       - name: Publish Docker Image
         run: |
-          echo "${{ secrets.DOCKER_PAT }}" | docker login --username "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+          echo "${{ secrets.DOCKER_PASSWORD_RW }}" | docker login --username "${{ secrets.DOCKER_USER_RW }}" --password-stdin
           ./gradlew --no-daemon dockerUpload
