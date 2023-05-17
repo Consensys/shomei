@@ -2,11 +2,12 @@
 FROM ubuntu:22.04
 ARG VERSION="dev"
 
-RUN apt-get update && \
- apt-get install --no-install-recommends -q --assume-yes openjdk-19-jre-headless=19* libjemalloc-dev=5.* && \
- apt-get clean  && \
- rm -rf /var/lib/apt/lists/*  && \
- adduser --disabled-password --gecos "" --home /opt/shomei shomei && \
+RUN apt-get update  && \
+    apt-get install --no-install-recommends -q --assume-yes ca-certificates=20* ca-certificates-java=20* && \
+    apt-get install --no-install-recommends -q --assume-yes curl=7* wget=1.21* jq=1.6* net-tools=1.60* openjdk-19-jdk-headless=19* libjemalloc-dev=5.* && \
+    apt-get clean  && \
+    rm -rf /var/lib/apt/lists/*  && \
+    adduser --disabled-password --gecos "" --home /opt/shomei shomei && \
     chown shomei:shomei /opt/shomei && \
     chmod 0755 /opt/shomei
 

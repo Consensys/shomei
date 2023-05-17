@@ -3,10 +3,11 @@ FROM ubuntu:22.04
 ARG VERSION="dev"
 ARG TARGETPLATFORM
 
-RUN apt-get update && \
- apt-get install --no-install-recommends -q --assume-yes curl=7* libjemalloc-dev=5.* && \
- apt-get clean  && \
- rm -rf /var/lib/apt/lists/*
+RUN apt-get update  && \
+    apt-get install --no-install-recommends -q --assume-yes ca-certificates=20* ca-certificates-java=20* && \
+    apt-get install --no-install-recommends -q --assume-yes curl=7* wget=1.21* jq=1.6* net-tools=1.60* libjemalloc-dev=5.* && \
+    apt-get clean  && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "aarch64" ]; then \
