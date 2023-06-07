@@ -166,7 +166,7 @@ jobs:
           ./gradlew --no-daemon dockerUpload
 
   publishDockerArm64:
-    needs: build
+    needs: buildArm64
     if: github.event_name == 'push'
     runs-on: [ ARM64, Linux, self-hosted ]
     env:
@@ -187,6 +187,7 @@ jobs:
           ./gradlew --no-daemon dockerUpload
 
   publishManifest:
+    needs: [ publishDocker, publishDockerArm64 ]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     env:
