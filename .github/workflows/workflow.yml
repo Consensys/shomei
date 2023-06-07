@@ -185,3 +185,22 @@ jobs:
         run: |
           echo "${{ secrets.DOCKER_PASSWORD_RW }}" | docker login --username "${{ secrets.DOCKER_USER_RW }}" --password-stdin
           ./gradlew --no-daemon dockerUpload
+
+  publishManifest:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      architecture: "amd64"
+      GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+      - name: Publish Multi-arch Docker Image
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD_RW }}" | docker login --username "${{ secrets.DOCKER_USER_RW }}" --password-stdin
+          ./gradlew --no-daemon manifestDockerRelease
