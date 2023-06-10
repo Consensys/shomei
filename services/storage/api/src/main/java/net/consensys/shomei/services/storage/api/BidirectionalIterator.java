@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package services.storage;
+package net.consensys.shomei.services.storage.api;
 
-/** The interface Snappable key value storage. */
-public interface SnappableKeyValueStorage extends KeyValueStorage {
+import java.util.Iterator;
 
-  /**
-   * Take snapshot.
-   *
-   * @return the snapped key value storage
-   */
-  KeyValueStorage takeSnapshot();
+public interface BidirectionalIterator<T> extends Iterator<T>, AutoCloseable {
+
+  T current();
+
+  boolean hasPrevious();
+
+  T previous();
 }

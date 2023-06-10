@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package services.storage;
+package net.consensys.shomei.services.storage.api;
 
 /** Base exception class for problems encountered in the domain for storage. */
 public class StorageException extends RuntimeException {

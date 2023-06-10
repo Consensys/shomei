@@ -16,9 +16,7 @@ package net.consensys.shomei.rpc.server.method;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import net.consensys.shomei.storage.WorldStateRepository;
-
-import java.util.Optional;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
@@ -34,12 +32,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class RollupGetZkEVMBlockNumberTest {
 
-  @Mock public WorldStateRepository worldStateRepository;
+  @Mock public ZkWorldStateArchive worldStateArchive;
   public RollupGetZkEVMBlockNumber method;
 
   @Before
   public void setup() {
-    method = new RollupGetZkEVMBlockNumber(worldStateRepository);
+    method = new RollupGetZkEVMBlockNumber(worldStateArchive);
   }
 
   @Test
@@ -59,7 +57,7 @@ public class RollupGetZkEVMBlockNumberTest {
 
   @Test
   public void shouldReturnCurrentBlockNumber() {
-    when(worldStateRepository.getWorldStateBlockNumber()).thenReturn(Optional.of(10L));
+    when(worldStateArchive.getCurrentBlockNumber()).thenReturn(10L);
     final JsonRpcRequestContext request = request();
     final JsonRpcResponse expectedResponse =
         new JsonRpcSuccessResponse(null, Bytes.ofUnsignedLong(10L).toShortHexString());

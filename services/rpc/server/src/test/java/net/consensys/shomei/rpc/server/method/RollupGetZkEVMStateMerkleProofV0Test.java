@@ -22,8 +22,8 @@ import net.consensys.shomei.rpc.server.error.JsonInvalidVersionMessage;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEVMStateMerkleProofV0Response;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEvmStateV0Parameter;
-import net.consensys.shomei.storage.InMemoryWorldStateRepository;
-import net.consensys.shomei.storage.WorldStateRepository;
+import net.consensys.shomei.storage.TraceManager;
+import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.proof.Trace;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
@@ -49,12 +49,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class RollupGetZkEVMStateMerkleProofV0Test {
 
-  @Mock public WorldStateRepository worldStateRepository;
+  @Mock public TraceManager traceManager;
   public RollupGetZkEVMStateMerkleProofV0 method;
 
   @Before
   public void setup() {
-    method = new RollupGetZkEVMStateMerkleProofV0(worldStateRepository);
+    method = new RollupGetZkEVMStateMerkleProofV0(traceManager);
   }
 
   @Test
@@ -92,15 +92,15 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
   @Test
   public void shouldReturnValidResponseWhenTraceAvailable() {
     ZKTrie accountStateTrie =
-        ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateRepository()));
+        ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
     Bytes trace =
         Trace.serialize(
             List.of(accountStateTrie.readAndProve(Hash.ZERO, MimcSafeBytes.safeByte32(Hash.ZERO))));
 
-    when(worldStateRepository.getZkStateRootHash(anyLong()))
+    when(traceManager.getZkStateRootHash(anyLong()))
         .thenReturn(Optional.of(Hash.wrap(accountStateTrie.getTopRootHash())));
-    when(worldStateRepository.getTrace(anyLong())).thenReturn(Optional.of(trace));
+    when(traceManager.getTrace(anyLong())).thenReturn(Optional.of(trace));
     final JsonRpcRequestContext request = request("0", "0", IMPL_VERSION);
     final JsonRpcResponse expectedResponse =
         new JsonRpcSuccessResponse(

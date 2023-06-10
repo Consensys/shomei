@@ -23,19 +23,19 @@ import org.apache.tuweni.bytes.Bytes;
  * This class serves as a wrapper for the AccountTrieRepository, providing additional functionality
  * and abstraction for interacting with the account trie data.
  */
-public class AccountTrieRepositoryWrapper implements TrieRepository {
+public class AccountTrieRepositoryWrapper implements TrieStorage {
 
-  private final TrieRepository trieStorage;
+  private final TrieStorage trieStorage;
 
   private final TrieUpdater worldStateUpdater;
 
   public AccountTrieRepositoryWrapper(
-      final TrieRepository trieStorage, final TrieUpdater worldStateUpdater) {
+      final TrieStorage trieStorage, final TrieUpdater worldStateUpdater) {
     this.trieStorage = trieStorage;
     this.worldStateUpdater = worldStateUpdater;
   }
 
-  public AccountTrieRepositoryWrapper(final TrieRepository trieStorage) {
+  public AccountTrieRepositoryWrapper(final TrieStorage trieStorage) {
     this.trieStorage = trieStorage;
     this.worldStateUpdater = trieStorage.updater();
   }

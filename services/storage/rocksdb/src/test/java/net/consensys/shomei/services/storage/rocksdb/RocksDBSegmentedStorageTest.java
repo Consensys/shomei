@@ -21,6 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import net.consensys.shomei.config.ShomeiConfig;
+import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
+import net.consensys.shomei.services.storage.api.StorageException;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
 
@@ -31,8 +33,6 @@ import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import services.storage.SnappableKeyValueStorage;
-import services.storage.StorageException;
 
 public class RocksDBSegmentedStorageTest {
 

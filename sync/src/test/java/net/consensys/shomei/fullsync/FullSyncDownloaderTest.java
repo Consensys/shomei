@@ -22,7 +22,7 @@ import static org.mockito.Mockito.times;
 
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.rpc.client.GetRawTrieLogClient;
-import net.consensys.shomei.worldview.ZkEvmWorldStateEntryPoint;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
 
 import java.util.List;
 
@@ -37,7 +37,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class FullSyncDownloaderTest {
 
-  @Mock ZkEvmWorldStateEntryPoint zkEvmWorldStateEntryPoint;
+  @Mock ZkWorldStateArchive zkWorldStateArchive;
 
   FullSyncDownloader fullSyncDownloader;
 
@@ -47,7 +47,7 @@ public class FullSyncDownloaderTest {
         spy(
             new TrieLogBlockingQueue(
                 INITIAL_SYNC_BLOCK_NUMBER_RANGE * 2,
-                zkEvmWorldStateEntryPoint::getCurrentBlockNumber,
+                zkWorldStateArchive::getCurrentBlockNumber,
                 aLong -> {
                   try {
                     fullSyncDownloader.stop(); // force stop the downloader
@@ -57,14 +57,14 @@ public class FullSyncDownloaderTest {
                 }));
     fullSyncDownloader =
         new FullSyncDownloader(
-            blockingQueue, zkEvmWorldStateEntryPoint, Mockito.mock(GetRawTrieLogClient.class));
+            blockingQueue, zkWorldStateArchive, Mockito.mock(GetRawTrieLogClient.class));
     doThrow(new RuntimeException()).when(blockingQueue).startWaiting();
   }
 
   @Test
   public void testNotTriggerImportWhenTrieLogMissing() throws Exception {
     fullSyncDownloader.startFullSync();
-    Mockito.verify(zkEvmWorldStateEntryPoint, Mockito.never())
+    Mockito.verify(zkWorldStateArchive, Mockito.never())
         .importBlock(Mockito.any(TrieLogIdentifier.class), Mockito.anyBoolean());
   }
 
@@ -72,7 +72,7 @@ public class FullSyncDownloaderTest {
   public void testTriggerImportWhenTrieLogAvailableFromTrieLogShipping() throws Exception {
     fullSyncDownloader.onTrieLogsReceived(List.of(new TrieLogIdentifier(1L, Hash.EMPTY, true)));
     fullSyncDownloader.startFullSync();
-    Mockito.verify(zkEvmWorldStateEntryPoint, times(1))
+    Mockito.verify(zkWorldStateArchive, times(1))
         .importBlock(Mockito.any(TrieLogIdentifier.class), Mockito.anyBoolean());
   }
 
@@ -80,7 +80,7 @@ public class FullSyncDownloaderTest {
   public void testNotTriggerImportWhenTrieLogAvailableButAlreadyImported() throws Exception {
     fullSyncDownloader.onTrieLogsReceived(List.of(new TrieLogIdentifier(0L, Hash.EMPTY, true)));
     fullSyncDownloader.startFullSync();
-    Mockito.verify(zkEvmWorldStateEntryPoint, never())
+    Mockito.verify(zkWorldStateArchive, never())
         .importBlock(Mockito.any(TrieLogIdentifier.class), Mockito.anyBoolean());
   }
 
@@ -88,7 +88,7 @@ public class FullSyncDownloaderTest {
   public void testNotTriggerImportWhenTrieLogTooFarFromHead() throws Exception {
     fullSyncDownloader.onTrieLogsReceived(List.of(new TrieLogIdentifier(500L, Hash.EMPTY, true)));
     fullSyncDownloader.startFullSync();
-    Mockito.verify(zkEvmWorldStateEntryPoint, never())
+    Mockito.verify(zkWorldStateArchive, never())
         .importBlock(Mockito.any(TrieLogIdentifier.class), Mockito.anyBoolean());
   }
 

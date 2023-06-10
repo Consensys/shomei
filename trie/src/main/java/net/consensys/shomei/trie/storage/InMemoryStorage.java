@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
-public class InMemoryRepository implements TrieRepository, TrieRepository.TrieUpdater {
+public class InMemoryStorage implements TrieStorage, TrieStorage.TrieUpdater {
 
   private final TreeMap<Bytes, FlattenedLeaf> flatLeafStorage =
       new TreeMap<>(Comparator.naturalOrder());
@@ -77,7 +77,7 @@ public class InMemoryRepository implements TrieRepository, TrieRepository.TrieUp
   }
 
   @Override
-  public InMemoryRepository updater() {
+  public InMemoryStorage updater() {
     return this;
   }
 

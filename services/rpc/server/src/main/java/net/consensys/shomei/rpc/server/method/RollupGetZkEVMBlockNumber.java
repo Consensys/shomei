@@ -14,7 +14,7 @@
 package net.consensys.shomei.rpc.server.method;
 
 import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
-import net.consensys.shomei.storage.WorldStateRepository;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
@@ -24,10 +24,10 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSucces
 
 public class RollupGetZkEVMBlockNumber implements JsonRpcMethod {
 
-  final WorldStateRepository worldStateRepository;
+  final ZkWorldStateArchive worldStateArchive;
 
-  public RollupGetZkEVMBlockNumber(final WorldStateRepository worldStateRepository) {
-    this.worldStateRepository = worldStateRepository;
+  public RollupGetZkEVMBlockNumber(final ZkWorldStateArchive worldStateArchive) {
+    this.worldStateArchive = worldStateArchive;
   }
 
   @Override
@@ -39,7 +39,6 @@ public class RollupGetZkEVMBlockNumber implements JsonRpcMethod {
   public JsonRpcResponse response(final JsonRpcRequestContext requestContext) {
     return new JsonRpcSuccessResponse(
         requestContext.getRequest().getId(),
-        Bytes.ofUnsignedLong(worldStateRepository.getWorldStateBlockNumber().orElse(0L))
-            .toShortHexString());
+        Bytes.ofUnsignedLong(worldStateArchive.getCurrentBlockNumber()).toShortHexString());
   }
 }

@@ -31,6 +31,10 @@ public interface TrieLogObserver {
   record TrieLogIdentifier(Long blockNumber, Hash blockHash, boolean isInitialSync)
       implements Comparable<TrieLogIdentifier> {
 
+    public TrieLogIdentifier(final Long blockNumber, final Hash blockHash) {
+      this(blockNumber, blockHash, false);
+    }
+
     @Override
     public int compareTo(TrieLogIdentifier other) {
       return this.blockNumber.compareTo(other.blockNumber);

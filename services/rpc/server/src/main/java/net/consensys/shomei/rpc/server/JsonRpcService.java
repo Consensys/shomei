@@ -20,7 +20,7 @@ import net.consensys.shomei.observer.TrieLogObserver;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMBlockNumber;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMStateMerkleProofV0;
 import net.consensys.shomei.rpc.server.method.SendRawTrieLog;
-import net.consensys.shomei.storage.WorldStateRepository;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 
 import java.util.Arrays;
@@ -93,7 +93,7 @@ public class JsonRpcService extends AbstractVerticle {
       final String rpcHttpHost,
       final Integer rpcHttpPort,
       final TrieLogObserver trieLogObserver,
-      final WorldStateRepository worldStateStorage) {
+      final ZkWorldStateArchive worldStateArchive) {
     this.config = JsonRpcConfiguration.createDefault();
     config.setHost(rpcHttpHost);
     config.setPort(rpcHttpPort);
@@ -101,9 +101,9 @@ public class JsonRpcService extends AbstractVerticle {
     this.rpcMethods.putAll(
         mapOf(
             new AdminChangeLogLevel(),
-            new SendRawTrieLog(trieLogObserver, worldStateStorage),
-            new RollupGetZkEVMBlockNumber(worldStateStorage),
-            new RollupGetZkEVMStateMerkleProofV0(worldStateStorage)));
+            new SendRawTrieLog(trieLogObserver, worldStateArchive.getTrieLogManager()),
+            new RollupGetZkEVMBlockNumber(worldStateArchive),
+            new RollupGetZkEVMStateMerkleProofV0(worldStateArchive.getTraceManager())));
     this.maxActiveConnections = config.getMaxActiveConnections();
     this.livenessService = new HealthService(new LivenessCheck());
   }

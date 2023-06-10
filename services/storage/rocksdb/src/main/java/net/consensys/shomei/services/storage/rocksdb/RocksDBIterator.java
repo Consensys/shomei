@@ -13,6 +13,9 @@
 
 package net.consensys.shomei.services.storage.rocksdb;
 
+import net.consensys.shomei.services.storage.api.BidirectionalIterator;
+import net.consensys.shomei.services.storage.api.KeyValueStorage.KeyValuePair;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -26,8 +29,6 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import services.storage.BidirectionalIterator;
-import services.storage.KeyValueStorage.KeyValuePair;
 
 public class RocksDBIterator implements BidirectionalIterator<KeyValuePair> {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDBIterator.class);

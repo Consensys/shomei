@@ -17,7 +17,7 @@ import static net.consensys.shomei.fullsync.TrieLogBlockingQueue.INITIAL_SYNC_BL
 
 import net.consensys.shomei.observer.TrieLogObserver;
 import net.consensys.shomei.rpc.client.GetRawTrieLogClient;
-import net.consensys.shomei.worldview.ZkEvmWorldStateEntryPoint;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
 
 import java.util.Comparator;
 import java.util.List;
@@ -44,7 +44,7 @@ public class FullSyncDownloader extends AbstractVerticle implements TrieLogObser
   private final ExecutorService importBlockTask = Executors.newSingleThreadExecutor();
   private final TrieLogBlockingQueue blockQueue;
 
-  private final ZkEvmWorldStateEntryPoint zkEvmWorldStateEntryPoint;
+  private final ZkWorldStateArchive zkWorldStateArchive;
 
   private final GetRawTrieLogClient getRawTrieLog;
 
@@ -52,23 +52,22 @@ public class FullSyncDownloader extends AbstractVerticle implements TrieLogObser
   private Optional<Long> estimateHeadBlockNumber = Optional.empty();
 
   public FullSyncDownloader(
-      final ZkEvmWorldStateEntryPoint zkEvmWorldStateEntryPoint,
-      final GetRawTrieLogClient getRawTrieLog) {
-    this.zkEvmWorldStateEntryPoint = zkEvmWorldStateEntryPoint;
+      final ZkWorldStateArchive zkWorldStateArchive, final GetRawTrieLogClient getRawTrieLog) {
+    this.zkWorldStateArchive = zkWorldStateArchive;
     this.getRawTrieLog = getRawTrieLog;
     this.blockQueue =
         new TrieLogBlockingQueue(
             INITIAL_SYNC_BLOCK_NUMBER_RANGE * 2,
-            zkEvmWorldStateEntryPoint::getCurrentBlockNumber,
+            zkWorldStateArchive::getCurrentBlockNumber,
             this::findMissingTrieLogFromBesu);
   }
 
   public FullSyncDownloader(
       final TrieLogBlockingQueue blockQueue,
-      final ZkEvmWorldStateEntryPoint zkEvmWorldStateEntryPoint,
+      final ZkWorldStateArchive zkWorldStateArchive,
       final GetRawTrieLogClient getRawTrieLog) {
     this.blockQueue = blockQueue;
-    this.zkEvmWorldStateEntryPoint = zkEvmWorldStateEntryPoint;
+    this.zkWorldStateArchive = zkWorldStateArchive;
     this.getRawTrieLog = getRawTrieLog;
   }
 
@@ -91,9 +90,8 @@ public class FullSyncDownloader extends AbstractVerticle implements TrieLogObser
     if (trieLogId != null) {
       try {
         final boolean tooFarFromTheHead = isTooFarFromTheHead();
-        zkEvmWorldStateEntryPoint.importBlock(
-            Objects.requireNonNull(trieLogId), !tooFarFromTheHead);
-        if (zkEvmWorldStateEntryPoint
+        zkWorldStateArchive.importBlock(Objects.requireNonNull(trieLogId), !tooFarFromTheHead);
+        if (zkWorldStateArchive
             .getCurrentBlockHash()
             .equals(Objects.requireNonNull(trieLogId.blockHash()))) {
           if (tooFarFromTheHead) {
@@ -140,7 +138,7 @@ public class FullSyncDownloader extends AbstractVerticle implements TrieLogObser
    * @return The estimated distance.
    */
   public long getEstimateDistanceFromTheHead() {
-    return estimateHeadBlockNumber.orElse(-1L) - zkEvmWorldStateEntryPoint.getCurrentBlockNumber();
+    return estimateHeadBlockNumber.orElse(-1L) - zkWorldStateArchive.getCurrentBlockNumber();
   }
 
   /**
@@ -202,9 +200,8 @@ public class FullSyncDownloader extends AbstractVerticle implements TrieLogObser
    */
   private void findMissingTrieLogFromBesu(final long missingTrieLogCount) {
 
-    final long startBlockNumber = zkEvmWorldStateEntryPoint.getCurrentBlockNumber() + 1;
-    final long endBlockNumber =
-        zkEvmWorldStateEntryPoint.getCurrentBlockNumber() + missingTrieLogCount;
+    final long startBlockNumber = zkWorldStateArchive.getCurrentBlockNumber() + 1;
+    final long endBlockNumber = zkWorldStateArchive.getCurrentBlockNumber() + missingTrieLogCount;
     getRawTrieLog
         .getTrieLog(startBlockNumber, endBlockNumber)
         .whenComplete(

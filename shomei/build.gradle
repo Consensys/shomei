@@ -23,6 +23,7 @@ dependencies {
     implementation project(':services:rpc:common')
     implementation project(':services:rpc:client')
     implementation project(':services:rpc:server')
+    implementation project(':services:storage:api')
     implementation project(':services:storage:rocksdb')
 
     implementation 'io.vertx:vertx-core'

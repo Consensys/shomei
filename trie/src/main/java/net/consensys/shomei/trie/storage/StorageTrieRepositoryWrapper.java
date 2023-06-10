@@ -25,23 +25,22 @@ import org.apache.tuweni.bytes.Bytes;
  * This class serves as a wrapper for the StorageTrieRepositoryWrapper, providing additional
  * functionality and abstraction for interacting with the storage trie data.
  */
-public class StorageTrieRepositoryWrapper implements TrieRepository {
+public class StorageTrieRepositoryWrapper implements TrieStorage {
 
   private final Bytes accountPath;
 
-  private final TrieRepository trieStorage;
+  private final TrieStorage trieStorage;
 
-  private final TrieRepository.TrieUpdater updater;
+  private final TrieStorage.TrieUpdater updater;
 
   public StorageTrieRepositoryWrapper(
-      final long accountLeafIndex, final TrieRepository trieStorage, final TrieUpdater updater) {
+      final long accountLeafIndex, final TrieStorage trieStorage, final TrieUpdater updater) {
     this.accountPath = Bytes.wrap(Longs.toByteArray(accountLeafIndex));
     this.trieStorage = trieStorage;
     this.updater = updater;
   }
 
-  public StorageTrieRepositoryWrapper(
-      final long accountLeafIndex, final TrieRepository trieStorage) {
+  public StorageTrieRepositoryWrapper(final long accountLeafIndex, final TrieStorage trieStorage) {
     this.accountPath = Bytes.wrap(Longs.toByteArray(accountLeafIndex));
     this.trieStorage = trieStorage;
     this.updater = trieStorage.updater();

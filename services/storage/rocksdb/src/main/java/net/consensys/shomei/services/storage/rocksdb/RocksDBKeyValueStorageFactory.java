@@ -14,6 +14,10 @@
 package net.consensys.shomei.services.storage.rocksdb;
 
 import net.consensys.shomei.config.ShomeiConfig;
+import net.consensys.shomei.services.storage.api.KeyValueStorageFactory;
+import net.consensys.shomei.services.storage.api.SegmentIdentifier;
+import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
+import net.consensys.shomei.services.storage.api.StorageException;
 import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
@@ -28,10 +32,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import services.storage.KeyValueStorageFactory;
-import services.storage.SegmentIdentifier;
-import services.storage.SnappableKeyValueStorage;
-import services.storage.StorageException;
 
 /** The Rocks db key value storage factory. */
 public class RocksDBKeyValueStorageFactory implements KeyValueStorageFactory {

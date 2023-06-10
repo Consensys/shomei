@@ -20,7 +20,7 @@ import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
 
 import net.consensys.shomei.MutableZkAccount;
 import net.consensys.shomei.ZkAccount;
-import net.consensys.shomei.storage.InMemoryWorldStateRepository;
+import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 import net.consensys.shomei.trielog.AccountKey;
@@ -68,7 +68,7 @@ public class TestFixtureGenerator {
   public static ZKTrie getContractStorageTrie(final MutableZkAccount mutableZkAccount) {
     return ZKTrie.createTrie(
         new StorageTrieRepositoryWrapper(
-            mutableZkAccount.hashCode(), new InMemoryWorldStateRepository()));
+            mutableZkAccount.hashCode(), new InMemoryWorldStateStorage()));
   }
 
   public static Address createDumAddress(int value) {

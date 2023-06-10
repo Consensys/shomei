@@ -16,7 +16,7 @@ package net.consensys.shomei.rpc.server.method;
 import net.consensys.shomei.observer.TrieLogObserver;
 import net.consensys.shomei.rpc.model.TrieLogElement;
 import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
-import net.consensys.shomei.storage.WorldStateRepository;
+import net.consensys.shomei.storage.TrieLogManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,12 +36,12 @@ public class SendRawTrieLog implements JsonRpcMethod {
   private static final Logger LOG = LoggerFactory.getLogger(SendRawTrieLog.class);
   final TrieLogObserver trieLogObserver;
 
-  final WorldStateRepository worldStateStorage;
+  final TrieLogManager trieLogManager;
 
   public SendRawTrieLog(
-      final TrieLogObserver trieLogObserver, final WorldStateRepository worldStateStorage) {
+      final TrieLogObserver trieLogObserver, final TrieLogManager trieLogManager) {
     this.trieLogObserver = trieLogObserver;
-    this.worldStateStorage = worldStateStorage;
+    this.trieLogManager = trieLogManager;
   }
 
   @Override
@@ -58,11 +58,11 @@ public class SendRawTrieLog implements JsonRpcMethod {
               index -> {
                 TrieLogElement param =
                     requestContext.getRequest().getRequiredParameter(index, TrieLogElement.class);
-                worldStateStorage.saveTrieLog(
-                    param.blockNumber(), Bytes.fromHexString(param.trieLog()));
+                trieLogManager.saveTrieLog(
+                    param.getTrieLogIdentifier(), Bytes.fromHexString(param.trieLog()));
                 trieLogIdentifiers.add(param.getTrieLogIdentifier());
               });
-      worldStateStorage.commitTrieLogStorage();
+      trieLogManager.commitTrieLogStorage();
       trieLogObserver.onTrieLogsReceived(trieLogIdentifiers);
 
     } catch (RuntimeException e) {

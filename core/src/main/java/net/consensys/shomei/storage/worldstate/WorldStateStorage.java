@@ -11,22 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.shomei.storage;
+package net.consensys.shomei.storage.worldstate;
 
-import net.consensys.shomei.trie.storage.TrieRepository;
+import net.consensys.shomei.trie.storage.TrieStorage;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
 
 /**
- * The WorldStateRepository class is responsible for managing the world state of a blockchain. It
+ * The WorldStateStorage class is responsible for managing the world state of a blockchain. It
  * provides methods for accessing and modifying the state of accounts and storage in the world
  * state.
  */
-public interface WorldStateRepository extends TrieRepository {
+public interface WorldStateStorage extends TrieStorage {
 
   /** key identifier of the block hash of the current world state. */
   byte[] WORLD_BLOCK_HASH_KEY = "blockHash".getBytes(StandardCharsets.UTF_8);
@@ -59,26 +58,13 @@ public interface WorldStateRepository extends TrieRepository {
   Optional<Hash> getWorldStateRootHash();
 
   /**
-   * Returns the trie log of the given block number.
+   * Returns a non-persistable snapshot of this worldstate storage.
    *
-   * @param blockNumber the block number.
-   * @return the trie log of the given block number.
+   * @return worldstate snapshot.
    */
-  Optional<Bytes> getTrieLog(final long blockNumber);
+  WorldStateStorage snapshot();
 
-  /**
-   * Returns the trace of the given block number.
-   *
-   * @param blockNumber the block number.
-   * @return the trace of the given block number.
-   */
-  Optional<Bytes> getTrace(final long blockNumber);
-
-  WorldStateRepository saveTrieLog(final long blockNumber, final Bytes rawTrieLogLayer);
-
-  void commitTrieLogStorage();
-
-  default void close() {
+  default void close() throws Exception {
     // no-op
   }
 
@@ -90,7 +76,5 @@ public interface WorldStateRepository extends TrieRepository {
     void setBlockNumber(final long blockNumber);
 
     void saveZkStateRootHash(long blockNumber, Hash stateRoot);
-
-    void saveTrace(final long blockNumber, final Bytes rawTrace);
   }
 }

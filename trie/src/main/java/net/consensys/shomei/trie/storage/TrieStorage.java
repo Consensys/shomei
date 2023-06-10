@@ -21,10 +21,10 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 
 /**
- * The TrieRepository class is responsible for managing the storage and retrieval of trie data. It
+ * The TrieStorage class is responsible for managing the storage and retrieval of trie data. It
  * provides an interface for interacting with the underlying trie data structure.
  */
-public interface TrieRepository {
+public interface TrieStorage {
 
   /**
    * Returns the leaf value for the given key.

@@ -13,11 +13,32 @@
 
 package net.consensys.shomei;
 
+// import static net.consensys.shomei.util.TestFixtureGenerator.getContractStorageTrie;
+// import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeUInt256;
+// import static org.assertj.core.api.Assertions.assertThat;
+//
+// import org.hyperledger.besu.datatypes.Hash;
+// import org.hyperledger.besu.datatypes.StorageSlotKey;
+// import org.hyperledger.besu.ethereum.rlp.RLP;
+// import org.hyperledger.besu.ethereum.worldstate.StateTrieAccountValue;
+//
+// import net.consensys.shomei.exception.MissingTrieLogException;
+// import net.consensys.shomei.storage.ZkWorldStateArchive;
+// import net.consensys.shomei.trie.ZKTrie;
+// import net.consensys.shomei.trielog.TrieLogLayer;
+// import net.consensys.shomei.trielog.TrieLogLayerConverter;
+// import net.consensys.shomei.util.TestFixtureGenerator;
+// import net.consensys.shomei.util.bytes.MimcSafeBytes;
+// import org.apache.tuweni.bytes.Bytes;
+// import org.apache.tuweni.bytes.Bytes32;
+// import org.apache.tuweni.units.bigints.UInt256;
+// import org.junit.Test;
+
 @SuppressWarnings("unused")
 public class TrieLogShippingTests {
-
+  /*
   // TODO activate when ZkTrieLogFactoryImpl will be available
-  /*@Test
+  @Test
   public void testTrielogShippingWithNewContractUpdate() throws MissingTrieLogException {
 
     ZKTrie accountStateTrieOne =
@@ -97,7 +118,7 @@ public class TrieLogShippingTests {
 
     // init the worldstate entrypoint with empty worldstate
     InMemoryWorldStateStorage storage = new InMemoryWorldStateStorage();
-    ZkEvmWorldStateEntryPoint evmWorldStateEntryPoint = new ZkEvmWorldStateEntryPoint(storage);
+    ZkWorldStateArchive evmWorldStateEntryPoint = new ZkWorldStateArchive(storage);
     assertThat(evmWorldStateEntryPoint.getCurrentRootHash()).isEqualTo(ZKTrie.EMPTY_TRIE_ROOT);
 
     // decode trielog from Besu
@@ -117,5 +138,6 @@ public class TrieLogShippingTests {
     // move head with the second trielog
     evmWorldStateEntryPoint.applyTrieLog(1, decodedLayer2);
     assertThat(evmWorldStateEntryPoint.getCurrentRootHash()).isEqualTo(topRootHashAfterUpdate);
-  }*/
+  }
+  */
 }

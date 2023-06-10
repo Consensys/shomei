@@ -20,7 +20,7 @@ import net.consensys.shomei.rpc.server.error.JsonInvalidVersionMessage;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEVMStateMerkleProofV0Response;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEvmStateV0Parameter;
-import net.consensys.shomei.storage.WorldStateRepository;
+import net.consensys.shomei.storage.TraceManager;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.proof.Trace;
 
@@ -38,10 +38,10 @@ import org.hyperledger.besu.ethereum.rlp.RLP;
 
 public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
-  final WorldStateRepository worldStateStorage;
+  final TraceManager traceManager;
 
-  public RollupGetZkEVMStateMerkleProofV0(final WorldStateRepository worldStateStorage) {
-    this.worldStateStorage = worldStateStorage;
+  public RollupGetZkEVMStateMerkleProofV0(final TraceManager traceManager) {
+    this.traceManager = traceManager;
   }
 
   @Override
@@ -60,9 +60,10 @@ public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
           "UNSUPPORTED_VERSION",
           new JsonInvalidVersionMessage(param.getZkStateManagerVersion(), IMPL_VERSION));
     }
+
     final List<List<Trace>> traces = new ArrayList<>();
     for (long i = param.getStartBlockNumber(); i <= param.getEndBlockNumber(); i++) {
-      Optional<Bytes> traceRaw = worldStateStorage.getTrace(i);
+      Optional<Bytes> traceRaw = traceManager.getTrace(i);
       traceRaw.ifPresent(bytes -> traces.add(Trace.deserialize(RLP.input(bytes))));
       if (traceRaw.isEmpty()) {
         return new ShomeiJsonRpcErrorResponse(
@@ -75,7 +76,7 @@ public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
     return new JsonRpcSuccessResponse(
         requestContext.getRequest().getId(),
         new RollupGetZkEVMStateMerkleProofV0Response(
-            worldStateStorage
+            traceManager
                 .getZkStateRootHash(param.getStartBlockNumber() - 1)
                 .orElse(ZKTrie.DEFAULT_TRIE_ROOT)
                 .toHexString(),

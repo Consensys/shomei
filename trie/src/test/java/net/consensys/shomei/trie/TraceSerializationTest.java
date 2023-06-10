@@ -24,7 +24,7 @@ import net.consensys.shomei.trie.proof.ReadTrace;
 import net.consensys.shomei.trie.proof.ReadZeroTrace;
 import net.consensys.shomei.trie.proof.Trace;
 import net.consensys.shomei.trie.proof.UpdateTrace;
-import net.consensys.shomei.trie.storage.InMemoryRepository;
+import net.consensys.shomei.trie.storage.InMemoryStorage;
 import net.consensys.shomei.util.bytes.MimcSafeBytes;
 import net.consensys.zkevm.HashProvider;
 
@@ -50,7 +50,7 @@ public class TraceSerializationTest {
 
   @Test
   public void testEncodeAndDecodeInsertionTrace() throws JsonProcessingException {
-    final InMemoryRepository storage = new InMemoryRepository();
+    final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
@@ -70,7 +70,7 @@ public class TraceSerializationTest {
   @Test
   public void testEncodeAndDecodeUpdateTrace() throws JsonProcessingException {
 
-    final InMemoryRepository storage = new InMemoryRepository();
+    final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
@@ -92,7 +92,7 @@ public class TraceSerializationTest {
 
   @Test
   public void testEncodeAndDecodeDeletionTrace() throws JsonProcessingException {
-    final InMemoryRepository storage = new InMemoryRepository();
+    final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
@@ -114,7 +114,7 @@ public class TraceSerializationTest {
   @Test
   public void testEncodeAndDecodeReadTrace() throws JsonProcessingException {
 
-    final InMemoryRepository storage = new InMemoryRepository();
+    final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
@@ -147,7 +147,7 @@ public class TraceSerializationTest {
   @Test
   public void testEncodeAndDecodeListOfTraces() throws JsonProcessingException {
 
-    final InMemoryRepository storage = new InMemoryRepository();
+    final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));

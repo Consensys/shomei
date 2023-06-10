@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package services.storage;
+package net.consensys.shomei.services.storage.api;
 
 import net.consensys.shomei.config.ShomeiConfig;
 

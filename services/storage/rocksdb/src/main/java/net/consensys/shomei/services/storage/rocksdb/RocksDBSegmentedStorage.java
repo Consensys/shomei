@@ -13,6 +13,12 @@
 
 package net.consensys.shomei.services.storage.rocksdb;
 
+import net.consensys.shomei.services.storage.api.BidirectionalIterator;
+import net.consensys.shomei.services.storage.api.KeyValueStorage;
+import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
+import net.consensys.shomei.services.storage.api.SnapshotKeyValueStorage;
+import net.consensys.shomei.services.storage.api.StorageException;
 import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
 
@@ -49,11 +55,6 @@ import org.rocksdb.TransactionDBOptions;
 import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import services.storage.BidirectionalIterator;
-import services.storage.KeyValueStorage;
-import services.storage.KeyValueStorageTransaction;
-import services.storage.SnappableKeyValueStorage;
-import services.storage.StorageException;
 
 /** The RocksDb columnar key value storage. */
 public class RocksDBSegmentedStorage implements AutoCloseable {
@@ -264,7 +265,7 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
       return new RocksDBTransaction(db, getHandle());
     }
 
-    public KeyValueStorage takeSnapshot() {
+    public SnapshotKeyValueStorage takeSnapshot() {
       throwIfClosed();
       return new RocksDBKeyValueSnapshot(this);
     }

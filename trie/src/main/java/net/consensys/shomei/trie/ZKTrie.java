@@ -28,9 +28,9 @@ import net.consensys.shomei.trie.proof.builder.InsertionTraceBuilder;
 import net.consensys.shomei.trie.proof.builder.ReadTraceBuilder;
 import net.consensys.shomei.trie.proof.builder.ReadZeroTraceBuilder;
 import net.consensys.shomei.trie.proof.builder.UpdateTraceBuilder;
-import net.consensys.shomei.trie.storage.InMemoryRepository;
-import net.consensys.shomei.trie.storage.TrieRepository;
-import net.consensys.shomei.trie.storage.TrieRepository.Range;
+import net.consensys.shomei.trie.storage.InMemoryStorage;
+import net.consensys.shomei.trie.storage.TrieStorage;
+import net.consensys.shomei.trie.storage.TrieStorage.Range;
 import net.consensys.shomei.util.bytes.MimcSafeBytes;
 import net.consensys.zkevm.HashProvider;
 
@@ -54,17 +54,17 @@ public class ZKTrie {
   public static final ZKTrie EMPTY_TRIE = generateEmptyTrie();
 
   public static final Hash DEFAULT_TRIE_ROOT =
-      Hash.wrap(createTrie(new InMemoryRepository()).getTopRootHash());
+      Hash.wrap(createTrie(new InMemoryStorage()).getTopRootHash());
 
   private static final int ZK_TRIE_DEPTH = 40;
 
   private final PathResolver pathResolver;
   private final StoredSparseMerkleTrie state;
-  private final TrieRepository worldStateStorage;
+  private final TrieStorage worldStateStorage;
 
-  private final TrieRepository.TrieUpdater updater;
+  private final TrieStorage.TrieUpdater updater;
 
-  public TrieRepository getWorldStateStorage() {
+  public TrieStorage getWorldStateStorage() {
     return worldStateStorage;
   }
 
@@ -75,7 +75,7 @@ public class ZKTrie {
    * @param worldStateStorage the storage used to store the trie
    * @return the created ZK trie
    */
-  private ZKTrie(final Bytes32 rootHash, final TrieRepository worldStateStorage) {
+  private ZKTrie(final Bytes32 rootHash, final TrieStorage worldStateStorage) {
     this.worldStateStorage = worldStateStorage;
     this.updater = worldStateStorage.updater();
     this.state = new StoredSparseMerkleTrie(worldStateStorage::getTrieNode, rootHash, b -> b);
@@ -83,8 +83,8 @@ public class ZKTrie {
   }
 
   public static ZKTrie generateEmptyTrie() {
-    final InMemoryRepository inMemoryStorage =
-        new InMemoryRepository() {
+    final InMemoryStorage inMemoryStorage =
+        new InMemoryStorage() {
           @Override
           public Optional<Bytes> getTrieNode(final Bytes location, final Bytes nodeHash) {
             return Optional.ofNullable(super.getTrieNodeStorage().get(nodeHash));
@@ -105,13 +105,13 @@ public class ZKTrie {
     return new ZKTrie(initWorldState(inMemoryStorage::putTrieNode).getHash(), inMemoryStorage);
   }
 
-  public static ZKTrie createTrie(final TrieRepository worldStateStorage) {
+  public static ZKTrie createTrie(final TrieStorage worldStateStorage) {
     final ZKTrie trie = new ZKTrie(EMPTY_TRIE.getTopRootHash(), worldStateStorage);
     trie.setHeadAndTail();
     return trie;
   }
 
-  public static ZKTrie loadTrie(final Bytes32 rootHash, final TrieRepository worldStateStorage) {
+  public static ZKTrie loadTrie(final Bytes32 rootHash, final TrieStorage worldStateStorage) {
     return new ZKTrie(rootHash, worldStateStorage);
   }
 

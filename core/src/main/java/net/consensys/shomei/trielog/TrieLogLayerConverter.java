@@ -13,12 +13,10 @@
 
 package net.consensys.shomei.trielog;
 
-import static net.consensys.shomei.trielog.TrieLogLayer.defaultOrValue;
-import static net.consensys.shomei.trielog.TrieLogLayer.nullOrValue;
 import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
 
 import net.consensys.shomei.ZkAccount;
-import net.consensys.shomei.storage.WorldStateRepository;
+import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 import net.consensys.zkevm.HashProvider;
@@ -42,9 +40,9 @@ public class TrieLogLayerConverter {
 
   private static final Logger LOG = LoggerFactory.getLogger(TrieLogLayerConverter.class);
 
-  final WorldStateRepository worldStateStorage;
+  final WorldStateStorage worldStateStorage;
 
-  public TrieLogLayerConverter(final WorldStateRepository worldStateStorage) {
+  public TrieLogLayerConverter(final WorldStateStorage worldStateStorage) {
     this.worldStateStorage = worldStateStorage;
   }
 
@@ -82,10 +80,10 @@ public class TrieLogLayerConverter {
         final PriorAccount priorAccount = preparePriorTrieLogAccount(accountKey, input);
         maybeAccountIndex = priorAccount.index;
         final ZkAccount newAccountValue =
-            nullOrValue(
+            TrieLogLayer.nullOrValue(
                 input,
                 rlpInput -> prepareNewTrieLogAccount(accountKey, newCode, priorAccount, rlpInput));
-        final boolean isCleared = defaultOrValue(input, 0, RLPInput::readInt) == 1;
+        final boolean isCleared = TrieLogLayer.defaultOrValue(input, 0, RLPInput::readInt) == 1;
         input.leaveList();
         trieLogLayer.addAccountChange(accountKey, priorAccount.account, newAccountValue, isCleared);
       }
@@ -97,14 +95,15 @@ public class TrieLogLayerConverter {
         while (!input.isEndOfCurrentList()) {
           input.enterList();
           final Bytes32 keccakSlotHash = input.readBytes32();
-          final UInt256 oldValueExpected = nullOrValue(input, RLPInput::readUInt256Scalar);
-          final UInt256 newValue = nullOrValue(input, RLPInput::readUInt256Scalar);
-          final boolean isCleared = defaultOrValue(input, 0, RLPInput::readInt) == 1;
+          final UInt256 oldValueExpected =
+              TrieLogLayer.nullOrValue(input, RLPInput::readUInt256Scalar);
+          final UInt256 newValue = TrieLogLayer.nullOrValue(input, RLPInput::readUInt256Scalar);
+          final boolean isCleared = TrieLogLayer.defaultOrValue(input, 0, RLPInput::readInt) == 1;
 
           if (!input.isEndOfCurrentList()) {
             final StorageSlotKey storageSlotKey =
                 new StorageSlotKey(
-                    defaultOrValue(input, UInt256.ZERO, RLPInput::readUInt256Scalar));
+                    TrieLogLayer.defaultOrValue(input, UInt256.ZERO, RLPInput::readUInt256Scalar));
             final UInt256 oldValueFound =
                 maybeAccountIndex
                     .flatMap(

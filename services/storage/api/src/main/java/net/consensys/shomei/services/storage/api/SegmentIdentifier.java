@@ -11,15 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package services.storage;
+package net.consensys.shomei.services.storage.api;
 
-import java.util.Iterator;
+/**
+ * A namespace identifier for the storage instance segment, a grouping of data that should be kept
+ * isolated from the data of other segments.
+ */
+public interface SegmentIdentifier {
 
-public interface BidirectionalIterator<T> extends Iterator<T>, AutoCloseable {
+  /**
+   * Name for the segment consistent throughout the lifetime of the segment.
+   *
+   * @return unique name of the segment.
+   */
+  String getName();
 
-  T current();
-
-  boolean hasPrevious();
-
-  T previous();
+  /**
+   * Identifier for the segment consistent throughout the lifetime of the segment.
+   *
+   * @return unique id of the segment.
+   */
+  byte[] getId();
 }

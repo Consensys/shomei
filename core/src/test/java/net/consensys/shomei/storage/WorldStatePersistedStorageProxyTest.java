@@ -13,8 +13,9 @@
 
 package net.consensys.shomei.storage;
 
-import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentedStorage;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
+import net.consensys.shomei.storage.worldstate.PersistedWorldStateStorage;
+import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 
 import org.junit.After;
 import org.junit.Before;
@@ -24,16 +25,19 @@ import org.junit.rules.TemporaryFolder;
 public class WorldStatePersistedStorageProxyTest extends WorldStateWrapperTestBase {
 
   @Rule public final TemporaryFolder tempData = new TemporaryFolder();
-  protected PersistedWorldStateRepository storage;
+  protected PersistedWorldStateStorage storage;
 
   @Before
   public void setup() {
+    var provider =
+        new RocksDBStorageProvider(
+            new RocksDBConfigurationBuilder().databaseDir(tempData.getRoot().toPath()).build());
+
     storage =
-        new PersistedWorldStateRepository(
-            new RocksDBSegmentedStorage(
-                new RocksDBConfigurationBuilder()
-                    .databaseDir(tempData.getRoot().toPath())
-                    .build()));
+        new PersistedWorldStateStorage(
+            provider.getFlatLeafStorage(),
+            provider.getTrieNodeStorage(),
+            provider.getTraceManager());
   }
 
   @After
@@ -43,7 +47,7 @@ public class WorldStatePersistedStorageProxyTest extends WorldStateWrapperTestBa
   }
 
   @Override
-  WorldStateRepository getWorldStateStorage() {
+  WorldStateStorage getWorldStateStorage() {
     return storage;
   }
 }

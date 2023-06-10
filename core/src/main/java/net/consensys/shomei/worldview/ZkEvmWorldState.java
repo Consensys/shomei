@@ -19,13 +19,13 @@ import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeUInt256;
 import net.consensys.shomei.MutableZkAccount;
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.ZkValue;
-import net.consensys.shomei.storage.WorldStateRepository;
+import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.proof.Trace;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
-import net.consensys.shomei.trie.storage.TrieRepository;
-import net.consensys.shomei.trie.storage.TrieRepository.TrieUpdater;
+import net.consensys.shomei.trie.storage.TrieStorage;
+import net.consensys.shomei.trie.storage.TrieStorage.TrieUpdater;
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.trielog.StorageSlotKey;
 
@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -41,14 +42,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * ZKEvmWorldState is a mutable world state that is backed by a ZKTrie. It is responsible for
+ * ZkEvmWorldState is a mutable world state that is backed by a ZKTrie. It is responsible for
  * tracking changes to the world state and persisting them to the storage.
  *
  * <p>It is also responsible for tracking the current root hash of the world state.
  */
-public class ZKEvmWorldState {
+public class ZkEvmWorldState {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ZKEvmWorldState.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ZkEvmWorldState.class);
 
   private final ZkEvmWorldStateUpdateAccumulator accumulator;
 
@@ -57,14 +58,18 @@ public class ZKEvmWorldState {
   private long blockNumber;
   private Hash blockHash;
 
-  private final WorldStateRepository zkEvmWorldStateStorage;
+  private final WorldStateStorage zkEvmWorldStateStorage;
+  final BiConsumer<Long, List<Trace>> traceWriter;
 
-  public ZKEvmWorldState(final WorldStateRepository zkEvmWorldStateStorage) {
+  public ZkEvmWorldState(
+      final WorldStateStorage zkEvmWorldStateStorage,
+      final BiConsumer<Long, List<Trace>> traceWriter) {
     this.stateRoot = zkEvmWorldStateStorage.getWorldStateRootHash().orElse(DEFAULT_TRIE_ROOT);
     this.blockNumber = zkEvmWorldStateStorage.getWorldStateBlockNumber().orElse(-1L);
     this.blockHash = zkEvmWorldStateStorage.getWorldStateBlockHash().orElse(Hash.EMPTY);
     this.accumulator = new ZkEvmWorldStateUpdateAccumulator();
     this.zkEvmWorldStateStorage = zkEvmWorldStateStorage;
+    this.traceWriter = traceWriter;
   }
 
   public void commit(final long blockNumber, final Hash blockHash, final boolean generateTrace) {
@@ -74,8 +79,8 @@ public class ZKEvmWorldState {
         .addArgument(blockHash)
         .log();
     long start = System.currentTimeMillis();
-    final WorldStateRepository.WorldStateUpdater updater =
-        (WorldStateRepository.WorldStateUpdater) zkEvmWorldStateStorage.updater();
+    final WorldStateStorage.WorldStateUpdater updater =
+        (WorldStateStorage.WorldStateUpdater) zkEvmWorldStateStorage.updater();
 
     final State state = generateNewState(updater, generateTrace);
 
@@ -88,7 +93,7 @@ public class ZKEvmWorldState {
     updater.saveZkStateRootHash(blockNumber, state.stateRoot);
 
     if (generateTrace) {
-      updater.saveTrace(blockNumber, Trace.serialize(state.traces));
+      traceWriter.accept(blockNumber, state.traces);
       if (!state.traces.isEmpty()) {
         LOG.atInfo()
             .setMessage("Generated trace for block {}:{} in {} ms")
@@ -324,7 +329,7 @@ public class ZKEvmWorldState {
     return accumulator;
   }
 
-  private ZKTrie loadAccountTrie(final TrieRepository storage) {
+  private ZKTrie loadAccountTrie(final TrieStorage storage) {
     if (stateRoot.equals(DEFAULT_TRIE_ROOT)) {
       return ZKTrie.createTrie(storage);
     } else {
@@ -333,9 +338,7 @@ public class ZKEvmWorldState {
   }
 
   private ZKTrie loadStorageTrie(
-      final ZkValue<ZkAccount> zkAccount,
-      final boolean forceNewTrie,
-      final TrieRepository storage) {
+      final ZkValue<ZkAccount> zkAccount, final boolean forceNewTrie, final TrieStorage storage) {
     if (zkAccount.getPrior() == null // new contract
         || zkAccount
             .getPrior()

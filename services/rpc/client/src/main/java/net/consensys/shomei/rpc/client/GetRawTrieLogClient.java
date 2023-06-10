@@ -17,7 +17,7 @@ import net.consensys.shomei.observer.TrieLogObserver;
 import net.consensys.shomei.rpc.client.model.GetRawTrieLogRpcRequest;
 import net.consensys.shomei.rpc.client.model.GetRawTrieLogRpcResponse;
 import net.consensys.shomei.rpc.model.TrieLogElement;
-import net.consensys.shomei.storage.WorldStateRepository;
+import net.consensys.shomei.storage.TrieLogManager;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -54,16 +54,14 @@ public class GetRawTrieLogClient {
   private final String besuHttpHost;
   private final int besuHttpPort;
 
-  private final WorldStateRepository worldStateRepository;
+  private final TrieLogManager trieLogManager;
 
   public GetRawTrieLogClient(
-      final WorldStateRepository worldStateRepository,
-      final String besuHttpHost,
-      final int besuHttpPort) {
+      final TrieLogManager trieLogManager, final String besuHttpHost, final int besuHttpPort) {
     final Vertx vertx = Vertx.vertx();
     final WebClientOptions options = new WebClientOptions();
     this.webClient = WebClient.create(vertx, options);
-    this.worldStateRepository = worldStateRepository;
+    this.trieLogManager = trieLogManager;
     this.besuHttpHost = besuHttpHost;
     this.besuHttpPort = besuHttpPort;
   }
@@ -96,12 +94,12 @@ public class GetRawTrieLogClient {
                   final List<TrieLogObserver.TrieLogIdentifier> trieLogIdentifiers =
                       new ArrayList<>();
                   for (TrieLogElement trieLogElement : responseBody.getResult()) {
-                    worldStateRepository.saveTrieLog(
-                        trieLogElement.blockNumber(),
+                    trieLogManager.saveTrieLog(
+                        trieLogElement.getTrieLogIdentifier(),
                         Bytes.fromHexString(trieLogElement.trieLog()));
                     trieLogIdentifiers.add(trieLogElement.getTrieLogIdentifier());
                   }
-                  worldStateRepository.commitTrieLogStorage();
+                  trieLogManager.commitTrieLogStorage();
                   completableFuture.complete(trieLogIdentifiers);
 
                 } catch (RuntimeException e) {

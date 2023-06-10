@@ -11,25 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package services.storage;
+package net.consensys.shomei.storage;
 
-/**
- * A namespace identifier for the storage instance segment, a grouping of data that should be kept
- * isolated from the data of other segments.
- */
-public interface SegmentIdentifier {
+import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 
-  /**
-   * Name for the segment consistent throughout the lifetime of the segment.
-   *
-   * @return unique name of the segment.
-   */
-  String getName();
+public interface StorageProvider {
 
-  /**
-   * Identifier for the segment consistent throughout the lifetime of the segment.
-   *
-   * @return unique id of the segment.
-   */
-  byte[] getId();
+  WorldStateStorage getWorldStateStorage();
+
+  TraceManager getTraceManager();
+
+  TrieLogManager getTrieLogManager();
 }

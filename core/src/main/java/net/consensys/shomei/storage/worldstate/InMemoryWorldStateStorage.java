@@ -11,40 +11,35 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.shomei.storage;
+package net.consensys.shomei.storage.worldstate;
 
-import net.consensys.shomei.trie.storage.InMemoryRepository;
+import net.consensys.shomei.trie.storage.InMemoryStorage;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
 
-/** In memory implementation of {@link WorldStateRepository}. */
-public class InMemoryWorldStateRepository extends InMemoryRepository
-    implements WorldStateRepository, WorldStateRepository.WorldStateUpdater {
+/** In memory implementation of {@link WorldStateStorage}. */
+public class InMemoryWorldStateStorage extends InMemoryStorage
+    implements WorldStateStorage, WorldStateStorage.WorldStateUpdater {
 
   private Optional<Long> currentBlockNumber = Optional.empty();
 
   private Optional<Hash> currentBlockHash = Optional.empty();
 
-  private final Map<Long, Bytes> trieLogStorage = new ConcurrentHashMap<>();
-
   private final Map<Long, Hash> zkStateRootHash = new ConcurrentHashMap<>();
 
-  private final Map<Long, Bytes> traces = new HashMap<>();
+  public InMemoryWorldStateStorage() {}
 
-  @Override
-  public Optional<Bytes> getTrieLog(final long blockNumber) {
-    return Optional.ofNullable(trieLogStorage.get(blockNumber));
-  }
-
-  @Override
-  public Optional<Bytes> getTrace(final long blockNumber) {
-    return Optional.ofNullable(traces.get(blockNumber));
+  private InMemoryWorldStateStorage(
+      Optional<Long> currentBlockNumber,
+      Optional<Hash> currentBlockHash,
+      Map<Long, Hash> zkStateRootHash) {
+    this.currentBlockHash = currentBlockHash;
+    this.currentBlockNumber = currentBlockNumber;
+    this.zkStateRootHash.putAll(zkStateRootHash);
   }
 
   @Override
@@ -55,6 +50,16 @@ public class InMemoryWorldStateRepository extends InMemoryRepository
   @Override
   public Optional<Hash> getWorldStateRootHash() {
     return currentBlockNumber.flatMap(this::getZkStateRootHash);
+  }
+
+  @Override
+  public WorldStateStorage snapshot() {
+    return new InMemoryWorldStateStorage(currentBlockNumber, currentBlockHash, zkStateRootHash);
+  }
+
+  @Override
+  public void close() {
+    // no-op;
   }
 
   @Override
@@ -78,22 +83,7 @@ public class InMemoryWorldStateRepository extends InMemoryRepository
   }
 
   @Override
-  public InMemoryWorldStateRepository saveTrieLog(
-      final long blockNumber, final Bytes rawTrieLogLayer) {
-    trieLogStorage.put(blockNumber, rawTrieLogLayer);
-    return this;
-  }
-
-  @Override
-  public void commitTrieLogStorage() {}
-
-  @Override
   public void saveZkStateRootHash(final long blockNumber, final Hash stateRoot) {
     zkStateRootHash.put(blockNumber, stateRoot);
-  }
-
-  @Override
-  public void saveTrace(final long blockNumber, final Bytes rawTrace) {
-    traces.put(blockNumber, rawTrace);
   }
 }

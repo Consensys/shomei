@@ -13,6 +13,11 @@
 
 package net.consensys.shomei.services.storage.rocksdb;
 
+import net.consensys.shomei.services.storage.api.BidirectionalIterator;
+import net.consensys.shomei.services.storage.api.KeyValueStorage.KeyValuePair;
+import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.StorageException;
+
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
@@ -28,10 +33,6 @@ import org.rocksdb.Transaction;
 import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import services.storage.BidirectionalIterator;
-import services.storage.KeyValueStorage.KeyValuePair;
-import services.storage.KeyValueStorageTransaction;
-import services.storage.StorageException;
 
 /** The Rocks db snapshot transaction. */
 public class RocksDBTransaction implements KeyValueStorageTransaction, AutoCloseable {

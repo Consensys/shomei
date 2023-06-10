@@ -15,6 +15,8 @@ package net.consensys.shomei.services.storage.rocksdb;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import net.consensys.shomei.services.storage.api.SegmentIdentifier;
+
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
@@ -23,7 +25,6 @@ import java.util.stream.Collectors;
 
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
-import services.storage.SegmentIdentifier;
 
 /** The RocksDb segment identifier. */
 public class RocksDBSegmentIdentifier implements SegmentIdentifier {

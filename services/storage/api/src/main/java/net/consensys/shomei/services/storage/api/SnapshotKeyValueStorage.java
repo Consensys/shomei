@@ -11,15 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.shomei.storage;
+package net.consensys.shomei.services.storage.api;
 
-import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
-import net.consensys.shomei.storage.worldstate.WorldStateStorage;
-
-public class WorldStateInMemoryStorageProxyTest extends WorldStateWrapperTestBase {
-
-  @Override
-  WorldStateStorage getWorldStateStorage() {
-    return new InMemoryWorldStateStorage();
-  }
-}
+public interface SnapshotKeyValueStorage extends KeyValueStorage, AutoCloseable {}

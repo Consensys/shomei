@@ -15,6 +15,7 @@ package net.consensys.shomei.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
@@ -25,11 +26,11 @@ import org.junit.Test;
 
 public abstract class WorldStateWrapperTestBase {
 
-  abstract WorldStateRepository getWorldStateStorage();
+  abstract WorldStateStorage getWorldStateStorage();
 
   @Test
   public void wrapCorrectlyPutKeyIndex() {
-    final WorldStateRepository worldStateStorage = getWorldStateStorage();
+    final WorldStateStorage worldStateStorage = getWorldStateStorage();
     final FlattenedLeaf flatLeafValue = new FlattenedLeaf(1L, Bytes.EMPTY);
     final AccountTrieRepositoryWrapper wrapper =
         new AccountTrieRepositoryWrapper(worldStateStorage, worldStateStorage.updater());
@@ -41,7 +42,7 @@ public abstract class WorldStateWrapperTestBase {
 
   @Test
   public void wrapCorrectlyPutKeyIndexWithPrefix() {
-    final WorldStateRepository worldStateStorage = getWorldStateStorage();
+    final WorldStateStorage worldStateStorage = getWorldStateStorage();
     final StorageTrieRepositoryWrapper wrapper =
         new StorageTrieRepositoryWrapper(1L, worldStateStorage, worldStateStorage.updater());
     final FlattenedLeaf flatLeafValue = new FlattenedLeaf(1L, Bytes.EMPTY);
@@ -56,7 +57,7 @@ public abstract class WorldStateWrapperTestBase {
 
   @Test
   public void wrapCorrectlyRemoveKeyIndex() {
-    final WorldStateRepository worldStateStorage = getWorldStateStorage();
+    final WorldStateStorage worldStateStorage = getWorldStateStorage();
     final AccountTrieRepositoryWrapper wrapper =
         new AccountTrieRepositoryWrapper(worldStateStorage, worldStateStorage.updater());
     final FlattenedLeaf flatLeafValue = new FlattenedLeaf(1L, Bytes.EMPTY);
@@ -70,7 +71,7 @@ public abstract class WorldStateWrapperTestBase {
 
   @Test
   public void wrapCorrectlyRemoveKeyIndexWithPrefix() {
-    final WorldStateRepository worldStateStorage = getWorldStateStorage();
+    final WorldStateStorage worldStateStorage = getWorldStateStorage();
     final StorageTrieRepositoryWrapper wrapper =
         new StorageTrieRepositoryWrapper(1L, worldStateStorage, worldStateStorage.updater());
     final FlattenedLeaf flatLeafValue = new FlattenedLeaf(1L, Bytes.EMPTY);
@@ -85,7 +86,7 @@ public abstract class WorldStateWrapperTestBase {
 
   @Test
   public void wrapCorrectlyPutTrieNode() {
-    final WorldStateRepository worldStateStorage = getWorldStateStorage();
+    final WorldStateStorage worldStateStorage = getWorldStateStorage();
     final AccountTrieRepositoryWrapper wrapper =
         new AccountTrieRepositoryWrapper(worldStateStorage, worldStateStorage.updater());
     wrapper.updater().putTrieNode(Bytes.of(1), Bytes.of(1), Bytes.of(3));
@@ -94,7 +95,7 @@ public abstract class WorldStateWrapperTestBase {
 
   @Test
   public void wrapCorrectlyPutTrieNodeWithPrefix() {
-    final WorldStateRepository worldStateStorage = getWorldStateStorage();
+    final WorldStateStorage worldStateStorage = getWorldStateStorage();
     final StorageTrieRepositoryWrapper wrapper =
         new StorageTrieRepositoryWrapper(1L, worldStateStorage, worldStateStorage.updater());
     wrapper.updater().putTrieNode(Bytes.of(1), Bytes.of(1), Bytes.of(3));
