@@ -16,7 +16,7 @@ package net.consensys.shomei.storage;
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 
-public class WorldStateInMemoryStorageProxyTest extends WorldStateWrapperTestBase {
+public class WorldStateInMemoryStorageWrapperTest extends WorldStateWrapperTestBase {
 
   @Override
   WorldStateStorage getWorldStateStorage() {

@@ -22,7 +22,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
-public class WorldStatePersistedStorageProxyTest extends WorldStateWrapperTestBase {
+public class WorldStatePersistedStorageWrapperTest extends WorldStateWrapperTestBase {
 
   @Rule public final TemporaryFolder tempData = new TemporaryFolder();
   protected PersistedWorldStateStorage storage;

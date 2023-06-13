@@ -23,12 +23,12 @@ dependencyManagement {
     dependency 'com.google.guava:guava:31.1-jre'
 
     // Hyperledger Besu
-    dependencySet(group: 'org.hyperledger.besu', version: '23.4.1-SNAPSHOT') {
+    dependencySet(group: 'org.hyperledger.besu', version: '23.4.1') {
       entry 'besu-datatypes'
       entry 'evm'
       entry 'plugin-api'
     }
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '23.4.1-SNAPSHOT') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '23.4.1') {
       entry 'api'
       entry 'util'
       entry 'algorithms'
@@ -42,6 +42,11 @@ dependencyManagement {
       entry 'pipeline'
       entry 'tasks'
     }
+
+    // besu-shomei plugin:
+    dependency 'ConsenSys:besu-shomei-plugin:0.2.1'
+
+
     dependency 'org.hyperledger.besu:mimc:0.7.2-SNAPSHOT'
 
     // Jackson

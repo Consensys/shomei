@@ -39,5 +39,10 @@ public interface TrieLogObserver {
     public int compareTo(TrieLogIdentifier other) {
       return this.blockNumber.compareTo(other.blockNumber);
     }
+
+    public Object toLogString() {
+      return String.format(
+          "TrieLogIdentifier{blockNumber=%s, blockHash=%s}", blockNumber, blockHash);
+    }
   }
 }

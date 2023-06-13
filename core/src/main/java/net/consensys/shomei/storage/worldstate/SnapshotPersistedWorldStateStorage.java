@@ -85,7 +85,6 @@ public class SnapshotPersistedWorldStateStorage extends PersistedWorldStateStora
 
   @Override
   public void close() {
-    // TODO Auto-generated method stub
     try {
       flatLeafStorage.close();
     } catch (IOException e) {

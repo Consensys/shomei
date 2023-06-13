@@ -34,6 +34,8 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
+    testImplementation 'ConsenSys:besu-shomei-plugin'
+
     testImplementation project(':util')
     testImplementation 'junit:junit'
     testImplementation 'org.assertj:assertj-core'

@@ -64,26 +64,29 @@ public class TrieLogLayer {
     return blockHash;
   }
 
-  public void setBlockHash(final Hash blockHash) {
+  public TrieLogLayer setBlockHash(final Hash blockHash) {
     checkState(!frozen, "Layer is Frozen");
     this.blockHash = blockHash;
+    return this;
   }
 
   public long getBlockNumber() {
     return blockNumber;
   }
 
-  public void setBlockNumber(final long blockNumber) {
+  public TrieLogLayer setBlockNumber(final long blockNumber) {
     this.blockNumber = blockNumber;
+    return this;
   }
 
-  public void addAccountChange(
+  public TrieLogLayer addAccountChange(
       final AccountKey accountKey,
       final ZkAccount oldValue,
       final ZkAccount newValue,
       final boolean isCleared) {
     checkState(!frozen, "Layer is Frozen");
     accounts.put(accountKey, new ZkValue<>(oldValue, newValue, isCleared));
+    return this;
   }
 
   public AccountKey addAccountChange(
@@ -101,7 +104,7 @@ public class TrieLogLayer {
     return addAccountChange(address, oldValue, newValue, false);
   }
 
-  public void addStorageChange(
+  public TrieLogLayer addStorageChange(
       final AccountKey accountKey,
       final StorageSlotKey storageSlotKey,
       final UInt256 oldValue,
@@ -111,22 +114,25 @@ public class TrieLogLayer {
     storages
         .computeIfAbsent(accountKey, a -> new TreeMap<>())
         .put(storageSlotKey, new ZkValue<>(oldValue, newValue, isCleared));
+    return this;
   }
 
-  public void addStorageChange(
+  public TrieLogLayer addStorageChange(
       final AccountKey accountKey,
       final StorageSlotKey storageKey,
       final UInt256 oldValue,
       final UInt256 newValue) {
     addStorageChange(accountKey, storageKey, oldValue, newValue, false);
+    return this;
   }
 
-  public void addStorageChange(
+  public TrieLogLayer addStorageChange(
       final AccountKey accountKey,
       final UInt256 storageKey,
       final UInt256 oldValue,
       final UInt256 newValue) {
     addStorageChange(accountKey, new StorageSlotKey(storageKey), oldValue, newValue, false);
+    return this;
   }
 
   public Stream<Map.Entry<AccountKey, ZkValue<ZkAccount>>> streamAccountChanges() {

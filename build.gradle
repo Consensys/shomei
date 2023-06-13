@@ -79,6 +79,22 @@ allprojects {
             url "https://hyperledger.jfrog.io/artifactory/besu-maven/"
             content { includeGroupByRegex('org\\.hyperledger\\.besu($|\\..*)') }
         }
+        // besu-shomei-plugin for test fixture generation
+        def besuShomeiPluginRelease = ivy {
+            url 'https://github.com'
+            patternLayout {
+                artifact '/[organisation]/[module]/releases/download/v[revision]/[artifact]-v[revision].[ext]'
+            }
+            metadataSources {
+                artifact()
+            }
+        }
+        // restict this so we do not accidentally pull in other artifacts from github
+        exclusiveContent {
+            forRepositories(besuShomeiPluginRelease)
+            filter { includeModule('ConsenSys', 'besu-shomei-plugin')}
+        }
+
     }
 
     dependencies {

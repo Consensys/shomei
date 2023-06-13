@@ -27,7 +27,6 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.primitives.Longs;
-import com.google.errorprone.annotations.MustBeClosed;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.datatypes.Hash;
@@ -134,9 +133,7 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
   }
 
   @Override
-  @MustBeClosed
   public SnapshotPersistedWorldStateStorage snapshot() {
-    // TODO: MustBeClosed can be removed once we implement time-based snapshot release
     return new SnapshotPersistedWorldStateStorage(
         ((SnappableKeyValueStorage) flatLeafStorage).takeSnapshot(),
         ((SnappableKeyValueStorage) trieNodeStorage).takeSnapshot(),
