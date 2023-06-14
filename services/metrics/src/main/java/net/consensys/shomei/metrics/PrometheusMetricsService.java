@@ -22,10 +22,12 @@ import io.vertx.ext.web.Router;
 
 public class PrometheusMetricsService extends AbstractVerticle implements MetricsService {
   private final PrometheusMeterRegistry prometheusMeterRegistry;
-
-  public PrometheusMetricsService() {
-    // TODO: configs from constructor here
+  private final String host;
+  private final int port;
+  public PrometheusMetricsService(String metricsHost, int metricsPort) {
     this.prometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+    this.host = metricsHost;
+    this.port = metricsPort;
   }
 
   @Override
@@ -45,6 +47,6 @@ public class PrometheusMetricsService extends AbstractVerticle implements Metric
               routingContext.response().end(metrics);
             });
 
-    vertx.createHttpServer().requestHandler(router).listen(9888);
+    vertx.createHttpServer().requestHandler(router).listen(port, host);
   }
 }

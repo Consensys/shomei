@@ -15,6 +15,7 @@ package net.consensys.shomei;
 
 import net.consensys.shomei.cli.option.DataStorageOption;
 import net.consensys.shomei.cli.option.JsonRpcOption;
+import net.consensys.shomei.cli.option.MetricsOption;
 import net.consensys.shomei.fullsync.FullSyncDownloader;
 import net.consensys.shomei.metrics.MetricsService;
 import net.consensys.shomei.metrics.PrometheusMetricsService;
@@ -44,10 +45,10 @@ public class Runner {
   private final MetricsService metricsService;
   private final WorldStateRepository worldStateStorage;
 
-  public Runner(final DataStorageOption dataStorageOption, JsonRpcOption jsonRpcOption) {
+  public Runner(final DataStorageOption dataStorageOption, JsonRpcOption jsonRpcOption, MetricsOption metricsOption) {
     this.vertx = Vertx.vertx();
 
-    metricsService = setupMetrics();
+    metricsService = setupMetrics(metricsOption);
 
     worldStateStorage =
         new PersistedWorldStateRepository(
@@ -75,9 +76,9 @@ public class Runner {
             worldStateStorage);
   }
 
-  private MetricsService setupMetrics() {
+  private MetricsService setupMetrics(MetricsOption metricsOption) {
     // use prometheus as metrics service
-    MetricsService metricsService = new PrometheusMetricsService();
+    MetricsService metricsService = new PrometheusMetricsService(metricsOption.getMetricsHttpHost(), metricsOption.getMetricsHttpPort());
     MeterRegistry meterRegistry = metricsService.getRegistry();
     MetricsService.MetricsServiceProvider.setMetricsService(metricsService);
 

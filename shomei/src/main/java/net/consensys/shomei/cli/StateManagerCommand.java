@@ -19,6 +19,7 @@ import net.consensys.shomei.cli.error.ParameterExceptionHandler;
 import net.consensys.shomei.cli.option.DataStorageOption;
 import net.consensys.shomei.cli.option.JsonRpcOption;
 import net.consensys.shomei.cli.option.LoggingLevelOption;
+import net.consensys.shomei.cli.option.MetricsOption;
 import net.consensys.shomei.util.logging.LoggingConfiguration;
 
 import org.apache.logging.log4j.Level;
@@ -56,6 +57,9 @@ public class StateManagerCommand implements Runnable {
   @Mixin(name = "JSON RPC configuration")
   private final JsonRpcOption jsonRpcOption = JsonRpcOption.create();
 
+  @Mixin(name = "Metrics configuration")
+  private final MetricsOption metricsOption = MetricsOption.create();
+
   public StateManagerCommand() {}
 
   public int parse(final String... args) {
@@ -88,7 +92,7 @@ public class StateManagerCommand implements Runnable {
   public void run() {
     try {
       configureLogging();
-      final Runner runner = new Runner(dataStorageOption, jsonRpcOption);
+      final Runner runner = new Runner(dataStorageOption, jsonRpcOption, metricsOption);
       addShutdownHook(runner);
       runner.start();
     } catch (final Exception e) {
