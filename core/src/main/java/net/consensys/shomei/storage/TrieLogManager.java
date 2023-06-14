@@ -16,12 +16,15 @@ package net.consensys.shomei.storage;
 import net.consensys.shomei.observer.TrieLogObserver;
 import net.consensys.shomei.services.storage.api.KeyValueStorage;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.StorageException;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public interface TrieLogManager {
 
@@ -33,6 +36,8 @@ public interface TrieLogManager {
   void commitTrieLogStorage();
 
   class TrieLogManagerImpl implements TrieLogManager {
+    private static final Logger LOG = LoggerFactory.getLogger(TrieLogManager.class);
+    static final int MAX_TX_RETRIES = 5;
     private final KeyValueStorage trieLogStorage;
     private AtomicReference<KeyValueStorageTransaction> trieLogTx;
 
@@ -59,8 +64,31 @@ public interface TrieLogManager {
     public void commitTrieLogStorage() {
       trieLogTx.getAndUpdate(
           tx -> {
-            tx.commit();
-            return trieLogStorage.startTransaction();
+            int tries = 0;
+            KeyValueStorageTransaction newTx = null;
+            while (newTx == null) {
+              try {
+                tries++;
+                tx.commit();
+                newTx = trieLogStorage.startTransaction();
+              } catch (final StorageException e) {
+                if (tries >= MAX_TX_RETRIES) {
+                  LOG.atError()
+                      .setMessage("Failed to commit trie log storage transaction after {} tries")
+                      .addArgument(tries)
+                      .setCause(e)
+                      .log();
+                  throw e;
+                } else {
+                  LOG.atWarn()
+                      .setMessage("Failed to commit trie log storage transaction, retry #{}")
+                      .addArgument(tries)
+                      .log();
+                  LOG.atDebug().setCause(e).log();
+                }
+              }
+            }
+            return newTx;
           });
     }
   }
