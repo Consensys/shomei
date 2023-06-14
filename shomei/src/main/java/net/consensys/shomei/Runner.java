@@ -16,6 +16,8 @@ package net.consensys.shomei;
 import net.consensys.shomei.cli.option.DataStorageOption;
 import net.consensys.shomei.cli.option.JsonRpcOption;
 import net.consensys.shomei.fullsync.FullSyncDownloader;
+import net.consensys.shomei.metrics.MetricsService;
+import net.consensys.shomei.metrics.PrometheusMetricsService;
 import net.consensys.shomei.rpc.client.GetRawTrieLogClient;
 import net.consensys.shomei.rpc.server.JsonRpcService;
 import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentedStorage;
@@ -24,6 +26,10 @@ import net.consensys.shomei.storage.PersistedWorldStateRepository;
 import net.consensys.shomei.storage.WorldStateRepository;
 import net.consensys.shomei.worldview.ZkEvmWorldStateEntryPoint;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,10 +41,13 @@ public class Runner {
   private final Vertx vertx;
   private final FullSyncDownloader fullSyncDownloader;
   private final JsonRpcService jsonRpcService;
+  private final MetricsService metricsService;
   private final WorldStateRepository worldStateStorage;
 
   public Runner(final DataStorageOption dataStorageOption, JsonRpcOption jsonRpcOption) {
     this.vertx = Vertx.vertx();
+
+    metricsService = setupMetrics();
 
     worldStateStorage =
         new PersistedWorldStateRepository(
@@ -66,6 +75,19 @@ public class Runner {
             worldStateStorage);
   }
 
+  private MetricsService setupMetrics() {
+    // use prometheus as metrics service
+    MetricsService metricsService = new PrometheusMetricsService();
+    MeterRegistry meterRegistry = metricsService.getRegistry();
+    MetricsService.MetricsServiceProvider.setMetricsService(metricsService);
+
+    // register JVM metrics here
+    new JvmMemoryMetrics().bindTo(meterRegistry);
+    new JvmGcMetrics().bindTo(meterRegistry);
+    new JvmThreadMetrics().bindTo(meterRegistry);
+    return metricsService;
+  }
+
   public void start() {
     vertx.deployVerticle(
         jsonRpcService,
@@ -83,6 +105,16 @@ public class Runner {
           if (!res.succeeded()) {
             LOG.atError()
                 .setMessage("Error occurred when starting the block downloader {}")
+                .addArgument(res.cause())
+                .log();
+          }
+        });
+    vertx.deployVerticle(
+        metricsService,
+        res -> {
+          if (!res.succeeded()) {
+            LOG.atError()
+                .setMessage("Error occurred when starting the metrics service {}")
                 .addArgument(res.cause())
                 .log();
           }

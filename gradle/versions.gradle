@@ -89,6 +89,13 @@ dependencyManagement {
       entry 'vertx-web'
       entry 'vertx-web-client'
       entry 'vertx-auth-jwt'
+      entry 'vertx-micrometer-metrics'
+    }
+
+    // Prometheus
+    dependencySet(group: 'io.micrometer', version: '1.11.1') {
+      entry 'micrometer-core'
+      entry 'micrometer-registry-prometheus'
     }
 
     // Other

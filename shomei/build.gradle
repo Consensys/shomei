@@ -19,6 +19,7 @@ dependencies {
     implementation project(':sync')
     implementation project(':core')
     implementation project(':trie')
+    implementation project(':services:metrics')
     implementation project(':services:rpc:common')
     implementation project(':services:rpc:client')
     implementation project(':services:rpc:server')
@@ -28,6 +29,7 @@ dependencies {
     implementation 'io.vertx:vertx-unit'
     implementation 'io.vertx:vertx-web'
     implementation 'io.vertx:vertx-codegen'
+    implementation 'io.micrometer:micrometer-core'
 
     api 'org.slf4j:slf4j-api'
     implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'

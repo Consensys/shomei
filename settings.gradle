@@ -6,6 +6,8 @@ include 'core'
 include 'crypto'
 include 'services'
 
+include 'services:metrics'
+findProject(':services:metrics')?.name = 'metrics'
 include 'services:storage'
 findProject(':services:storage')?.name = 'storage'
 include 'services:storage:api'

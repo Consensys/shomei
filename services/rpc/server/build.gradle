@@ -18,6 +18,7 @@ dependencies {
     implementation project(':util')
     implementation project(':core')
     implementation project(':services:rpc:common')
+    implementation project(':services:metrics')
     implementation project(':trie')
 
     // Google Guava
@@ -28,6 +29,8 @@ dependencies {
     implementation 'org.hyperledger.besu.internal:api'
     implementation 'org.hyperledger.besu.internal:rlp'
     implementation 'org.hyperledger.besu.internal:util'
+    implementation 'org.hyperledger.besu.internal:util'
+    implementation 'io.micrometer:micrometer-core'
 
     // Jackson dependencies
     implementation 'com.fasterxml.jackson.core:jackson-databind'

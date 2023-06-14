@@ -15,6 +15,7 @@ package net.consensys.shomei.rpc.server;
 
 import static com.google.common.collect.Streams.stream;
 
+import net.consensys.shomei.metrics.MetricsService;
 import net.consensys.shomei.observer.TrieLogObserver;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMBlockNumber;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMStateMerkleProofV0;
@@ -28,12 +29,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Handler;
 import io.vertx.core.VertxException;
@@ -43,6 +47,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Route;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -81,6 +86,8 @@ public class JsonRpcService extends AbstractVerticle {
   private final AtomicInteger activeConnectionsCount = new AtomicInteger();
   private HttpServer httpServer;
   private final HealthService livenessService;
+  private final MeterRegistry meterRegistry =
+      MetricsService.MetricsServiceProvider.getMetricsService().getRegistry();
 
   public JsonRpcService(
       final String rpcHttpHost,
@@ -210,6 +217,7 @@ public class JsonRpcService extends AbstractVerticle {
         .handler(livenessService::handleRequest);
     Route mainRoute = router.route("/").method(HttpMethod.POST).produces(APPLICATION_JSON);
     mainRoute
+        .handler(measureRequest())
         .handler(HandlerFactory.jsonRpcParser())
         .handler(HandlerFactory.timeout(new TimeoutOptions(config.getHttpTimeoutSec()), rpcMethods))
         .blockingHandler(
@@ -227,6 +235,29 @@ public class JsonRpcService extends AbstractVerticle {
         .handler(DefaultAuthenticationService::handleDisabledLogin);
 
     return router;
+  }
+
+  private Handler<RoutingContext> measureRequest() {
+    return routingContext -> {
+      long start = System.nanoTime();
+
+      routingContext.addBodyEndHandler(
+          v -> {
+            long duration = System.nanoTime() - start;
+
+            // Parse the request body to get the method name
+            JsonObject requestBody = routingContext.getBodyAsJson();
+            String methodName = requestBody.getString("method");
+
+            Timer.builder("http.request")
+                .tag("endpoint", "/")
+                .tag("method", methodName)
+                .register(meterRegistry)
+                .record(duration, TimeUnit.NANOSECONDS);
+          });
+
+      routingContext.next();
+    };
   }
 
   private HttpServerOptions getHttpServerOptions() {
