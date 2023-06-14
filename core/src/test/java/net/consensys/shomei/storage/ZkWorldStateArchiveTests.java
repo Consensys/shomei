@@ -19,21 +19,20 @@ import net.consensys.shomei.exception.MissingTrieLogException;
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.trielog.PluginTrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
-
-import org.hyperledger.besu.datatypes.Hash;
+import net.consensys.shomei.trielog.ZkTrieLogFactory;
 
 import java.util.HashMap;
 import java.util.Optional;
 
-import net.consensys.shomei.trielog.ZkTrieLogFactory;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.datatypes.Hash;
 import org.junit.Test;
 
 public class ZkWorldStateArchiveTests {
 
   ZkWorldStateArchive archive = new ZkWorldStateArchive(new InMemoryStorageProvider());
   TrieLogLayerConverter converter = new TrieLogLayerConverter(archive.getHeadWorldStateStorage());
-    ZkTrieLogFactory encoder = new ZkTrieLogFactory();
+  ZkTrieLogFactory encoder = new ZkTrieLogFactory();
 
   @Test
   public void shouldDropWorldStatesFromHead() {
@@ -62,19 +61,23 @@ public class ZkWorldStateArchiveTests {
     assertThat(archive.getCachedWorldState(128L).isPresent()).isTrue();
   }
 
-    @Test
-    public void verifyStorageSnapshot() throws MissingTrieLogException {
+  @Test
+  public void verifyStorageSnapshot() throws MissingTrieLogException {
 
-      PluginTrieLogLayer pluginLayer = new PluginTrieLogLayer(
-          archive.getCurrentBlockHash(), Optional.of(0L), new HashMap<>(), new HashMap<>(), new HashMap<>(),
-          false);
-      TrieLogIdentifier genesis = new TrieLogIdentifier(0L, pluginLayer.getBlockHash());
-      archive.getTrieLogManager().saveTrieLog(genesis, Bytes.of(encoder.serialize(pluginLayer)));
+    PluginTrieLogLayer pluginLayer =
+        new PluginTrieLogLayer(
+            archive.getCurrentBlockHash(),
+            Optional.of(0L),
+            new HashMap<>(),
+            new HashMap<>(),
+            new HashMap<>(),
+            false);
+    TrieLogIdentifier genesis = new TrieLogIdentifier(0L, pluginLayer.getBlockHash());
+    archive.getTrieLogManager().saveTrieLog(genesis, Bytes.of(encoder.serialize(pluginLayer)));
 
-      archive.importBlock(new TrieLogIdentifier(0L, pluginLayer.getBlockHash()), true);
+    archive.importBlock(new TrieLogIdentifier(0L, pluginLayer.getBlockHash()), true);
 
-      assertThat(archive.getCachedWorldState(0L).isPresent()).isTrue();
-      assertThat(archive.getCachedWorldState(pluginLayer.getBlockHash()).isPresent()).isTrue();
-
-    }
+    assertThat(archive.getCachedWorldState(0L).isPresent()).isTrue();
+    assertThat(archive.getCachedWorldState(pluginLayer.getBlockHash()).isPresent()).isTrue();
+  }
 }
