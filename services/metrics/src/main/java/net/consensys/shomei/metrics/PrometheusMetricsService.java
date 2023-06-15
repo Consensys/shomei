@@ -24,6 +24,7 @@ public class PrometheusMetricsService extends AbstractVerticle implements Metric
   private final PrometheusMeterRegistry prometheusMeterRegistry;
   private final String host;
   private final int port;
+
   public PrometheusMetricsService(String metricsHost, int metricsPort) {
     this.prometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
     this.host = metricsHost;

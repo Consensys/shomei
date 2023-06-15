@@ -45,7 +45,10 @@ public class Runner {
   private final MetricsService metricsService;
   private final WorldStateRepository worldStateStorage;
 
-  public Runner(final DataStorageOption dataStorageOption, JsonRpcOption jsonRpcOption, MetricsOption metricsOption) {
+  public Runner(
+      final DataStorageOption dataStorageOption,
+      JsonRpcOption jsonRpcOption,
+      MetricsOption metricsOption) {
     this.vertx = Vertx.vertx();
 
     metricsService = setupMetrics(metricsOption);
@@ -78,7 +81,9 @@ public class Runner {
 
   private MetricsService setupMetrics(MetricsOption metricsOption) {
     // use prometheus as metrics service
-    MetricsService metricsService = new PrometheusMetricsService(metricsOption.getMetricsHttpHost(), metricsOption.getMetricsHttpPort());
+    MetricsService metricsService =
+        new PrometheusMetricsService(
+            metricsOption.getMetricsHttpHost(), metricsOption.getMetricsHttpPort());
     MeterRegistry meterRegistry = metricsService.getRegistry();
     MetricsService.MetricsServiceProvider.setMetricsService(metricsService);
 
