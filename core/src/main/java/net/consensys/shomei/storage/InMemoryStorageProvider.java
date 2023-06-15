@@ -18,9 +18,10 @@ import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.proof.Trace;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
@@ -34,8 +35,8 @@ public class InMemoryStorageProvider implements StorageProvider {
   @Override
   public TraceManager getTraceManager() {
     return new TraceManager() {
-      private final HashMap<Long, List<Trace>> traceStorage = new HashMap<>();
-      private final HashMap<Long, Hash> zkStateRootStorage = new HashMap<>();
+      private final Map<Long, List<Trace>> traceStorage = new ConcurrentHashMap<>();
+      private final Map<Long, Hash> zkStateRootStorage = new ConcurrentHashMap<>();
 
       @Override
       public Optional<Bytes> getTrace(final long blockNumber) {
@@ -69,7 +70,7 @@ public class InMemoryStorageProvider implements StorageProvider {
 
   @Override
   public TrieLogManager getTrieLogManager() {
-    HashMap<Long, Bytes> trieLogStorage = new HashMap<>();
+    Map<Long, Bytes> trieLogStorage = new ConcurrentHashMap<>();
 
     return new TrieLogManager() {
       @Override

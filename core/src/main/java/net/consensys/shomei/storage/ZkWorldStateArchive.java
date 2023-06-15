@@ -157,6 +157,8 @@ public class ZkWorldStateArchive implements Closeable {
   @Override
   public void close() throws IOException {
     // close all storages
+    traceManager.close();
+    trieLogManager.close();
     cachedWorldStates.forEach(
         (key, value) -> {
           try {

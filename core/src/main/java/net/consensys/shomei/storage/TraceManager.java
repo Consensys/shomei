@@ -17,6 +17,7 @@ import net.consensys.shomei.services.storage.api.KeyValueStorage;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
 import net.consensys.shomei.trie.proof.Trace;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
@@ -40,6 +41,8 @@ public interface TraceManager {
 
   TraceManager commit();
 
+  default void close() {}
+
   class TraceManagerImpl implements TraceManager {
     private final KeyValueStorage traceStorage;
     private final AtomicReference<KeyValueStorageTransaction> traceTx;
@@ -51,8 +54,7 @@ public interface TraceManager {
 
     @Override
     public Optional<Bytes> getTrace(final long blockNumber) {
-      // we might not need to read through the transaction, but it probably doesn't hurt
-      return traceTx.get().get(Longs.toByteArray(blockNumber)).map(Bytes::wrap);
+      return traceStorage.get(Longs.toByteArray(blockNumber)).map(Bytes::wrap);
     }
 
     @Override
@@ -93,6 +95,21 @@ public interface TraceManager {
             return traceStorage.startTransaction();
           });
       return this;
+    }
+
+    @Override
+    public void close() {
+      traceTx.getAndUpdate(
+          traceTx -> {
+            try {
+              // not committing in case we are in-flight
+              traceTx.close();
+              traceStorage.close();
+            } catch (IOException e) {
+              throw new RuntimeException(e);
+            }
+            return null;
+          });
     }
   }
 }

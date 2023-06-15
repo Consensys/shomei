@@ -170,12 +170,14 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
 
       @Override
       public void putFlatLeaf(final Bytes key, final FlattenedLeaf value) {
-        flatLeafTx.get().put(key.toArrayUnsafe(), RLP.encode(value::writeTo).toArrayUnsafe());
+        flatLeafTx.getAndUpdate(
+            flatTx -> flatTx.put(key.toArrayUnsafe(), RLP.encode(value::writeTo).toArrayUnsafe()));
       }
 
       @Override
       public void putTrieNode(final Bytes location, final Bytes nodeHash, final Bytes value) {
-        trieNodeTx.get().put(location.toArrayUnsafe(), value.toArrayUnsafe());
+        trieNodeTx.getAndUpdate(
+            trieTx -> trieTx.put(location.toArrayUnsafe(), value.toArrayUnsafe()));
       }
 
       @Override
@@ -202,12 +204,27 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
 
   @Override
   public void close() {
-    try {
-      flatLeafStorage.close();
-      trieNodeStorage.close();
-    } catch (IOException e) {
-      LOG.error("Failed to close storage", e);
-      throw new RuntimeException(e);
-    }
+    flatLeafTx.getAndUpdate(
+        flatTx -> {
+          try {
+            // not committing in case we are in-flight
+            flatTx.close();
+            flatLeafStorage.close();
+          } catch (IOException e) {
+            LOG.error("failed to close flatleaf storage", e);
+          }
+          return null;
+        });
+    trieNodeTx.getAndUpdate(
+        trieTx -> {
+          try {
+            // not committing in case we are in-flight
+            trieTx.close();
+            trieNodeStorage.close();
+          } catch (IOException e) {
+            LOG.error("failed to close trienode storage", e);
+          }
+          return null;
+        });
   }
 }

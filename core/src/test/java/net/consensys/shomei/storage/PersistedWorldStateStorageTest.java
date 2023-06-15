@@ -91,6 +91,9 @@ public class PersistedWorldStateStorageTest {
   @Test
   public void assertReadConsistentBeforeCommit() {
     mutateWorldStateStorage();
+    // trie log manager does not read uncommitted:
+    trieLogManager.commitTrieLogStorage();
+
     assertWorldStateStorage();
   }
 
@@ -98,6 +101,7 @@ public class PersistedWorldStateStorageTest {
   public void assertReadConsistentAfterCommit() {
     mutateWorldStateStorage();
     updater.commit();
+    trieLogManager.commitTrieLogStorage();
     assertWorldStateStorage();
   }
 
@@ -105,6 +109,7 @@ public class PersistedWorldStateStorageTest {
   public void assertFreshUpdaterAfterCommit() {
     mutateWorldStateStorage();
     updater.commit();
+    trieLogManager.commitTrieLogStorage();
     assertWorldStateStorage();
     var newTrieVal = Bytes.of("newval".getBytes(StandardCharsets.UTF_8));
 

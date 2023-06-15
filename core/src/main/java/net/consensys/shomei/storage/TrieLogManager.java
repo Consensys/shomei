@@ -18,6 +18,7 @@ import net.consensys.shomei.services.storage.api.KeyValueStorage;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
 import net.consensys.shomei.services.storage.api.StorageException;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -32,6 +33,8 @@ public interface TrieLogManager {
       final TrieLogObserver.TrieLogIdentifier trieLogIdentifier, final Bytes rawTrieLogLayer);
 
   Optional<Bytes> getTrieLog(final long blockNumber);
+
+  default void close() {}
 
   void commitTrieLogStorage();
 
@@ -49,15 +52,32 @@ public interface TrieLogManager {
     @Override
     public TrieLogManager saveTrieLog(
         final TrieLogObserver.TrieLogIdentifier trieLogIdentifier, final Bytes rawTrieLogLayer) {
-      trieLogTx
-          .get()
-          .put(Longs.toByteArray(trieLogIdentifier.blockNumber()), rawTrieLogLayer.toArrayUnsafe());
+      trieLogTx.getAndUpdate(
+          tx ->
+              tx.put(
+                  Longs.toByteArray(trieLogIdentifier.blockNumber()),
+                  rawTrieLogLayer.toArrayUnsafe()));
       return this;
     }
 
     @Override
     public Optional<Bytes> getTrieLog(final long blockNumber) {
-      return trieLogTx.get().get(Longs.toByteArray(blockNumber)).map(Bytes::wrap);
+      return trieLogStorage.get(Longs.toByteArray(blockNumber)).map(Bytes::wrap);
+    }
+
+    @Override
+    public void close() {
+      trieLogTx.getAndUpdate(
+          trieLogTx -> {
+            // not committing in case we are in-flight
+            trieLogTx.close();
+            try {
+              trieLogStorage.close();
+            } catch (IOException e) {
+              LOG.error("failed to close trieLogStorage", e);
+            }
+            return null;
+          });
     }
 
     @Override
