@@ -25,6 +25,7 @@ import net.consensys.shomei.trie.json.JsonTraceParser;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
@@ -92,11 +93,13 @@ public class JsonRpcService extends AbstractVerticle {
   public JsonRpcService(
       final String rpcHttpHost,
       final Integer rpcHttpPort,
+      final Optional<List<String>> hostAllowList,
       final TrieLogObserver trieLogObserver,
       final WorldStateRepository worldStateStorage) {
     this.config = JsonRpcConfiguration.createDefault();
     config.setHost(rpcHttpHost);
     config.setPort(rpcHttpPort);
+    hostAllowList.ifPresent(config::setHostsAllowlist);
     this.rpcMethods = new HashMap<>();
     this.rpcMethods.putAll(
         mapOf(

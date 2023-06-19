@@ -13,6 +13,9 @@
 
 package net.consensys.shomei.cli.option;
 
+import java.util.Arrays;
+import java.util.List;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
@@ -35,6 +38,15 @@ public class JsonRpcOption {
 
   public static final int BESU_DEFAULT_JSON_RPC_PORT = 8545;
   public static final int SHOMEI_DEFAULT_JSON_RPC_PORT = 8888;
+  public static final List<String> SHOMEI_DEFAULT_JSON_RPC_HOST_ALLOW_LIST =
+      Arrays.asList("localhost", "127.0.0.1");
+
+  @CommandLine.Option(
+      names = {"--rpc-http-host-allow-list"},
+      paramLabel = "<ALLOW_HOSTS>",
+      description = "Hosts to accept state updates from (default: ${DEFAULT-VALUE})",
+      arity = "1")
+  private List<String> rpcHttpHostAllowList = SHOMEI_DEFAULT_JSON_RPC_HOST_ALLOW_LIST;
 
   @SuppressWarnings({"FieldCanBeFinal", "FieldMayBeFinal"}) // PicoCLI requires non-final Strings.
   @CommandLine.Option(
@@ -73,6 +85,10 @@ public class JsonRpcOption {
 
   public Integer getBesuRHttpPort() {
     return besuRHttpPort;
+  }
+
+  public List<String> getRpcHttpHostAllowList() {
+    return rpcHttpHostAllowList;
   }
 
   public String getRpcHttpHost() {

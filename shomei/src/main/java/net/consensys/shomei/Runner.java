@@ -27,6 +27,8 @@ import net.consensys.shomei.storage.PersistedWorldStateRepository;
 import net.consensys.shomei.storage.WorldStateRepository;
 import net.consensys.shomei.worldview.ZkEvmWorldStateEntryPoint;
 
+import java.util.Optional;
+
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
@@ -75,6 +77,7 @@ public class Runner {
         new JsonRpcService(
             jsonRpcOption.getRpcHttpHost(),
             jsonRpcOption.getRpcHttpPort(),
+            Optional.of(jsonRpcOption.getRpcHttpHostAllowList()),
             fullSyncDownloader,
             worldStateStorage);
   }
