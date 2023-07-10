@@ -257,6 +257,7 @@ def dockerVariants = project.hasProperty("dockerVariants") ? project.getProperty
         "graalvm",
         "openjdk-latest"
 ]
+def archVariants = ["amd64", "arm64"]
 
 // rename the top level dir from shomei-<version> to shomei and this makes it really
 // simple for use in docker
@@ -340,93 +341,46 @@ task dockerUpload {
     dependsOn distDocker
     def architecture = System.getenv('architecture')
     def image = "${dockerImageName}:${dockerBuildVersion}"
-    def additionalTags = []
-
-    if (project.hasProperty('branch') && project.property('branch') == 'main') {
-        additionalTags.add('develop')
-    }
+    def tags = []
 
     if (!isInterimBuild(dockerBuildVersion)) {
-        additionalTags.add(dockerBuildVersion.split(/\./)[0..1].join('.'))
+        // if this is a release build, upload the version and latest tags
+        tags.add("${dockerImageName}:" + dockerBuildVersion.split(/\./)[0..1].join('.'))
+        tags.add("${dockerImageName}:latest")
+    } else if (project.hasProperty('branch') && project.property('branch') == 'main') {
+        // otherwise, upload as develop
+        tags.add("${dockerImageName}:develop")
     }
 
     doLast {
-        for (def variant in dockerVariants) {
-            def variantImage = "${image}-${variant}"
-            exec {
-                def archVariantImage = "${variantImage}-${architecture}"
-                def cmd = "docker tag '${variantImage}' '${archVariantImage}' && docker push '${archVariantImage}'"
-                additionalTags.each { tag -> cmd += " && docker tag '${variantImage}' '${dockerImageName}:${tag.trim()}-${variant}-${architecture}' && docker push '${dockerImageName}:${tag.trim()}-${variant}-${architecture}'" }
-                executable "sh"
-                args "-c", cmd
-            }
-        }
-
         exec {
             def archImage = "${image}-${architecture}"
             def cmd = "docker tag ${image} ${archImage} && docker push '${archImage}'"
-            additionalTags.each { tag -> cmd += " && docker tag '${image}' '${dockerImageName}:${tag.trim()}-${architecture}' && docker push '${dockerImageName}:${tag.trim()}-${architecture}'" }
+            tags.each { tag -> cmd += " && docker tag '${image}' '${dockerImageName}:${tag.trim()}-${architecture}' && docker push '${dockerImageName}:${tag.trim()}-${architecture}'" }
             executable "sh"
             args "-c", cmd
         }
     }
 }
 
-task dockerUploadRelease {
-    def archs = ["arm64", "amd64"]
-    def image = "${dockerImageName}:${dockerBuildVersion}"
-
-    doLast {
-        for (def architecture in archs) {
-            for (def variant in dockerVariants) {
-                def variantImage = "${image}-${variant}"
-                exec {
-                    def cmd = "docker pull '${variantImage}-${architecture}' && docker tag '${variantImage}-${architecture}' '${dockerImageName}:latest-${variant}-${architecture}' && docker push '${dockerImageName}:latest-${variant}-${architecture}'"
-                    executable "sh"
-                    args "-c", cmd
-                }
-            }
-
-            exec {
-                def archImage = "${image}-${architecture}"
-                def cmd = "docker pull '${archImage}' && docker tag ${archImage} '${dockerImageName}:latest-${architecture}' && docker push '${dockerImageName}:latest-${architecture}'"
-                executable "sh"
-                args "-c", cmd
-            }
-        }
-    }
-}
-
 task manifestDocker {
-    def image = "${dockerImageName}:${dockerBuildVersion}"
-    def archs = ["arm64", "amd64"]
-    def tags = ["${image}"]
-
-    if (project.hasProperty('branch') && project.property('branch') == 'main') {
-        tags.add("${dockerImageName}:develop")
-    }
+    def tags = []
 
     if (!isInterimBuild(dockerBuildVersion)) {
+        // if this is a release, create manifests for the version and latest tags
         tags.add("${dockerImageName}:" + dockerBuildVersion.split(/\./)[0..1].join('.'))
+        tags.add("${dockerImageName}:latest")
+    } else {
+        // otherwise, create manifest for develop
+        tags.add("${dockerImageName}:develop")
     }
 
     doLast {
         for (baseTag in tags) {
-            for (def variant in dockerVariants) {
-                def variantImage = "${baseTag}-${variant}"
-                def targets = ""
-                archs.forEach { arch -> targets += "'${variantImage}-${arch}' " }
-
-                exec {
-                    def cmd = "docker manifest create '${variantImage}' ${targets} && docker manifest push '${variantImage}'"
-                    executable "sh"
-                    args "-c", cmd
-                }
-            }
 
             exec {
                 def targets = ""
-                archs.forEach { arch -> targets += "'${baseTag}-${arch}' " }
+                archVariants.forEach { arch -> targets += "'${baseTag}-${arch}' " }
                 def cmd = "docker manifest create '${baseTag}' ${targets} && docker manifest push '${baseTag}'"
                 executable "sh"
                 args "-c", cmd
@@ -435,33 +389,6 @@ task manifestDocker {
     }
 }
 
-task manifestDockerRelease {
-    dependsOn manifestDocker
-    def archs = ["arm64", "amd64"]
-    def baseTag = "${dockerImageName}:latest";
-
-    doLast {
-        for (def variant in dockerVariants) {
-            def variantImage = "${baseTag}-${variant}"
-            def targets = ""
-            archs.forEach { arch -> targets += "'${variantImage}-${arch}' " }
-
-            exec {
-                def cmd = "docker manifest create '${variantImage}' ${targets} && docker manifest push '${variantImage}'"
-                executable "sh"
-                args "-c", cmd
-            }
-        }
-
-        exec {
-            def targets = ""
-            archs.forEach { arch -> targets += "'${baseTag}-${arch}' " }
-            def cmd = "docker manifest create '${baseTag}' ${targets} && docker manifest push '${baseTag}'"
-            executable "sh"
-            args "-c", cmd
-        }
-    }
-}
 
 def isInterimBuild(dockerBuildVersion) {
     return (dockerBuildVersion ==~ /.*-SNAPSHOT/) || (dockerBuildVersion ==~ /.*-alpha/)
