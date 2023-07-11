@@ -261,7 +261,7 @@ def archVariants = ["amd64", "arm64"]
 
 // rename the top level dir from shomei-<version> to shomei and this makes it really
 // simple for use in docker
-tasks.register("dockerDistUntar") {
+task dockerDistUntar {
     dependsOn distTar
     dependsOn distZip
     def dockerBuildDir = "build/docker-shomei/"
@@ -279,7 +279,8 @@ tasks.register("dockerDistUntar") {
     }
 }
 
-task distDocker {
+
+task dockerDist {
     dependsOn dockerDistUntar
     inputs.dir("build/docker-shomei/")
     def dockerBuildDir = "build/docker-shomei/"
@@ -316,7 +317,7 @@ task distDocker {
     }
 }
 
-task testDocker {
+task dockerTest {
     dependsOn distDocker
     def dockerReportsDir = "docker/reports/"
 
@@ -337,7 +338,7 @@ task testDocker {
     }
 }
 
-task uploadDocker {
+task dockerUpload {
     dependsOn distDocker
     def architecture = System.getenv('architecture')
     def image = "${dockerImageName}:${dockerBuildVersion}"
@@ -371,7 +372,7 @@ task uploadDocker {
     }
 }
 
-task manifestDocker {
+task dockerManifest {
     def tags = []
 
     if (!isInterimBuild(dockerBuildVersion)) {
@@ -396,6 +397,12 @@ task manifestDocker {
         }
     }
 }
+
+// aliases for the prior docker task names:
+task distDocker(dependsOn: dockerDist)
+task testDocker(dependsOn: dockerTest)
+task uploadDocker(dependsOn: dockerUpload)
+task manifestDocker(dependsOn: dockerManifest)
 
 
 def isInterimBuild(dockerBuildVersion) {

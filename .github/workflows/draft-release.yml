@@ -3,7 +3,7 @@ name: Create Draft Release
 on:
   push:
     tags:
-      - '*'
+      - '[0-9]+.[0-9]+.[0-9]+' # Matches release tags of the form major.minor.patch, e.g. 1.2.1
 
 jobs:
   build:
@@ -12,7 +12,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
+      - name: Get date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -21,5 +23,12 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
+          body: |
+            ## Release ${{ github.ref }} 
+            ### Release Date: ${{ steps.date.outputs.date }}
+            ### Additions and Improvements
+            ### Bug Fixes
+            ### Release Link
+            Link : https://hub.docker.com/r/consensys/linea-shomei/tags?page=1&name=${{ github.ref }}
           draft: true
-          prerelease: true
+          prerelease: false
