@@ -318,7 +318,7 @@ task dockerDist {
 }
 
 task dockerTest {
-    dependsOn distDocker
+    dependsOn dockerDist
     def dockerReportsDir = "docker/reports/"
 
     doFirst {
@@ -339,7 +339,7 @@ task dockerTest {
 }
 
 task dockerUpload {
-    dependsOn distDocker
+    dependsOn dockerDist
     def architecture = System.getenv('architecture')
     def image = "${dockerImageName}:${dockerBuildVersion}"
     def tags = []
