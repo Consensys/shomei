@@ -406,8 +406,8 @@ task manifestDocker(dependsOn: dockerManifest)
 
 
 def isInterimBuild(dockerBuildVersion) {
-    return (dockerBuildVersion ==~ /.*-SNAPSHOT/) || (dockerBuildVersion ==~ /.*-alpha/)
-            || (dockerBuildVersion ==~ /.*-beta/) || (dockerBuildVersion ==~ /.*-RC.*/)
+    // any build version that is not major.minor.patch is treated as an interim build:
+    return !(dockerBuildVersion ==~ /[0-9]+\.[0-9]+\.[0-9]+/)
 }
 
 def buildTime() {
