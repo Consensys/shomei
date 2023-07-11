@@ -337,7 +337,7 @@ task testDocker {
     }
 }
 
-task dockerUpload {
+task uploadDocker {
     dependsOn distDocker
     def architecture = System.getenv('architecture')
     def image = "${dockerImageName}:${dockerBuildVersion}"
@@ -345,18 +345,26 @@ task dockerUpload {
 
     if (!isInterimBuild(dockerBuildVersion)) {
         // if this is a release build, upload the version and latest tags
+        logger.quiet("uploading release build")
         tags.add("${dockerImageName}:" + dockerBuildVersion.split(/\./)[0..1].join('.'))
         tags.add("${dockerImageName}:latest")
-    } else if (project.hasProperty('branch') && project.property('branch') == 'main') {
+    } else {
         // otherwise, upload as develop
+        logger.quiet("uploading develop build")
         tags.add("${dockerImageName}:develop")
     }
 
     doLast {
         exec {
             def archImage = "${image}-${architecture}"
-            def cmd = "docker tag ${image} ${archImage} && docker push '${archImage}'"
-            tags.each { tag -> cmd += " && docker tag '${image}' '${dockerImageName}:${tag.trim()}-${architecture}' && docker push '${dockerImageName}:${tag.trim()}-${architecture}'" }
+
+            logger.quiet("architecture: $architecture")
+            logger.quiet("image: $image")
+            logger.quiet("tags: $tags")
+            logger.quiet("archImage: $archImage")
+
+            def cmd = ""
+            tags.each { tag -> cmd += "docker tag '${image}' '${tag.trim()}-${architecture}' && docker push '${tag.trim()}-${architecture}'" }
             executable "sh"
             args "-c", cmd
         }
@@ -391,6 +399,8 @@ task manifestDocker {
 
 
 def isInterimBuild(dockerBuildVersion) {
+    logger.quiet("isInterimBuild : $dockerBuildVersion")
+
     return (dockerBuildVersion ==~ /.*-SNAPSHOT/) || (dockerBuildVersion ==~ /.*-alpha/)
             || (dockerBuildVersion ==~ /.*-beta/) || (dockerBuildVersion ==~ /.*-RC.*/)
 }

@@ -160,13 +160,10 @@ jobs:
         with:
           java-version: '17'
           distribution: 'adopt'
-      - name: Extract branch name
-        shell: bash
-        run: echo "branch_name=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
       - name: Publish Docker Image
         run: |
           echo "${{ secrets.DOCKER_PASSWORD_RW }}" | docker login --username "${{ secrets.DOCKER_USER_RW }}" --password-stdin
-          ./gradlew --no-daemon -Pbranch=$branch_name dockerUpload
+          ./gradlew --no-daemon uploadDocker
 
   publishDockerArm64:
     needs: buildArm64
@@ -184,13 +181,10 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
           architecture: aarch64
-      - name: Extract branch name
-        shell: bash
-        run: echo "branch_name=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
       - name: Publish Docker Image
         run: |
           echo "${{ secrets.DOCKER_PASSWORD_RW }}" | docker login --username "${{ secrets.DOCKER_USER_RW }}" --password-stdin
-          ./gradlew --no-daemon -Pbranch=$branch_name dockerUpload
+          ./gradlew --no-daemon uploadDocker
 
   publishManifest:
     needs: [ publishDocker, publishDockerArm64 ]
@@ -207,10 +201,7 @@ jobs:
         with:
           java-version: '17'
           distribution: 'adopt'
-      - name: Extract branch name
-        shell: bash
-        run: echo "branch_name=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
       - name: Publish Multi-arch Docker Image
         run: |
           echo "${{ secrets.DOCKER_PASSWORD_RW }}" | docker login --username "${{ secrets.DOCKER_USER_RW }}" --password-stdin
-          ./gradlew --no-daemon -Pbranch=$branch_name manifestDocker
+          ./gradlew --no-daemon manifestDocker
