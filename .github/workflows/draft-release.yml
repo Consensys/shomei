@@ -28,7 +28,5 @@ jobs:
             ### Release Date: ${{ steps.date.outputs.date }}
             ### Additions and Improvements
             ### Bug Fixes
-            ### Release Link
-            Link : https://hub.docker.com/r/consensys/linea-shomei/tags?page=1&name=${{ github.ref }}
           draft: true
           prerelease: false
