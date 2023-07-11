@@ -213,4 +213,4 @@ jobs:
       - name: Publish Multi-arch Docker Image
         run: |
           echo "${{ secrets.DOCKER_PASSWORD_RW }}" | docker login --username "${{ secrets.DOCKER_USER_RW }}" --password-stdin
-          ./gradlew --no-daemon -Pbranch=$branch_name manifestDockerRelease
+          ./gradlew --no-daemon -Pbranch=$branch_name manifestDocker
