@@ -43,7 +43,7 @@ After a successful build, distribution packages are available in `build/distribu
 | distTar     | Full distribution in build/distributions (as `.tar.gz`) |
 | distZip     | Full distribution in build/distributions (as `.zip`)    |
 | installDist | Expanded distribution in `build/install/shomei`         |
-| distDocker  | The `consensys/linea-shomei` docker image                     |
+| dockerDist  | The `consensys/linea-shomei` docker image               |
 
 ## Code Style
 
@@ -63,3 +63,18 @@ All the unit tests are run as part of the build, but can be explicitly triggered
 ./gradlew test
 ```
 
+## Release process
+The release process is automated via github actions, but requires a few steps.  To release:
+### Step 1 Create a PR that updates the shomei to a release version
+  * Update the version in `gradle.properties` to the release version
+  * Release version should be [major].[minor].[patch], for example 1.2.0. 
+  * Once the PR merges, github actions will trigger a build and publish of the image to dockerhub
+### Step 2 Create a release tag
+  * Create a release tag with the same version as the release version, for example 1.2.0
+  * Push the tag to the repo, this will trigger a github action that creates draft release on github.  
+  * Edit the draft and publish it.
+### Step 3 Create a PR that updates shomei to the next snapshot version
+  * Update the version in `gradle.properties` to the next snapshot version, for example 1.2.1-SNAPSHOT
+  * Once the PR merges, github actions will trigger a build and publish of the `develop` image to dockerhub
+
+Finally, notify the team that the release is complete.
