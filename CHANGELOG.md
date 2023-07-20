@@ -1,11 +1,13 @@
 # Changelog
 
-## 1.2.1 
-### Release Date: TBD
-### Release Date 2023-07-11
+## 1.3.0 
+### Release Date 2023-07-20
 ### Additions and Improvements
 ### Bug Fixes
+- fix for worldstate partitioning [#55](https://github.com/Consensys/shomei/pull/55)
 ### Release Link
+Link : https://hub.docker.com/r/consensys/linea-shomei/tags?page=1&name=1.3.0
+
 
 ## 1.2.0 
 ### Release Date 2023-07-11
