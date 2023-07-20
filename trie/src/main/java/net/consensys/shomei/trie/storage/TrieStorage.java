@@ -113,5 +113,16 @@ public interface TrieStorage {
     public FlattenedLeaf getRightNodeValue() {
       return rightNode.getValue();
     }
+
+    @Override
+    public String toString() {
+      return "Range [leftNode="
+          + getLeftNodeKey().toHexString()
+          + ", centerNode="
+          + getCenterNodeKey().map(Bytes::toHexString)
+          + ", rightNode="
+          + getRightNodeKey().toHexString()
+          + "]";
+    }
   }
 }

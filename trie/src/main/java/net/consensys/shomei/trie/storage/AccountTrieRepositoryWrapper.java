@@ -15,8 +15,11 @@ package net.consensys.shomei.trie.storage;
 
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
+import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
 
 /**
@@ -24,7 +27,11 @@ import org.apache.tuweni.bytes.Bytes;
  * and abstraction for interacting with the account trie data.
  */
 public class AccountTrieRepositoryWrapper implements TrieStorage {
-
+  private static final Bytes ACCOUNT_TRIE_PREFIX = Bytes.wrap(Longs.toByteArray(Long.MAX_VALUE));
+  public  static final Function<Bytes, Bytes> WRAP =
+      hkey -> Bytes.concatenate(ACCOUNT_TRIE_PREFIX, hkey);
+  public static final Function<Bytes, Bytes> UNWRAP =
+      key -> key.slice(ACCOUNT_TRIE_PREFIX.size() - 1);
   private final TrieStorage trieStorage;
 
   private final TrieUpdater worldStateUpdater;
@@ -42,12 +49,21 @@ public class AccountTrieRepositoryWrapper implements TrieStorage {
 
   @Override
   public Optional<FlattenedLeaf> getFlatLeaf(final Bytes hkey) {
-    return trieStorage.getFlatLeaf(hkey);
+    return trieStorage.getFlatLeaf(WRAP.apply(hkey));
   }
 
   @Override
   public Range getNearestKeys(final Bytes hkey) {
-    return trieStorage.getNearestKeys(hkey);
+    Range nearestKeys = trieStorage.getNearestKeys(WRAP.apply(hkey));
+    final Map.Entry<Bytes, FlattenedLeaf> left =
+        Map.entry(UNWRAP.apply(nearestKeys.getLeftNodeKey()), nearestKeys.getLeftNodeValue());
+    final Optional<Map.Entry<Bytes, FlattenedLeaf>> center =
+        nearestKeys
+            .getCenterNode()
+            .map(centerNode -> Map.entry(UNWRAP.apply(centerNode.getKey()), centerNode.getValue()));
+    final Map.Entry<Bytes, FlattenedLeaf> right =
+        Map.entry(UNWRAP.apply(nearestKeys.getRightNodeKey()), nearestKeys.getRightNodeValue());
+    return new Range(left, center, right);
   }
 
   @Override
@@ -57,6 +73,36 @@ public class AccountTrieRepositoryWrapper implements TrieStorage {
 
   @Override
   public TrieUpdater updater() {
-    return worldStateUpdater;
+    return new AccountUpdater(worldStateUpdater);
+  }
+
+  public static class AccountUpdater implements TrieUpdater {
+
+    private final TrieUpdater updater;
+
+    public AccountUpdater(final TrieUpdater updater) {
+
+      this.updater = updater;
+    }
+
+    @Override
+    public void putFlatLeaf(final Bytes hkey, final FlattenedLeaf value) {
+      updater.putFlatLeaf(WRAP.apply(hkey), value);
+    }
+
+    @Override
+    public void putTrieNode(final Bytes location, final Bytes nodeHash, final Bytes value) {
+      updater.putTrieNode(location, nodeHash, value);
+    }
+
+    @Override
+    public void removeFlatLeafValue(final Bytes hkey) {
+      updater.removeFlatLeafValue(WRAP.apply(hkey));
+    }
+
+    @Override
+    public void commit() {
+      updater.commit();
+    }
   }
 }

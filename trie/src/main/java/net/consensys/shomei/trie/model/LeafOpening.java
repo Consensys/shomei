@@ -131,4 +131,18 @@ public class LeafOpening {
         hkey, // HKEY
         hval); // HVALUE
   }
+
+  @Override
+  public String toString() {
+    return "LeafOpening{"
+        + "hkey="
+        + hkey
+        + ", hval="
+        + hval.toHexString()
+        + ", prevLeaf="
+        + prevLeaf
+        + ", nextLeaf="
+        + nextLeaf
+        + '}';
+  }
 }
