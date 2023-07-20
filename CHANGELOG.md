@@ -1,6 +1,13 @@
 # Changelog
 
-## 1.3.0 
+## 1.3.1
+### Release Date TBD
+### Additions and Improvements
+### Bug Fixes
+### Release Link
+Link : https://hub.docker.com/r/consensys/linea-shomei/tags?page=1&name=1.3.1
+
+## 1.3.0
 ### Release Date 2023-07-20
 ### Additions and Improvements
 ### Bug Fixes
