@@ -13,6 +13,7 @@
 
 package net.consensys.shomei.storage;
 
+import static net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper.WRAP_ACCOUNT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
@@ -35,7 +36,7 @@ public abstract class WorldStateWrapperTestBase {
     final AccountTrieRepositoryWrapper wrapper =
         new AccountTrieRepositoryWrapper(worldStateStorage, worldStateStorage.updater());
     wrapper.updater().putFlatLeaf(Bytes.of(3), flatLeafValue);
-    var res = worldStateStorage.getFlatLeaf(Bytes.of(3));
+    var res = worldStateStorage.getFlatLeaf(WRAP_ACCOUNT.apply(Bytes.of(3)));
     assertThat(res).isPresent();
     assertThat(res.get()).isEqualTo(flatLeafValue);
   }
@@ -62,7 +63,7 @@ public abstract class WorldStateWrapperTestBase {
         new AccountTrieRepositoryWrapper(worldStateStorage, worldStateStorage.updater());
     final FlattenedLeaf flatLeafValue = new FlattenedLeaf(1L, Bytes.EMPTY);
     wrapper.updater().putFlatLeaf(Bytes.of(3), flatLeafValue);
-    var res = worldStateStorage.getFlatLeaf(Bytes.of(3));
+    var res = worldStateStorage.getFlatLeaf(WRAP_ACCOUNT.apply(Bytes.of(3)));
     assertThat(res).isPresent();
     assertThat(res.get()).isEqualTo(flatLeafValue);
     wrapper.updater().removeFlatLeafValue(Bytes.of(3));

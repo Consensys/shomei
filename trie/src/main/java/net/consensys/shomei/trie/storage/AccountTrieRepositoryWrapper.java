@@ -28,9 +28,9 @@ import org.apache.tuweni.bytes.Bytes;
  */
 public class AccountTrieRepositoryWrapper implements TrieStorage {
   private static final Bytes ACCOUNT_TRIE_PREFIX = Bytes.wrap(Longs.toByteArray(Long.MAX_VALUE));
-  public  static final Function<Bytes, Bytes> WRAP =
+  public static final Function<Bytes, Bytes> WRAP_ACCOUNT =
       hkey -> Bytes.concatenate(ACCOUNT_TRIE_PREFIX, hkey);
-  public static final Function<Bytes, Bytes> UNWRAP =
+  public static final Function<Bytes, Bytes> UNWRAP_ACCOUNT =
       key -> key.slice(ACCOUNT_TRIE_PREFIX.size() - 1);
   private final TrieStorage trieStorage;
 
@@ -49,20 +49,24 @@ public class AccountTrieRepositoryWrapper implements TrieStorage {
 
   @Override
   public Optional<FlattenedLeaf> getFlatLeaf(final Bytes hkey) {
-    return trieStorage.getFlatLeaf(WRAP.apply(hkey));
+    return trieStorage.getFlatLeaf(WRAP_ACCOUNT.apply(hkey));
   }
 
   @Override
   public Range getNearestKeys(final Bytes hkey) {
-    Range nearestKeys = trieStorage.getNearestKeys(WRAP.apply(hkey));
+    Range nearestKeys = trieStorage.getNearestKeys(WRAP_ACCOUNT.apply(hkey));
     final Map.Entry<Bytes, FlattenedLeaf> left =
-        Map.entry(UNWRAP.apply(nearestKeys.getLeftNodeKey()), nearestKeys.getLeftNodeValue());
+        Map.entry(
+            UNWRAP_ACCOUNT.apply(nearestKeys.getLeftNodeKey()), nearestKeys.getLeftNodeValue());
     final Optional<Map.Entry<Bytes, FlattenedLeaf>> center =
         nearestKeys
             .getCenterNode()
-            .map(centerNode -> Map.entry(UNWRAP.apply(centerNode.getKey()), centerNode.getValue()));
+            .map(
+                centerNode ->
+                    Map.entry(UNWRAP_ACCOUNT.apply(centerNode.getKey()), centerNode.getValue()));
     final Map.Entry<Bytes, FlattenedLeaf> right =
-        Map.entry(UNWRAP.apply(nearestKeys.getRightNodeKey()), nearestKeys.getRightNodeValue());
+        Map.entry(
+            UNWRAP_ACCOUNT.apply(nearestKeys.getRightNodeKey()), nearestKeys.getRightNodeValue());
     return new Range(left, center, right);
   }
 
@@ -87,7 +91,7 @@ public class AccountTrieRepositoryWrapper implements TrieStorage {
 
     @Override
     public void putFlatLeaf(final Bytes hkey, final FlattenedLeaf value) {
-      updater.putFlatLeaf(WRAP.apply(hkey), value);
+      updater.putFlatLeaf(WRAP_ACCOUNT.apply(hkey), value);
     }
 
     @Override
@@ -97,7 +101,7 @@ public class AccountTrieRepositoryWrapper implements TrieStorage {
 
     @Override
     public void removeFlatLeafValue(final Bytes hkey) {
-      updater.removeFlatLeafValue(WRAP.apply(hkey));
+      updater.removeFlatLeafValue(WRAP_ACCOUNT.apply(hkey));
     }
 
     @Override

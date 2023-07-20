@@ -118,6 +118,6 @@ public class StorageTrieRepositoryWrapper implements TrieStorage {
   }
 
   private Bytes retrieveStorageKey(final Bytes key) {
-    return key.slice(accountPath.size() -1);
+    return key.slice(accountPath.size() - 1);
   }
 }

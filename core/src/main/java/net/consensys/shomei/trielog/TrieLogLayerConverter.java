@@ -13,21 +13,19 @@
 
 package net.consensys.shomei.trielog;
 
-import static net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper.WRAP;
+import static net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper.WRAP_ACCOUNT;
 import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
 
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
-import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 import net.consensys.zkevm.HashProvider;
 
 import java.util.Objects;
 import java.util.Optional;
 
-import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
@@ -112,8 +110,7 @@ public class TrieLogLayerConverter {
                     .flatMap(
                         index ->
                             new StorageTrieRepositoryWrapper(index, worldStateStorage, null)
-                                .getFlatLeaf(
-                                        storageSlotKey.slotHash())
+                                .getFlatLeaf(storageSlotKey.slotHash())
                                 .map(FlattenedLeaf::leafValue)
                                 .map(UInt256::fromBytes))
                     .orElse(null);
@@ -165,7 +162,7 @@ public class TrieLogLayerConverter {
     final ZkAccount oldAccountValue;
 
     final Optional<FlattenedLeaf> flatLeaf =
-        worldStateStorage.getFlatLeaf(WRAP.apply(accountKey.accountHash()));
+        worldStateStorage.getFlatLeaf(WRAP_ACCOUNT.apply(accountKey.accountHash()));
 
     if (in.nextIsNull() && flatLeaf.isEmpty()) {
       in.skipNext();
