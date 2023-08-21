@@ -76,6 +76,11 @@ public interface TraceManager {
       return this;
     }
 
+    public TraceManagerUpdater removeTrace(final long blockNumber) {
+      transaction.remove(Longs.toByteArray(blockNumber));
+      return this;
+    }
+
     public TraceManagerUpdater saveZkStateRootHash(final long blockNumber, final Hash stateRoot) {
       transaction.put(
           (ZK_STATE_ROOT_PREFIX + blockNumber).getBytes(StandardCharsets.UTF_8),

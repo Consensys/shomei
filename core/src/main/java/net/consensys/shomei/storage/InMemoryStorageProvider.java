@@ -54,6 +54,12 @@ public class InMemoryStorageProvider implements StorageProvider {
           }
 
           @Override
+          public TraceManagerUpdater removeTrace(final long blockNumber) {
+            traceStorage.remove(blockNumber);
+            return this;
+          }
+
+          @Override
           public void commit() {
             // no-op
           }
