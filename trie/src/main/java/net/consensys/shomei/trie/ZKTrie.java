@@ -272,7 +272,6 @@ public class ZKTrie {
 
       final FlattenedLeaf currentFlatLeafValue = nearestKeys.getCenterNodeValue().orElseThrow();
 
-      System.out.println(currentFlatLeafValue.leafValue());
       // GET path of hash(k)
       final Bytes leafPath = pathResolver.getLeafPath(currentFlatLeafValue.leafIndex());
       // READ hash(k)
