@@ -1,12 +1,14 @@
 # Changelog
 
-## 1.4.1
+## 2.0.0
 ### Release Date X
-### Additions and Improvements
-### Bug Fixes
+Version 2.0.0 requires a re-sync of the state and requires version 0.3.0+ of the besu-shomei plugin.
 
-- Added a fix to correctly handle the scenario of contract self-destruction and recreation within the same block by creating a new tree for the recreated contract. [#68](https://github.com/Consensys/shomei/pull/68)
+### Additions and Improvements
 - Added support for Mimc on bls12-377 [#69](https://github.com/Consensys/shomei/pull/69)
+
+### Bug Fixes
+- Added a fix to correctly handle the scenario of contract self-destruction and recreation within the same block by creating a new tree for the recreated contract. [#68](https://github.com/Consensys/shomei/pull/68)
 
 ### Release Link
 
