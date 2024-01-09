@@ -51,7 +51,7 @@ public class WorldStateStateRootTest {
             EMPTY_KECCAK_CODE_HASH,
             0L);
 
-    assertThat(HashProvider.mimc(zkAccount.getEncodedBytes()))
+    assertThat(HashProvider.trieHash(zkAccount.getEncodedBytes()))
         .isEqualTo(
             Hash.fromHexString(
                 "0x017095f9f125ac3d74c7e0bb482f3cfb7409915d27ecad1b1bb4ca65103f13ce"));
@@ -87,7 +87,7 @@ public class WorldStateStateRootTest {
 
     MutableZkAccount account = getAccountOne();
 
-    assertThat(HashProvider.mimc(account.getEncodedBytes()))
+    assertThat(HashProvider.trieHash(account.getEncodedBytes()))
         .isEqualTo(
             Hash.fromHexString(
                 "0x017095f9f125ac3d74c7e0bb482f3cfb7409915d27ecad1b1bb4ca65103f13ce"));
@@ -161,7 +161,7 @@ public class WorldStateStateRootTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.mimc(slotKey);
+    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     account2Storage.putWithTrace(
         slotKeyHash,
@@ -206,7 +206,7 @@ public class WorldStateStateRootTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.mimc(slotKey);
+    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
@@ -232,7 +232,7 @@ public class WorldStateStateRootTest {
 
     // Write again, somewhere else
     final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
-    final Hash newSlotKeyHash = HashProvider.mimc(newSlotKey);
+    final Hash newSlotKeyHash = HashProvider.trieHash(newSlotKey);
     final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
     account2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));

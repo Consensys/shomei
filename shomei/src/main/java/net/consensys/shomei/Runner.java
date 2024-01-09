@@ -14,6 +14,7 @@
 package net.consensys.shomei;
 
 import net.consensys.shomei.cli.option.DataStorageOption;
+import net.consensys.shomei.cli.option.HashFunctionOption;
 import net.consensys.shomei.cli.option.JsonRpcOption;
 import net.consensys.shomei.cli.option.MetricsOption;
 import net.consensys.shomei.cli.option.SyncOption;
@@ -27,6 +28,7 @@ import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfig
 import net.consensys.shomei.storage.RocksDBStorageProvider;
 import net.consensys.shomei.storage.StorageProvider;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
+import net.consensys.zkevm.HashProvider;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -56,9 +58,10 @@ public class Runner {
       final DataStorageOption dataStorageOption,
       JsonRpcOption jsonRpcOption,
       final SyncOption syncOption,
-      MetricsOption metricsOption) {
+      MetricsOption metricsOption,
+      HashFunctionOption hashFunctionOption) {
     this.vertx = Vertx.vertx();
-
+    setupHashFunction(hashFunctionOption);
     metricsService = setupMetrics(metricsOption);
 
     final StorageProvider storageProvider =
@@ -93,6 +96,10 @@ public class Runner {
             Optional.of(jsonRpcOption.getRpcHttpHostAllowList()),
             fullSyncDownloader,
             worldStateArchive);
+  }
+
+  private void setupHashFunction(HashFunctionOption hashFunctionOption) {
+    HashProvider.setTrieHashFunction(hashFunctionOption.getHashFunction());
   }
 
   private MetricsService setupMetrics(MetricsOption metricsOption) {

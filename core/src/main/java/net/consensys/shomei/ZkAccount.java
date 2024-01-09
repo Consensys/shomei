@@ -15,7 +15,7 @@ package net.consensys.shomei;
 
 import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
 import static net.consensys.zkevm.HashProvider.keccak256;
-import static net.consensys.zkevm.HashProvider.mimc;
+import static net.consensys.zkevm.HashProvider.trieHash;
 
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.trielog.TrieLogAccountValue;
@@ -36,7 +36,7 @@ public class ZkAccount {
 
   public static final MimcSafeBytes<Bytes32> EMPTY_KECCAK_CODE_HASH =
       safeByte32(keccak256(Bytes.EMPTY));
-  public static final Hash EMPTY_CODE_HASH = mimc(Bytes32.ZERO);
+  public static final Hash EMPTY_CODE_HASH = trieHash(Bytes32.ZERO);
 
   protected AccountKey accountKey;
   protected MimcSafeBytes<Bytes32> keccakCodeHash;

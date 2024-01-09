@@ -390,7 +390,7 @@ public class ZKTrie {
               nearestKeys.getLeftNodeValue().leafIndex(),
               nearestKeys.getRightNodeValue().leafIndex(),
               hKey,
-              HashProvider.mimc(newValue));
+              HashProvider.trieHash(newValue));
 
       final List<Node<Bytes>> centerSiblings =
           state.putAndProve(leafPathToAdd, newLeafValue.getEncodesBytes());
@@ -437,7 +437,7 @@ public class ZKTrie {
       final LeafOpening priorUpdatedLeaf =
           get(leafPathToUpdate).map(LeafOpening::readFrom).orElseThrow();
       final LeafOpening newUpdatedLeaf = new LeafOpening(priorUpdatedLeaf);
-      newUpdatedLeaf.setHval(HashProvider.mimc(newValue));
+      newUpdatedLeaf.setHval(HashProvider.trieHash(newValue));
 
       final List<Node<Bytes>> siblings =
           state.putAndProve(leafPathToUpdate, newUpdatedLeaf.getEncodesBytes());

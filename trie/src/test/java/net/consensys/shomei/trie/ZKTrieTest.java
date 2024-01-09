@@ -53,7 +53,7 @@ public class ZKTrieTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     zkTrie.putWithTrace(hkey, key, value);
     zkTrie.commit();
@@ -77,7 +77,7 @@ public class ZKTrieTest {
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
     final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     zkTrie.putWithTrace(hkey, key, dumValue);
 
@@ -111,7 +111,7 @@ public class ZKTrieTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     zkTrie.putWithTrace(hkey, key, value);
 

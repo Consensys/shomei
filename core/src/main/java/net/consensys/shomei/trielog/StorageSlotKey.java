@@ -32,7 +32,7 @@ public record StorageSlotKey(Hash slotHash, MimcSafeBytes<UInt256> slotKey)
   }
 
   public StorageSlotKey(final UInt256 slotKey) {
-    this(HashProvider.mimc(safeUInt256(slotKey)), slotKey);
+    this(HashProvider.trieHash(safeUInt256(slotKey)), slotKey);
   }
 
   @Override

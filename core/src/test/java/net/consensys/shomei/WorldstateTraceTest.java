@@ -58,7 +58,7 @@ public class WorldstateTraceTest {
   public void testTraceReadZero() throws IOException {
 
     final Bytes32 key = createDumDigest(36);
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -74,7 +74,7 @@ public class WorldstateTraceTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -191,7 +191,7 @@ public class WorldstateTraceTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.mimc(slotKey);
+    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
 
@@ -236,7 +236,7 @@ public class WorldstateTraceTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.mimc(slotKey);
+    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
@@ -256,7 +256,7 @@ public class WorldstateTraceTest {
 
     // Write again, somewhere else
     final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
-    final Hash newSlotKeyHash = HashProvider.mimc(newSlotKey);
+    final Hash newSlotKeyHash = HashProvider.trieHash(newSlotKey);
     final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
     Trace trace4 = account2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
 

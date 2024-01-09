@@ -29,7 +29,7 @@ public class HashProviderTest {
     for (int i = 0; i < 16; i++) {
       input.set(Bytes32.SIZE * (i + 1) - 1, (byte) i);
     }
-    assertThat(HashProvider.mimc(input))
+    assertThat(HashProvider.trieHash(input))
         .isEqualTo(
             Bytes32.fromHexString(
                 "0x12900ae41a010e54e3b1ed95efa39071d357ff642aeedd30a2c4e13250409662"));

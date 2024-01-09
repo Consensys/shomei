@@ -13,6 +13,8 @@
 
 package net.consensys.zkevm;
 
+import java.util.function.Function;
+
 import com.sun.jna.Native;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,8 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HashProvider {
-
   private static final Logger LOG = LoggerFactory.getLogger(HashProvider.class);
+  // default to bls12-377
+  private static Function<Bytes, Hash> trieHashFunction = HashProvider::mimcBls12377;
 
   @SuppressWarnings("WeakerAccess")
   public static final boolean ENABLED;
@@ -43,13 +46,27 @@ public class HashProvider {
     ENABLED = enabled;
   }
 
+  public static Hash trieHash(final Bytes bytes) {
+    return trieHashFunction.apply(bytes);
+  }
+
+  public static void setTrieHashFunction(Function<Bytes, Hash> hashFunction) {
+    trieHashFunction = hashFunction;
+  }
+
   public static Hash keccak256(final Bytes bytes) {
     return Hash.hash(bytes);
   }
 
-  public static Hash mimc(final Bytes bytes) {
+  public static Hash mimcBls12377(final Bytes bytes) {
     final byte[] output = new byte[Bytes32.SIZE];
     LibGnark.computeMimcBls12377(bytes.toArrayUnsafe(), bytes.size(), output);
+    return Hash.wrap(Bytes32.wrap(output));
+  }
+
+  public static Hash mimcBn254(final Bytes bytes) {
+    final byte[] output = new byte[Bytes32.SIZE];
+    LibGnark.computeMimcBn254(bytes.toArrayUnsafe(), bytes.size(), output);
     return Hash.wrap(Bytes32.wrap(output));
   }
 }

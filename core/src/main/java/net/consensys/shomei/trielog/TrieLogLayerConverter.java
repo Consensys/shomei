@@ -297,6 +297,6 @@ public class TrieLogLayerConverter {
       mutableBytes.set(i * Bytes32.SIZE + (Bytes32.SIZE - length), code.slice(offset, length));
       offset += length;
     }
-    return HashProvider.mimc(mutableBytes);
+    return HashProvider.trieHash(mutableBytes);
   }
 }
