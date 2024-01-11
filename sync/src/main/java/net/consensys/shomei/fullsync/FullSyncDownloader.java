@@ -112,14 +112,14 @@ public class FullSyncDownloader extends AbstractVerticle implements TrieLogObser
     LOG.atInfo().setMessage("Fullsync downloader service started").log();
     completableFuture = new CompletableFuture<>();
     while (!completableFuture.isDone()) {
-      if (blockQueue.waitForNewElement()) {
-        importBlock();
+      final TrieLogIdentifier trieLogId = blockQueue.waitForNewElement();
+      if (trieLogId != null) {
+        importBlock(trieLogId);
       }
     }
   }
 
-  public void importBlock() {
-    final TrieLogObserver.TrieLogIdentifier trieLogId = blockQueue.poll();
+  public void importBlock(final TrieLogIdentifier trieLogId) {
     if (trieLogId != null) {
       try {
         final boolean isTraceGenerationNeeded = isTraceGenerationAllowed(trieLogId.blockNumber());

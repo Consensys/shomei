@@ -47,7 +47,7 @@ dependencyManagement {
     dependency 'ConsenSys:besu-shomei-plugin:0.2.1'
 
 
-    dependency 'org.hyperledger.besu:mimc:0.7.2-SNAPSHOT'
+    dependency 'org.hyperledger.besu:gnark:0.8.3'
 
     // Jackson
     dependencySet(group:'com.fasterxml.jackson.core', version:'2.14.2') {

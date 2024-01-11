@@ -55,7 +55,7 @@ public class TraceSerializationTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     final InsertionTrace expectedTrace = (InsertionTrace) zkTrie.putWithTrace(hkey, key, value);
 
@@ -76,7 +76,7 @@ public class TraceSerializationTest {
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
     final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     zkTrie.putWithTrace(hkey, key, dumValue);
 
@@ -97,7 +97,7 @@ public class TraceSerializationTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     zkTrie.putWithTrace(hkey, key, value);
 
@@ -119,7 +119,7 @@ public class TraceSerializationTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     // try read zero trace before inserting the key in the trie
     final ReadZeroTrace expectedReadZeroTrace = (ReadZeroTrace) zkTrie.readWithTrace(hkey, key);
@@ -153,7 +153,7 @@ public class TraceSerializationTest {
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
     final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     List<Trace> expectedTraces = new ArrayList<>();
     expectedTraces.add(zkTrie.putWithTrace(hkey, key, dumValue));

@@ -32,7 +32,7 @@ public class LeafOpening {
       new LeafOpening(
           0,
           1,
-          Hash.fromHexString("30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000000"),
+          Hash.fromHexString("12ab655e9a2ca55660b44d1e5c37b00159aa76fed00000010a11800000000000"),
           Bytes32.ZERO);
 
   private final Hash hkey;

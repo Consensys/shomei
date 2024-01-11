@@ -58,7 +58,7 @@ public class WorldstateTraceTest {
   public void testTraceReadZero() throws IOException {
 
     final Bytes32 key = createDumDigest(36);
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -70,11 +70,11 @@ public class WorldstateTraceTest {
   }
 
   @Test
-  public void testTraceRead() throws IOException {
+  public void testTraceReadSimpleValue() throws IOException {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
-    final Hash hkey = HashProvider.mimc(key);
+    final Hash hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -84,7 +84,23 @@ public class WorldstateTraceTest {
     Trace trace = accountStateTrie.readWithTrace(hkey, key);
 
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(trace))
-        .isEqualToIgnoringWhitespace(getResources("testTraceRead.json"));
+        .isEqualToIgnoringWhitespace(getResources("testTraceReadSimpleValue.json"));
+  }
+
+  @Test
+  public void testTraceReadAccount() throws IOException {
+
+    ZKTrie accountStateTrie =
+        ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
+
+    MutableZkAccount account = getAccountOne();
+    accountStateTrie.putWithTrace(
+        account.getHkey(), account.getAddress(), account.getEncodedBytes());
+
+    Trace trace = accountStateTrie.readWithTrace(account.getHkey(), account.getAddress());
+
+    assertThat(JSON_OBJECT_MAPPER.writeValueAsString(trace))
+        .isEqualToIgnoringWhitespace(getResources("testTraceReadAccount.json"));
   }
 
   @Test
@@ -103,7 +119,7 @@ public class WorldstateTraceTest {
   }
 
   @Test
-  public void testWorldStateWithTwoAccount() throws IOException {
+  public void testWorldStateWithTwoAccounts() throws IOException {
 
     final ZkAccount zkAccount2 =
         new ZkAccount(
@@ -191,7 +207,7 @@ public class WorldstateTraceTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.mimc(slotKey);
+    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
 
@@ -236,7 +252,7 @@ public class WorldstateTraceTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.mimc(slotKey);
+    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
@@ -248,6 +264,7 @@ public class WorldstateTraceTest {
 
     // clean storage B
     Trace trace2 = account2Storage.removeWithTrace(slotKeyHash, slotKey);
+    trace2.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
     Trace trace3 =
@@ -256,9 +273,10 @@ public class WorldstateTraceTest {
 
     // Write again, somewhere else
     final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
-    final Hash newSlotKeyHash = HashProvider.mimc(newSlotKey);
+    final Hash newSlotKeyHash = HashProvider.trieHash(newSlotKey);
     final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
     Trace trace4 = account2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
+    trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
     Trace trace5 =

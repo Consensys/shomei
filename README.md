@@ -84,6 +84,10 @@ it's important to enable `--min-confirmations-before-importing` if you have reor
 ```bash
 shomei --enable-trace-generation=false  --enable-finalized-block-limit=true --use-finalized-block-number=1855350 --use-finalized-block-hash=0xabc0cca83e3eec5a0a30db97dcd4fbbec07361f38c4395c9f79ecf15ee92a07c
 ```
+### More
+
+In addition, it's important to note that Shomei currently does not handle rollback state operations, particularly due to its strategy for managing self-destruction of contracts. This is a known limitation and we are actively exploring potential solutions to improve that.
+Indeed, this limitation is also due to how we decode the trie log that we receive from Besu but not only that. For more details on this, please refer to the pull request at https://github.com/Consensys/shomei/pull/68.
 
 ## Testing
 

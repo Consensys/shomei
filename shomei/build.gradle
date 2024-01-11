@@ -18,6 +18,7 @@ dependencies {
     implementation project(':util')
     implementation project(':sync')
     implementation project(':core')
+    implementation project(':crypto')
     implementation project(':trie')
     implementation project(':services:metrics')
     implementation project(':services:rpc:common')

@@ -34,7 +34,7 @@ public record AccountKey(Hash accountHash, MimcSafeBytes<Address> address)
   }
 
   public AccountKey(final MimcSafeBytes<Address> address) {
-    this(HashProvider.mimc(address), address);
+    this(HashProvider.trieHash(address), address);
   }
 
   @Override

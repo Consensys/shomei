@@ -17,6 +17,7 @@ import net.consensys.shomei.Runner;
 import net.consensys.shomei.cli.error.ExecutionExceptionHandler;
 import net.consensys.shomei.cli.error.ParameterExceptionHandler;
 import net.consensys.shomei.cli.option.DataStorageOption;
+import net.consensys.shomei.cli.option.HashFunctionOption;
 import net.consensys.shomei.cli.option.JsonRpcOption;
 import net.consensys.shomei.cli.option.LoggingLevelOption;
 import net.consensys.shomei.cli.option.MetricsOption;
@@ -64,6 +65,9 @@ public class StateManagerCommand implements Runnable {
 
   @Mixin(name = "Metrics configuration")
   private final MetricsOption metricsOption = MetricsOption.create();
+
+  @Mixin(name = "Hash function configuration")
+  private final HashFunctionOption hashFunctionOption = HashFunctionOption.create();
 
   public StateManagerCommand() {}
 
@@ -119,7 +123,9 @@ public class StateManagerCommand implements Runnable {
     try {
       verifyCommandParameters();
       configureLogging();
-      final Runner runner = new Runner(dataStorageOption, jsonRpcOption, syncOption, metricsOption);
+      final Runner runner =
+          new Runner(
+              dataStorageOption, jsonRpcOption, syncOption, metricsOption, hashFunctionOption);
       addShutdownHook(runner);
       runner.start();
     } catch (final Exception e) {

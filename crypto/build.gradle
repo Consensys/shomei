@@ -22,7 +22,7 @@ dependencies {
 
     implementation 'org.hyperledger.besu:besu-datatypes'
 
-    implementation 'org.hyperledger.besu:mimc'
+    implementation 'org.hyperledger.besu:gnark'
     implementation 'net.java.dev.jna:jna'
 
     api 'org.slf4j:slf4j-api'

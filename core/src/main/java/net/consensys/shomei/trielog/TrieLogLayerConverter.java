@@ -62,6 +62,7 @@ public class TrieLogLayerConverter {
       final AccountKey accountKey = new AccountKey(address);
       final Optional<Bytes> newCode;
       Optional<Long> maybeAccountIndex = Optional.empty();
+      boolean isAccountCleared = false;
 
       if (input.nextIsNull()) {
         input.skipNext();
@@ -84,9 +85,10 @@ public class TrieLogLayerConverter {
             TrieLogLayer.nullOrValue(
                 input,
                 rlpInput -> prepareNewTrieLogAccount(accountKey, newCode, priorAccount, rlpInput));
-        final boolean isCleared = TrieLogLayer.defaultOrValue(input, 0, RLPInput::readInt) == 1;
+        isAccountCleared = TrieLogLayer.defaultOrValue(input, 0, RLPInput::readInt) == 1;
         input.leaveList();
-        trieLogLayer.addAccountChange(accountKey, priorAccount.account, newAccountValue, isCleared);
+        trieLogLayer.addAccountChange(
+            accountKey, priorAccount.account, newAccountValue, isAccountCleared);
       }
 
       if (input.nextIsNull()) {
@@ -96,8 +98,7 @@ public class TrieLogLayerConverter {
         while (!input.isEndOfCurrentList()) {
           input.enterList();
           final Bytes32 keccakSlotHash = input.readBytes32();
-          final UInt256 oldValueExpected =
-              TrieLogLayer.nullOrValue(input, RLPInput::readUInt256Scalar);
+          UInt256 oldValueExpected = TrieLogLayer.nullOrValue(input, RLPInput::readUInt256Scalar);
           final UInt256 newValue = TrieLogLayer.nullOrValue(input, RLPInput::readUInt256Scalar);
           final boolean isCleared = TrieLogLayer.defaultOrValue(input, 0, RLPInput::readInt) == 1;
 
@@ -105,18 +106,25 @@ public class TrieLogLayerConverter {
             final StorageSlotKey storageSlotKey =
                 new StorageSlotKey(
                     TrieLogLayer.defaultOrValue(input, UInt256.ZERO, RLPInput::readUInt256Scalar));
-            final UInt256 oldValueFound =
-                maybeAccountIndex
-                    .flatMap(
-                        index ->
-                            new StorageTrieRepositoryWrapper(index, worldStateStorage, null)
-                                .getFlatLeaf(storageSlotKey.slotHash())
-                                .map(FlattenedLeaf::leafValue)
-                                .map(UInt256::fromBytes))
-                    .orElse(null);
+            final UInt256 oldValueFound;
+            if (isAccountCleared) {
+              oldValueFound = null;
+              oldValueExpected =
+                  null; // ignore old value as we will create a new account in the trie
+            } else {
+              oldValueFound =
+                  maybeAccountIndex
+                      .flatMap(
+                          index ->
+                              new StorageTrieRepositoryWrapper(index, worldStateStorage, null)
+                                  .getFlatLeaf(storageSlotKey.slotHash())
+                                  .map(FlattenedLeaf::leafValue)
+                                  .map(UInt256::fromBytes))
+                      .orElse(null);
+            }
             LOG.atTrace()
                 .setMessage(
-                    "storage entry ({} and keccak hash {}) found for account {} with leaf index {} : expected old value {} and found {} with new value {}")
+                    "storage entry ({} and keccak hash {}) found for account {} with leaf index {} : expected old value {} and found {} with new value {} is cleared {}")
                 .addArgument(storageSlotKey)
                 .addArgument(keccakSlotHash)
                 .addArgument(address)
@@ -124,6 +132,7 @@ public class TrieLogLayerConverter {
                 .addArgument(oldValueExpected)
                 .addArgument(oldValueFound)
                 .addArgument(newValue)
+                .addArgument(isCleared)
                 .log();
             if (!Objects.equals(
                 oldValueExpected, oldValueFound)) { // check consistency between trielog and db
@@ -288,6 +297,6 @@ public class TrieLogLayerConverter {
       mutableBytes.set(i * Bytes32.SIZE + (Bytes32.SIZE - length), code.slice(offset, length));
       offset += length;
     }
-    return HashProvider.mimc(mutableBytes);
+    return HashProvider.trieHash(mutableBytes);
   }
 }

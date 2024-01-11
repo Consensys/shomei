@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 
 public class TrieLogBlockingQueue extends PriorityBlockingQueue<TrieLogObserver.TrieLogIdentifier> {
 
-  public static final long INITIAL_SYNC_BLOCK_NUMBER_RANGE = 500;
+  public static final long INITIAL_SYNC_BLOCK_NUMBER_RANGE = 64;
 
   private final long maxCapacity;
 
@@ -64,11 +64,12 @@ public class TrieLogBlockingQueue extends PriorityBlockingQueue<TrieLogObserver.
     return super.offer(e);
   }
 
-  private Optional<Long> distance(Long e) {
-    return isEmpty() ? Optional.empty() : Optional.of(peek().blockNumber() - e);
+  private Optional<Long> distance(
+      final TrieLogObserver.TrieLogIdentifier trieLogIdentifier, final Long head) {
+    return isEmpty() ? Optional.empty() : Optional.of(trieLogIdentifier.blockNumber() - head);
   }
 
-  public boolean waitForNewElement() {
+  public TrieLogObserver.TrieLogIdentifier waitForNewElement() {
     long distance;
     CompletableFuture<Boolean> foundBlockFuture;
     try {
@@ -93,19 +94,22 @@ public class TrieLogBlockingQueue extends PriorityBlockingQueue<TrieLogObserver.
               CompletableFuture.supplyAsync(
                   () -> false, CompletableFuture.delayedExecutor(1, TimeUnit.SECONDS));
         } else {
+          final TrieLogObserver.TrieLogIdentifier trieLogIdentifier = peek();
           distance =
-              distance(currentShomeiHeadSupplier.get()).orElse(INITIAL_SYNC_BLOCK_NUMBER_RANGE);
+              distance(trieLogIdentifier, currentShomeiHeadSupplier.get())
+                  .orElse(INITIAL_SYNC_BLOCK_NUMBER_RANGE);
           if (distance == 1) {
-            return true;
+            remove(trieLogIdentifier);
+            return trieLogIdentifier;
           } else { // missing trielog we need to import them
             foundBlockFuture = onTrieLogMissing.apply(distance);
           }
         }
       } while (!completableFuture.isDone()
           && !foundBlockFuture.completeOnTimeout(false, 5, TimeUnit.SECONDS).get());
-      return foundBlockFuture.get();
+      return null;
     } catch (Exception ex) {
-      return false;
+      return null;
     }
   }
 

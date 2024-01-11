@@ -94,7 +94,7 @@ public class TrieLogLayer {
       final ZkAccount oldValue,
       final ZkAccount newValue,
       final boolean isCleared) {
-    final AccountKey accountKey = new AccountKey(HashProvider.mimc(address), address);
+    final AccountKey accountKey = new AccountKey(HashProvider.trieHash(address), address);
     addAccountChange(accountKey, oldValue, newValue, isCleared);
     return accountKey;
   }

@@ -60,7 +60,7 @@ public class LeafNode<V> extends org.hyperledger.besu.ethereum.trie.patricia.Lea
         return hashed;
       }
     }
-    final Bytes32 hashed = HashProvider.mimc(getEncodedBytes());
+    final Bytes32 hashed = HashProvider.trieHash(getEncodedBytes());
     hash = new SoftReference<>(hashed);
     return hashed;
   }

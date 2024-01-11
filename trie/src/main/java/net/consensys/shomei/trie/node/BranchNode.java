@@ -86,7 +86,7 @@ public class BranchNode<V> extends org.hyperledger.besu.ethereum.trie.patricia.B
         return hashed;
       }
     }
-    final Bytes32 hashed = HashProvider.mimc(getEncodedBytes());
+    final Bytes32 hashed = HashProvider.trieHash(getEncodedBytes());
     hash = new SoftReference<>(hashed);
     return hashed;
   }

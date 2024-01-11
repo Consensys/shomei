@@ -42,10 +42,10 @@ public class ZkAccountTest {
             safeByte32(Hash.ZERO),
             0L);
 
-    assertThat(HashProvider.mimc(zkAccount.getEncodedBytes()))
+    assertThat(HashProvider.trieHash(zkAccount.getEncodedBytes()))
         .isEqualTo(
             Bytes32.fromHexString(
-                "19be98b429f6e00b8eff84a8aa617d2982421d5cde049c3e2a9b5a30a554a307"));
+                "0x0f170eaef9275fd6098a06790c63a141e206e0520738a4cf5cf5081d495e8682"));
   }
 
   @Test
