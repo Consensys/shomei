@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0
+
+### Additions and Improvements
+
+### Bug Fixes
+
+### Release Link
+
 ## 2.0.0
 
 Version 2.0.0 requires a re-sync of the state and requires version [0.3.0](https://github.com/Consensys/besu-shomei-plugin/releases/tag/v0.3.0)+ of the besu-shomei plugin.
