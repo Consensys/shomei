@@ -9,6 +9,7 @@ This is a minor release on top of version 2.1.0.  A resync is required only if u
 ### Bug Fixes
 
 ### Release Link
+https://hub.docker.com/r/consensys/linea-shomei/tags?name=2.1.1
 
 ## 2.1.0
 
