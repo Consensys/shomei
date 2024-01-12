@@ -221,7 +221,7 @@ jobs:
           ./gradlew --no-daemon dockerManifest
 
   draftRelease:
-    if: github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/')
     needs: publishManifest
     runs-on: ubuntu-latest
     steps:
