@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.0
+
+### Additions and Improvements
+
+### Bug Fixes
+
+### Release Link
+
+
 ## 2.1.1
 This is a minor release on top of version 2.1.0.  A resync is required only if upgrading from a version prior to 2.1
 
