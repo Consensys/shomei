@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - '[0-9]+\.[0-9]+\.[0-9]+' # Matches release tags of the form major.minor.patch, e.g. 1.2.1
+      - 'v?[0-9]+.[0-9]+.[0-9]+**' # Matches release tags of the form major.minor.patch, e.g. 1.2.1
   pull_request:
 
 jobs:
@@ -219,3 +219,29 @@ jobs:
       - name: Publish Multi-arch Docker Image
         run: |
           ./gradlew --no-daemon dockerManifest
+
+  draftRelease:
+    if: github.event_name == 'push'
+    needs: publishManifest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Get date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            ## Release ${{ github.ref }} 
+            ### Release Date: ${{ steps.date.outputs.date }}
+            ### Additions and Improvements
+            ### Bug Fixes
+          draft: true
+          prerelease: false
