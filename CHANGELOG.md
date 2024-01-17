@@ -8,6 +8,18 @@
 
 ### Release Link
 
+
+## 2.1.1
+This is a minor release on top of version 2.1.0.  A resync is required only if upgrading from a version prior to 2.1
+
+### Additions and Improvements
+* add zkEndStateRootHash to trace response [#77](https://github.com/Consensys/shomei/pull/77)
+
+### Bug Fixes
+
+### Release Link
+https://hub.docker.com/r/consensys/linea-shomei/tags?name=2.1.1
+
 ## 2.1.0
 
 ⚠️  It is important to upgrade to this version in order to obtain a correct world state. **It is also necessary to resync from scratch.**

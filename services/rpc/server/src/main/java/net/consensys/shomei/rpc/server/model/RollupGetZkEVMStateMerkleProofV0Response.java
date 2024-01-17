@@ -25,6 +25,9 @@ public class RollupGetZkEVMStateMerkleProofV0Response {
   @JsonProperty("zkParentStateRootHash")
   private final String zkParentStateRootHash;
 
+  @JsonProperty("zkEndStateRootHash")
+  private final String zkEndStateRootHash;
+
   @JsonProperty("zkStateMerkleProof")
   private final List<List<Trace>> zkStateMerkleProof;
 
@@ -33,9 +36,11 @@ public class RollupGetZkEVMStateMerkleProofV0Response {
 
   public RollupGetZkEVMStateMerkleProofV0Response(
       final String zkParentStateRootHash,
+      final String zkEndStateRootHash,
       final List<List<Trace>> zkStateMerkleProof,
       final String zkStateManagerVersion) {
     this.zkParentStateRootHash = zkParentStateRootHash;
+    this.zkEndStateRootHash = zkEndStateRootHash;
     this.zkStateMerkleProof = zkStateMerkleProof;
     this.zkStateManagerVersion = zkStateManagerVersion;
   }

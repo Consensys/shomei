@@ -108,6 +108,7 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
             null,
             new RollupGetZkEVMStateMerkleProofV0Response(
                 accountStateTrie.getTopRootHash().toHexString(),
+                accountStateTrie.getTopRootHash().toHexString(),
                 List.of(Trace.deserialize(RLP.input(trace))),
                 IMPL_VERSION));
     final JsonRpcResponse response = method.response(request);

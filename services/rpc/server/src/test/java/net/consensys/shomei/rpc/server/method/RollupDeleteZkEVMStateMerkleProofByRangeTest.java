@@ -89,6 +89,7 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
     updater.saveZkStateRootHash(0, Hash.wrap(accountStateTrie.getTopRootHash()));
     updater.saveZkStateRootHash(1, Hash.wrap(accountStateTrie.getTopRootHash()));
     updater.saveZkStateRootHash(2, Hash.wrap(accountStateTrie.getTopRootHash()));
+    updater.saveZkStateRootHash(3, Hash.wrap(accountStateTrie.getTopRootHash()));
     updater.saveTrace(1, traces);
     updater.saveTrace(2, traces2);
     updater.saveTrace(3, traces3);
@@ -100,6 +101,7 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
         new JsonRpcSuccessResponse(
             null,
             new RollupGetZkEVMStateMerkleProofV0Response(
+                accountStateTrie.getTopRootHash().toHexString(),
                 accountStateTrie.getTopRootHash().toHexString(),
                 List.of(traces, traces2, traces3),
                 IMPL_VERSION));
@@ -140,7 +142,10 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
         new JsonRpcSuccessResponse(
             null,
             new RollupGetZkEVMStateMerkleProofV0Response(
-                accountStateTrie.getTopRootHash().toHexString(), List.of(traces3), IMPL_VERSION));
+                accountStateTrie.getTopRootHash().toHexString(),
+                accountStateTrie.getTopRootHash().toHexString(),
+                List.of(traces3),
+                IMPL_VERSION));
     response = requestMethod.response(request);
 
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(expectedResponse))
