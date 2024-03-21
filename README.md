@@ -2,7 +2,7 @@
 
 
 **Shomei zkevm state manager** extends the Hyperledger Besu functionality.
-This component communicates with Besu in order to maintain and update the zkevm state
+This component communicates with Besu in order to maintain and update the zkevm state.
 
 ## Shomei developers
 
@@ -12,9 +12,9 @@ This component communicates with Besu in order to maintain and update the zkevm 
 
 ## Binary Releases
 
-Binary releases are available from the [releases page](https://github.com/ConsenSys/shomei/releases).
+Binary releases are available on the [releases page](https://github.com/ConsenSys/shomei/releases).
 Binary builds that track the latest changes on the main branch are available on
-[Dockerhub](https://hub.docker.com/r/consensys/linea-shomei) 
+[Dockerhub](https://hub.docker.com/r/consensys/linea-shomei).
 
 We recommend only using release versions for Mainnet, but `develop` builds are useful for testing
 the latest changes on testnets.
@@ -62,7 +62,7 @@ Shomei can be launched in two different modes:
 ### Mode 1: Trace Generation
 
 The first mode is used for the generation of traces so that the prover can retrieve them.
-To use this mode, you need to activate it with these flags: `--enable-trace-generation=true` and `--trace-start-block-number=BLOCK_NUMBER`. The `--trace-start-block-number` flag allows you to define from when we want to start the generation of traces.
+To use this mode, you need to activate it with these flags: `--enable-trace-generation=true` and `--trace-start-block-number=BLOCK_NUMBER`. The `--trace-start-block-number` flag allows you to define on when we want to start the generation of traces.
 This allows for a faster sync rather than generating traces for old blocks that we no longer need.
 
 it's important to enable `--min-confirmations-before-importing` if you have reorg in your network (in general 2 for goerli and 4 for mainnet in linea)
@@ -74,8 +74,8 @@ shomei --enable-trace-generation=true --trace-start-block-number=1970000
 ### Mode 2: Serving GetProof for Finalized Blocks
 
 The second mode is used to serve getProof for finalized blocks. This mode does not require the generation of traces, so you should use this `-enable-trace-generation=false` flag. In addition, you should add `--enable-finalized-block-limit=true`, `--use-finalized-block-number=BLOCK_NUMBER`, and `--use-finalized-block-hash=BLOCK_HASH`. 
-Setting these will allow Shomei to stop the sync at this block and thus be able to serve the proof for it. It is recommended to choose a finalized block. Then the node will stop and wait before moving forward. 
-As long as it does not move forward, it can serve the getProof of this block. 
+Setting these will allow Shomei to stop the sync at this block and thus be able to serve as proof for it. It is recommended to choose a finalized block. Then the node will stop and wait before moving forward. 
+As long as it does not move forward, it can serve as getProof of this block. 
 As soon as the coordinator calls `rollup_forkChoiceUpdated` (for passing the new finalized block), Shomei will again move forward to this last one and stop.
 It can thus serve the getProof for this last one and those before it (knowing that there is a cache to serve the last 128 finalized blocks encountered by the node since it started).
 
