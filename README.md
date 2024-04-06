@@ -74,8 +74,8 @@ shomei --enable-trace-generation=true --trace-start-block-number=1970000
 ### Mode 2: Serving GetProof for Finalized Blocks
 
 The second mode is used to serve getProof for finalized blocks. This mode does not require the generation of traces, so you should use this `-enable-trace-generation=false` flag. In addition, you should add `--enable-finalized-block-limit=true`, `--use-finalized-block-number=BLOCK_NUMBER`, and `--use-finalized-block-hash=BLOCK_HASH`. 
-Setting these will allow Shomei to stop the sync at this block and thus be able to serve as proof for it. It is recommended to choose a finalized block. Then the node will stop and wait before moving forward. 
-As long as it does not move forward, it can serve as getProof of this block. 
+Setting these will allow Shomei to stop the sync at this block and thus be able to serve its proof. It is recommended to choose a finalized block. Then the node will stop and wait before moving forward. 
+As long as the sync does not move forward, shomei can serve the getProof method for this block. 
 As soon as the coordinator calls `rollup_forkChoiceUpdated` (for passing the new finalized block), Shomei will again move forward to this last one and stop.
 It can thus serve the getProof for this last one and those before it (knowing that there is a cache to serve the last 128 finalized blocks encountered by the node since it started).
 
