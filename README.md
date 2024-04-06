@@ -62,7 +62,7 @@ Shomei can be launched in two different modes:
 ### Mode 1: Trace Generation
 
 The first mode is used for the generation of traces so that the prover can retrieve them.
-To use this mode, you need to activate it with these flags: `--enable-trace-generation=true` and `--trace-start-block-number=BLOCK_NUMBER`. The `--trace-start-block-number` flag allows you to define on when we want to start the generation of traces.
+To use this mode, you need to activate it with these flags: `--enable-trace-generation=true` and `--trace-start-block-number=BLOCK_NUMBER`. The `--trace-start-block-number` flag allows you to define at which block number we want to start the generation of traces.
 This allows for a faster sync rather than generating traces for old blocks that we no longer need.
 
 it's important to enable `--min-confirmations-before-importing` if you have reorg in your network (in general 2 for goerli and 4 for mainnet in linea)
