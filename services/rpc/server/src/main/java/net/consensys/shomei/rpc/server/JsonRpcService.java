@@ -17,9 +17,9 @@ import static com.google.common.collect.Streams.stream;
 
 import net.consensys.shomei.fullsync.FullSyncDownloader;
 import net.consensys.shomei.metrics.MetricsService;
+import net.consensys.shomei.rpc.server.method.LineaGetProof;
 import net.consensys.shomei.rpc.server.method.RollupDeleteZkEVMStateMerkleProofByRange;
 import net.consensys.shomei.rpc.server.method.RollupForkChoiceUpdated;
-import net.consensys.shomei.rpc.server.method.LineaGetProof;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMBlockNumber;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMStateMerkleProofV0;
 import net.consensys.shomei.rpc.server.method.SendRawTrieLog;
