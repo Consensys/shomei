@@ -19,7 +19,7 @@ import net.consensys.shomei.fullsync.FullSyncDownloader;
 import net.consensys.shomei.metrics.MetricsService;
 import net.consensys.shomei.rpc.server.method.RollupDeleteZkEVMStateMerkleProofByRange;
 import net.consensys.shomei.rpc.server.method.RollupForkChoiceUpdated;
-import net.consensys.shomei.rpc.server.method.RollupGetProof;
+import net.consensys.shomei.rpc.server.method.LineaGetProof;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMBlockNumber;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMStateMerkleProofV0;
 import net.consensys.shomei.rpc.server.method.SendRawTrieLog;
@@ -105,7 +105,7 @@ public class JsonRpcService extends AbstractVerticle {
         mapOf(
             new AdminChangeLogLevel(),
             new SendRawTrieLog(fullSyncDownloader, worldStateArchive.getTrieLogManager()),
-            new RollupGetProof(worldStateArchive),
+            new LineaGetProof(worldStateArchive),
             new RollupGetZkEVMBlockNumber(worldStateArchive),
             new RollupDeleteZkEVMStateMerkleProofByRange(worldStateArchive.getTraceManager()),
             new RollupForkChoiceUpdated(worldStateArchive, fullSyncDownloader),

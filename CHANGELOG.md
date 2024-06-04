@@ -2,6 +2,9 @@
 
 ## 2.2.0
 
+### Breaking Changes
+- RPC method `rollup_getProof` has been renamed to `linea_getProof`
+
 ### Additions and Improvements
 
 ### Bug Fixes

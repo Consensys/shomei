@@ -45,10 +45,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
-public class RollupGetProofTest {
+public class LineaGetProofTest {
 
   @Mock public ZkWorldStateArchive worldStateArchive;
-  public RollupGetProof method;
+  public LineaGetProof method;
 
   @Before
   public void setup() {
@@ -69,12 +69,12 @@ public class RollupGetProofTest {
                 Optional.empty(),
                 Map.entry(Bytes.of(0x02), FlattenedLeaf.TAIL)));
 
-    method = new RollupGetProof(worldStateArchive);
+    method = new LineaGetProof(worldStateArchive);
   }
 
   @Test
   public void shouldReturnCorrectMethodName() {
-    assertThat(method.getName()).isEqualTo("rollup_getProof");
+    assertThat(method.getName()).isEqualTo("linea_getProof");
   }
 
   @Test
@@ -106,7 +106,7 @@ public class RollupGetProofTest {
     return new JsonRpcRequestContext(
         new JsonRpcRequest(
             "2.0",
-            "rollup_getProof",
+            "linea_getProof",
             new Object[] {
               Address.fromHexString("0x0000000000000000000000000000000000000000"),
               new String[] {Bytes.of(0x01).toString()},

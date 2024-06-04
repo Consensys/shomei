@@ -35,17 +35,17 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 
-public class RollupGetProof implements JsonRpcMethod {
+public class LineaGetProof implements JsonRpcMethod {
 
   final ZkWorldStateArchive worldStateArchive;
 
-  public RollupGetProof(final ZkWorldStateArchive worldStateArchive) {
+  public LineaGetProof(final ZkWorldStateArchive worldStateArchive) {
     this.worldStateArchive = worldStateArchive;
   }
 
   @Override
   public String getName() {
-    return ShomeiRpcMethod.ROLLUP_GET_PROOF.getMethodName();
+    return ShomeiRpcMethod.LINEA_GET_PROOF.getMethodName();
   }
 
   @Override
