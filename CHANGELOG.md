@@ -6,11 +6,12 @@
 - RPC method `rollup_getProof` has been renamed to `linea_getProof`
 
 ### Additions and Improvements
+- Various build and CI improvements.
 
 ### Bug Fixes
 
 ### Release Link
-
+https://hub.docker.com/r/consensys/linea-shomei/tags?name=2.2.0
 
 ## 2.1.1
 This is a minor release on top of version 2.1.0.  A resync is required only if upgrading from a version prior to 2.1
