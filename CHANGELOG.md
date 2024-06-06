@@ -1,5 +1,15 @@
 # Changelog
 
+## Next Release - 2.2.1
+
+### Breaking Changes
+
+### Additions and Improvements
+
+### Bug Fixes
+
+### Release Link
+
 ## 2.2.0
 ⚠️ This release introduces a breaking change to the RPC method `rollup_getProof` which has been renamed to `linea_getProof`.
 A resync is only required if upgrading from a version prior to 2.1. 
