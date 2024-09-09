@@ -70,7 +70,6 @@ public class ZkWorldStateArchive implements Closeable {
     this.headWorldState = fromWorldStateStorage(headWorldStateStorage);
     this.trieLogLayerConverter = new TrieLogLayerConverter(headWorldStateStorage);
     if (enableFinalizedBlockLimit) {
-      System.out.println("allo " + headWorldState.getBlockNumber());
       cacheSnapshot(
           new TrieLogIdentifier(headWorldState.getBlockNumber(), headWorldState.getBlockHash()),
           headWorldStateStorage);
