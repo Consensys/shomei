@@ -70,7 +70,8 @@ public class Runner {
                 .databaseDir(dataStorageOption.getDataStoragePath())
                 .build());
 
-    worldStateArchive = new ZkWorldStateArchive(storageProvider);
+    worldStateArchive =
+        new ZkWorldStateArchive(storageProvider, syncOption.isEnableFinalizedBlockLimit());
 
     final GetRawTrieLogClient getRawTrieLog =
         new GetRawTrieLogClient(

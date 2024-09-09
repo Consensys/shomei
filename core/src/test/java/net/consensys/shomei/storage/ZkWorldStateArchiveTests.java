@@ -83,4 +83,42 @@ public class ZkWorldStateArchiveTests {
     assertThat(archive.getCachedWorldState(0L).isPresent()).isTrue();
     assertThat(archive.getCachedWorldState(pluginLayer.getBlockHash()).isPresent()).isTrue();
   }
+
+  @Test
+  public void verifyStorageSnapshotAtStart() throws MissingTrieLogException {
+
+    PluginTrieLogLayer pluginLayer =
+        new PluginTrieLogLayer(
+            archive.getCurrentBlockHash(),
+            Optional.of(0L),
+            new HashMap<>(),
+            new HashMap<>(),
+            new HashMap<>(),
+            false);
+    TrieLogIdentifier genesis = new TrieLogIdentifier(0L, pluginLayer.getBlockHash());
+    TrieLogManager trieLogManager = archive.getTrieLogManager();
+    TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction = trieLogManager.updater();
+    trieLogManagerTransaction.saveTrieLog(genesis, Bytes.of(encoder.serialize(pluginLayer)));
+    trieLogManagerTransaction.commit();
+
+    archive.importBlock(new TrieLogIdentifier(0L, pluginLayer.getBlockHash()), true, true);
+
+    ZkWorldStateArchive zkWorldStateArchive =
+        new ZkWorldStateArchive(
+            archive.getTrieLogManager(),
+            archive.getTraceManager(),
+            archive.getHeadWorldStateStorage(),
+            false);
+
+    assertThat(zkWorldStateArchive.getCachedWorldState(0L).isPresent()).isFalse();
+
+    zkWorldStateArchive =
+        new ZkWorldStateArchive(
+            archive.getTrieLogManager(),
+            archive.getTraceManager(),
+            archive.getHeadWorldStateStorage(),
+            true);
+
+    assertThat(zkWorldStateArchive.getCachedWorldState(0L).isPresent()).isTrue();
+  }
 }

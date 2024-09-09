@@ -47,11 +47,34 @@ public class ZkWorldStateArchive implements Closeable {
       new ConcurrentSkipListMap<>(Comparator.comparing(TrieLogIdentifier::blockNumber));
 
   public ZkWorldStateArchive(final StorageProvider storageProvider) {
-    this.trieLogManager = storageProvider.getTrieLogManager();
-    this.traceManager = storageProvider.getTraceManager();
-    this.headWorldStateStorage = storageProvider.getWorldStateStorage();
+    this(storageProvider, false);
+  }
+
+  public ZkWorldStateArchive(
+      final StorageProvider storageProvider, final boolean enableFinalizedBlockLimit) {
+    this(
+        storageProvider.getTrieLogManager(),
+        storageProvider.getTraceManager(),
+        storageProvider.getWorldStateStorage(),
+        enableFinalizedBlockLimit);
+  }
+
+  public ZkWorldStateArchive(
+      final TrieLogManager trieLogManager,
+      final TraceManager traceManager,
+      final WorldStateStorage headWorldStateStorage,
+      final boolean enableFinalizedBlockLimit) {
+    this.trieLogManager = trieLogManager;
+    this.traceManager = traceManager;
+    this.headWorldStateStorage = headWorldStateStorage;
     this.headWorldState = fromWorldStateStorage(headWorldStateStorage);
     this.trieLogLayerConverter = new TrieLogLayerConverter(headWorldStateStorage);
+    if (enableFinalizedBlockLimit) {
+      cacheSnapshot(
+          new TrieLogIdentifier(headWorldState.getBlockNumber(), headWorldState.getBlockHash()),
+          headWorldStateStorage);
+      LOG.debug("Worldstate archive created snapshot for " + headWorldState.getBlockNumber());
+    }
   }
 
   public Optional<ZkEvmWorldState> getCachedWorldState(Hash blockHash) {
