@@ -69,10 +69,12 @@ public class ZkWorldStateArchive implements Closeable {
     this.headWorldStateStorage = headWorldStateStorage;
     this.headWorldState = fromWorldStateStorage(headWorldStateStorage);
     this.trieLogLayerConverter = new TrieLogLayerConverter(headWorldStateStorage);
+    LOG.info("will create snapshot for " + headWorldState.getBlockNumber());
     if (enableFinalizedBlockLimit) {
       cacheSnapshot(
           new TrieLogIdentifier(headWorldState.getBlockNumber(), headWorldState.getBlockHash()),
           headWorldStateStorage);
+      LOG.info("created snapshot for " + headWorldState.getBlockNumber());
     }
   }
 
