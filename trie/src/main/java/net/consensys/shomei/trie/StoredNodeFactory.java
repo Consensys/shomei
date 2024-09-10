@@ -145,6 +145,9 @@ public class StoredNodeFactory implements NodeFactory<Bytes> {
      * optimization for pruning, we can achieve an efficient and compact representation of the
      * sparse Merkle trie.
      */
+    if (Bytes32.ZERO.equals(hash)) {
+      return Optional.of(EmptyLeafNode.instance());
+    }
     return nodeLoader
         .getNode(location, hash)
         .or(
