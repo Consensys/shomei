@@ -306,6 +306,7 @@ task dockerDist {
         // tag the "default" (which is the variant in the zero position)
         exec {
             executable "sh"
+            args "-c", "docker images"
             println "debug docker tag: \"docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${dockerImageName}:${dockerBuildVersion}'\""
             args "-c", "docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${dockerImageName}:${dockerBuildVersion}'"
         }
