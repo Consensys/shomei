@@ -148,7 +148,7 @@ jobs:
 
   draftRelease:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: publishManifest
+    needs: publishDocker
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
