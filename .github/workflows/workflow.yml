@@ -10,7 +10,7 @@ on:
 
 jobs:
   assemble:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-128
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
 
@@ -18,10 +18,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up JDK 17
+      - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
-          java-version: 17
+          java-version: 21
           distribution: 'adopt'
 
       - name: Cache Gradle dependencies
