@@ -251,8 +251,8 @@ def dockerOrgName = project.hasProperty('dockerOrgName') ? project.getProperty("
 def dockerArtifactName = project.hasProperty("dockerArtifactName") ? project.getProperty("dockerArtifactName") : "linea-shomei"
 def dockerImageName = "${dockerOrgName}/${dockerArtifactName}"
 def dockerVariants = project.hasProperty("dockerVariants") ? project.getProperty("dockerVariants").split(",") : [
-        "openjdk-17",
-        "openjdk-17-debug",
+        "openjdk-21",
+        "openjdk-21-debug",
         "openjdk-latest"
 ]
 def archVariants = ["amd64", "arm64"]
@@ -298,7 +298,7 @@ task dockerDist {
                 }
                 executable "sh"
                 workingDir dockerBuildDir
-                args "-c", "docker build ${dockerPlatform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+                args "-c", "docker buildx ${dockerPlatform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
             }
         }
 
