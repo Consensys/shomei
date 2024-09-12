@@ -306,11 +306,13 @@ task dockerDist {
         // tag the "default" (which is the variant in the zero position)
         exec {
             executable "sh"
+            println "debug docker tag: \"docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${dockerImageName}:${dockerBuildVersion}'\""
             args "-c", "docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${dockerImageName}:${dockerBuildVersion}'"
         }
         // create a static tag for the benchmark target
         exec {
             executable "sh"
+            println "debug benchmark docker tag: \"docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${dockerImageName}:benchmark'\""
             args "-c", "docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${dockerImageName}:benchmark'"
         }
     }

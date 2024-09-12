@@ -103,18 +103,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           platforms: linux/amd64,linux/arm64
-      - name: Check Docker and Buildx versions
-        run: |
-          docker --version
-          docker buildx version
-      - name: Create and use Buildx builder
-        run: |
-          docker buildx create --use --name multiarch-builder --driver docker-container
-          docker buildx inspect --bootstrap
-      - name: Inspect Buildx
-        run: |
-          docker buildx inspect multiarch-builder
-
       - name: Setup JDK
         uses: actions/setup-java@v3
         with:
