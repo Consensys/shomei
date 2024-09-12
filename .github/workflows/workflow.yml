@@ -107,6 +107,14 @@ jobs:
         run: |
           docker --version
           docker buildx version
+      - name: Create and use Buildx builder
+        run: |
+          docker buildx create --use --name multiarch-builder --driver docker-container
+          docker buildx inspect --bootstrap
+      - name: Inspect Buildx
+        run: |
+          docker buildx inspect multiarch-builder
+
       - name: Setup JDK
         uses: actions/setup-java@v3
         with:
