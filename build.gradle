@@ -296,11 +296,13 @@ task dockerDist {
                     dockerPlatform = "--platform ${project.getProperty('docker-platform')}"
                     println "Building for platform ${project.getProperty('docker-platform')}"
                 }
-                println "buildx-debug: \"docker buildx build ${dockerPlatform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} --output type=docker,dest=./docker-image-${dockerBuildVersion}.tar .\""
+                println "buildx-debug: \"docker buildx build ${dockerPlatform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} --output type=oci,dest=./docker-image-${dockerBuildVersion}.tar .\""
                 executable "sh"
                 workingDir dockerBuildDir
-                args "-c", "docker buildx build ${dockerPlatform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} --output type=docker,dest=./docker-image-${dockerBuildVersion}.tar ."
-                args "-c", "docker load -i ./docker-image-${dockerBuildVersion}.tar"
+                args "-c", "docker buildx build ${dockerPlatform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} --output type=oci,dest=./docker-image-${dockerBuildVersion}.tar ."
+                args "-c", "sudo apt-get install skopeo"
+                args "-c", "skopeo copy oci:./docker-image-${dockerBuildVersion}.tar docker-daemon:${image}"
+
             }
         }
 
