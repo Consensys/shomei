@@ -20,6 +20,7 @@ dependencies {
     implementation project(':crypto')
     implementation project(':services:storage:api')
     implementation project(':services:storage:rocksdb')
+    implementation project(':services:metrics')
 
     implementation 'org.hyperledger.besu.internal:trie'
     implementation 'org.hyperledger.besu.internal:core'

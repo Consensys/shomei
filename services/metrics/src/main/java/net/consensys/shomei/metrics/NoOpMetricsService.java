@@ -13,16 +13,15 @@
 
 package net.consensys.shomei.metrics;
 
+import java.util.function.Supplier;
+
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.vertx.core.Context;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 
 public class NoOpMetricsService implements MetricsService {
 
   private final MeterRegistry meterRegistry;
-  private Vertx vertx;
 
   public NoOpMetricsService() {
     this.meterRegistry = new SimpleMeterRegistry();
@@ -34,22 +33,11 @@ public class NoOpMetricsService implements MetricsService {
   }
 
   @Override
-  public Vertx getVertx() {
-    return vertx;
-  }
-
-  @Override
-  public void init(final Vertx vertx, final Context context) {
-    this.vertx = vertx;
-  }
-
-  @Override
-  public void start(final Promise<Void> startPromise) throws Exception {
-    // no-op
-  }
-
-  @Override
-  public void stop(final Promise<Void> stopPromise) throws Exception {
+  public void addGauge(
+      final String name,
+      final String description,
+      final Iterable<Tag> tags,
+      final Supplier<Number> supplier) {
     // no-op
   }
 }

@@ -16,6 +16,8 @@ package net.consensys.shomei.storage;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.exception.MissingTrieLogException;
+import net.consensys.shomei.metrics.MetricsService;
+import net.consensys.shomei.metrics.NoOpMetricsService;
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.trielog.PluginTrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
@@ -33,6 +35,7 @@ public class ZkWorldStateArchiveTests {
   ZkWorldStateArchive archive = new ZkWorldStateArchive(new InMemoryStorageProvider());
   TrieLogLayerConverter converter = new TrieLogLayerConverter(archive.getHeadWorldStateStorage());
   ZkTrieLogFactory encoder = new ZkTrieLogFactory();
+  MetricsService noopMetrics = new NoOpMetricsService();
 
   @Test
   public void shouldDropWorldStatesFromHead() {
@@ -108,7 +111,8 @@ public class ZkWorldStateArchiveTests {
             archive.getTrieLogManager(),
             archive.getTraceManager(),
             archive.getHeadWorldStateStorage(),
-            false);
+            false,
+            noopMetrics);
 
     assertThat(zkWorldStateArchive.getCachedWorldState(0L).isPresent()).isFalse();
 
@@ -117,7 +121,8 @@ public class ZkWorldStateArchiveTests {
             archive.getTrieLogManager(),
             archive.getTraceManager(),
             archive.getHeadWorldStateStorage(),
-            true);
+            true,
+            noopMetrics);
 
     assertThat(zkWorldStateArchive.getCachedWorldState(0L).isPresent()).isTrue();
   }

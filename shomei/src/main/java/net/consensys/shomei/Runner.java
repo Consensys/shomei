@@ -50,7 +50,7 @@ public class Runner {
   private final FullSyncDownloader fullSyncDownloader;
   private final JsonRpcService jsonRpcService;
 
-  private final MetricsService metricsService;
+  private final MetricsService.VertxMetricsService metricsService;
 
   private final ZkWorldStateArchive worldStateArchive;
 
@@ -103,9 +103,9 @@ public class Runner {
     HashProvider.setTrieHashFunction(hashFunctionOption.getHashFunction());
   }
 
-  private MetricsService setupMetrics(MetricsOption metricsOption) {
+  private MetricsService.VertxMetricsService setupMetrics(MetricsOption metricsOption) {
     // use prometheus as metrics service
-    MetricsService metricsService =
+    MetricsService.VertxMetricsService metricsService =
         new PrometheusMetricsService(
             metricsOption.getMetricsHttpHost(), metricsOption.getMetricsHttpPort());
     MeterRegistry meterRegistry = metricsService.getRegistry();

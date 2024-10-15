@@ -115,7 +115,7 @@ jobs:
           ./gradlew --no-daemon dockerTest
 
   buildArm64:
-    runs-on: [ ARM64, Linux, self-hosted ]
+    runs-on: [ besu-arm64 ]
     strategy:
       matrix:
         architecture: [ arm64 ]
@@ -173,7 +173,7 @@ jobs:
   publishDockerArm64:
     needs: buildArm64
     if: github.event_name == 'push'
-    runs-on: [ ARM64, Linux, self-hosted ]
+    runs-on: [ besu-arm64 ]
     env:
       architecture: "arm64"
       GRADLE_OPTS: "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2"

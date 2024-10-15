@@ -14,6 +14,7 @@
 package net.consensys.shomei.storage;
 
 import net.consensys.shomei.exception.MissingTrieLogException;
+import net.consensys.shomei.metrics.MetricsService;
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trielog.TrieLogLayer;
@@ -22,6 +23,7 @@ import net.consensys.shomei.worldview.ZkEvmWorldState;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
@@ -56,14 +58,16 @@ public class ZkWorldStateArchive implements Closeable {
         storageProvider.getTrieLogManager(),
         storageProvider.getTraceManager(),
         storageProvider.getWorldStateStorage(),
-        enableFinalizedBlockLimit);
+        enableFinalizedBlockLimit,
+        MetricsService.MetricsServiceProvider.getMetricsService());
   }
 
   public ZkWorldStateArchive(
       final TrieLogManager trieLogManager,
       final TraceManager traceManager,
       final WorldStateStorage headWorldStateStorage,
-      final boolean enableFinalizedBlockLimit) {
+      final boolean enableFinalizedBlockLimit,
+      final MetricsService metricsService) {
     this.trieLogManager = trieLogManager;
     this.traceManager = traceManager;
     this.headWorldStateStorage = headWorldStateStorage;
@@ -75,6 +79,7 @@ public class ZkWorldStateArchive implements Closeable {
           headWorldStateStorage);
       LOG.debug("Worldstate archive created snapshot for " + headWorldState.getBlockNumber());
     }
+    setupHeadMetrics(metricsService);
   }
 
   public Optional<ZkEvmWorldState> getCachedWorldState(Hash blockHash) {
@@ -101,6 +106,14 @@ public class ZkWorldStateArchive implements Closeable {
   @VisibleForTesting
   Map<TrieLogIdentifier, WorldStateStorage> getCachedWorldStates() {
     return cachedWorldStates;
+  }
+
+  private void setupHeadMetrics(MetricsService metricsService) {
+    metricsService.addGauge(
+        "shomei_blockchain_head",
+        "current chain head block number which corresponds to shomei state",
+        Collections.emptyList(),
+        this::getCurrentBlockNumber);
   }
 
   private ZkEvmWorldState fromWorldStateStorage(WorldStateStorage storage) {
