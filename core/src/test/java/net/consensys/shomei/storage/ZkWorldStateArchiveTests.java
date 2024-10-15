@@ -111,7 +111,8 @@ public class ZkWorldStateArchiveTests {
             archive.getTrieLogManager(),
             archive.getTraceManager(),
             archive.getHeadWorldStateStorage(),
-            false, noopMetrics);
+            false,
+            noopMetrics);
 
     assertThat(zkWorldStateArchive.getCachedWorldState(0L).isPresent()).isFalse();
 
@@ -120,7 +121,8 @@ public class ZkWorldStateArchiveTests {
             archive.getTrieLogManager(),
             archive.getTraceManager(),
             archive.getHeadWorldStateStorage(),
-            true, noopMetrics);
+            true,
+            noopMetrics);
 
     assertThat(zkWorldStateArchive.getCachedWorldState(0L).isPresent()).isTrue();
   }
