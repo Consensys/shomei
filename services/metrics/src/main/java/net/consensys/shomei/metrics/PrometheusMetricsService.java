@@ -13,14 +13,19 @@
 
 package net.consensys.shomei.metrics;
 
+import java.util.function.Supplier;
+
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.Router;
 
-public class PrometheusMetricsService extends AbstractVerticle implements MetricsService {
+public class PrometheusMetricsService extends AbstractVerticle
+    implements MetricsService.VertxMetricsService {
   private final PrometheusMeterRegistry prometheusMeterRegistry;
   private final String host;
   private final int port;
@@ -34,6 +39,20 @@ public class PrometheusMetricsService extends AbstractVerticle implements Metric
   @Override
   public MeterRegistry getRegistry() {
     return prometheusMeterRegistry;
+  }
+
+  @Override
+  public void addGauge(
+      final String name,
+      final String description,
+      final Iterable<Tag> tags,
+      final Supplier<Number> supplier) {
+
+    // Register a gauge to track this value
+    Gauge.builder(name, supplier)
+        .description(description)
+        .tags(tags)
+        .register(prometheusMeterRegistry);
   }
 
   @Override

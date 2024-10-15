@@ -14,13 +14,19 @@
 package net.consensys.shomei.metrics;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
 import io.vertx.core.Verticle;
 
-public interface MetricsService extends Verticle {
+public interface MetricsService {
 
   MeterRegistry getRegistry();
+
+  void addGauge(String name, String description, Iterable<Tag> tags, Supplier<Number> supplier);
+
+  interface VertxMetricsService extends MetricsService, Verticle {}
 
   class MetricsServiceProvider {
     private static final AtomicReference<MetricsService> METRICS_SERVICE = new AtomicReference<>();

@@ -20,8 +20,8 @@ dependencies {
     implementation 'io.vertx:vertx-core'
     implementation 'io.vertx:vertx-web'
     implementation 'io.vertx:vertx-micrometer-metrics'
-    implementation 'io.micrometer:micrometer-core'
     implementation 'io.micrometer:micrometer-registry-prometheus'
+    api 'io.micrometer:micrometer-core'
 
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
