@@ -19,6 +19,7 @@ import net.consensys.shomei.storage.TraceManager;
 
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 
@@ -37,8 +38,12 @@ public class RollupDeleteZkEVMStateMerkleProofByRange implements JsonRpcMethod {
 
   @Override
   public JsonRpcResponse response(final JsonRpcRequestContext requestContext) {
-    final RollupDeleteZkEvmStateByRangeParameter param =
-        requestContext.getRequiredParameter(0, RollupDeleteZkEvmStateByRangeParameter.class);
+    final RollupDeleteZkEvmStateByRangeParameter param;
+    try {
+      param = requestContext.getRequiredParameter(0, RollupDeleteZkEvmStateByRangeParameter.class);
+    } catch (JsonRpcParameter.JsonRpcParameterException e) {
+      throw new RuntimeException(e);
+    }
 
     final TraceManager.TraceManagerUpdater updater = traceManager.updater();
     for (long i = param.getStartBlockNumber(); i <= param.getEndBlockNumber(); i++) {

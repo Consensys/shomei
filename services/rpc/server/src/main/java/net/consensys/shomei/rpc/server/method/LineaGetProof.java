@@ -31,9 +31,10 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.BlockParameterOrBlockHash;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 
 public class LineaGetProof implements JsonRpcMethod {
 
@@ -75,24 +76,36 @@ public class LineaGetProof implements JsonRpcMethod {
     } else {
       return new ShomeiJsonRpcErrorResponse(
           requestContext.getRequest().getId(),
-          JsonRpcError.INVALID_REQUEST,
+          RpcErrorType.INVALID_REQUEST,
           "BLOCK_MISSING_IN_CHAIN - block is missing");
     }
   }
 
   private AccountKey getAccountAddress(final JsonRpcRequestContext request) {
-    return new AccountKey(request.getRequiredParameter(0, Address.class));
+    try {
+      return new AccountKey(request.getRequiredParameter(0, Address.class));
+    } catch (JsonRpcParameter.JsonRpcParameterException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private List<StorageSlotKey> getSlotKeys(final JsonRpcRequestContext request) {
-    return Arrays.stream(request.getRequiredParameter(1, String[].class))
-        .map(UInt256::fromHexString)
-        .map(StorageSlotKey::new)
-        .collect(Collectors.toList());
+    try {
+      return Arrays.stream(request.getRequiredParameter(1, String[].class))
+          .map(UInt256::fromHexString)
+          .map(StorageSlotKey::new)
+          .collect(Collectors.toList());
+    } catch (JsonRpcParameter.JsonRpcParameterException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private BlockParameterOrBlockHash getBlockParameterOrBlockHash(
       final JsonRpcRequestContext request) {
-    return request.getRequiredParameter(2, BlockParameterOrBlockHash.class);
+    try {
+      return request.getRequiredParameter(2, BlockParameterOrBlockHash.class);
+    } catch (JsonRpcParameter.JsonRpcParameterException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

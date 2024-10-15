@@ -24,9 +24,10 @@ import java.util.Optional;
 
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 
 public class RollupForkChoiceUpdated implements JsonRpcMethod {
 
@@ -47,12 +48,16 @@ public class RollupForkChoiceUpdated implements JsonRpcMethod {
 
   @Override
   public JsonRpcResponse response(final JsonRpcRequestContext requestContext) {
-    final RollupForkChoiceUpdatedParameter param =
-        requestContext.getRequiredParameter(0, RollupForkChoiceUpdatedParameter.class);
+    final RollupForkChoiceUpdatedParameter param;
+    try {
+      param = requestContext.getRequiredParameter(0, RollupForkChoiceUpdatedParameter.class);
+    } catch (JsonRpcParameter.JsonRpcParameterException e) {
+      throw new RuntimeException(e);
+    }
     if (param.getFinalizedBlockNumber() < zkWorldStateArchive.getCurrentBlockNumber()) {
       return new ShomeiJsonRpcErrorResponse(
           requestContext.getRequest().getId(),
-          JsonRpcError.INVALID_PARAMS,
+          RpcErrorType.INVALID_PARAMS,
           "Cannot set finalized %d lower than the current shomei head %s ."
               .formatted(
                   param.getFinalizedBlockNumber(), zkWorldStateArchive.getCurrentBlockNumber()));
@@ -60,7 +65,7 @@ public class RollupForkChoiceUpdated implements JsonRpcMethod {
     if (!fullSyncDownloader.getFullSyncRules().isEnableFinalizedBlockLimit()) {
       return new ShomeiJsonRpcErrorResponse(
           requestContext.getRequest().getId(),
-          JsonRpcError.UNAUTHORIZED,
+          RpcErrorType.UNAUTHORIZED,
           "The --enable-finalized-block-limit feature must be activated in order to set the finalized block limit.");
     }
     // update full sync rules

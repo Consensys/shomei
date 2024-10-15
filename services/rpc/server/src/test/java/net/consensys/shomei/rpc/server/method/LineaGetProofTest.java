@@ -35,9 +35,9 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -82,7 +82,7 @@ public class LineaGetProofTest {
     final JsonRpcRequestContext request = request("2");
     final JsonRpcResponse expectedResponse =
         new ShomeiJsonRpcErrorResponse(
-            null, JsonRpcError.INVALID_REQUEST, "BLOCK_MISSING_IN_CHAIN - block is missing");
+            null, RpcErrorType.INVALID_REQUEST, "BLOCK_MISSING_IN_CHAIN - block is missing");
     final JsonRpcResponse response = method.response(request);
 
     assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);

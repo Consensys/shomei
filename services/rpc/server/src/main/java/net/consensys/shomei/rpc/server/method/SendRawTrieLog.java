@@ -24,10 +24,11 @@ import java.util.stream.IntStream;
 
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcErrorResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +56,13 @@ public class SendRawTrieLog implements JsonRpcMethod {
       IntStream.range(0, requestContext.getRequest().getParamLength())
           .forEach(
               index -> {
-                TrieLogElement param =
-                    requestContext.getRequest().getRequiredParameter(index, TrieLogElement.class);
+                TrieLogElement param;
+                try {
+                  param =
+                      requestContext.getRequest().getRequiredParameter(index, TrieLogElement.class);
+                } catch (JsonRpcParameter.JsonRpcParameterException e) {
+                  throw new RuntimeException(e);
+                }
                 trieLogIdentifiers.add(param.getTrieLogIdentifier());
               });
       trieLogObserver.onNewBesuHeadReceived(trieLogIdentifiers);
@@ -64,7 +70,7 @@ public class SendRawTrieLog implements JsonRpcMethod {
       LOG.error("failed to handle new TrieLog {}", e.getMessage());
       LOG.debug("exception handling TrieLog", e);
       return new JsonRpcErrorResponse(
-          requestContext.getRequest().getId(), JsonRpcError.INVALID_PARAMS);
+          requestContext.getRequest().getId(), RpcErrorType.INVALID_PARAMS);
     }
     return new JsonRpcSuccessResponse(requestContext.getRequest().getId());
   }

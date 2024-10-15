@@ -32,9 +32,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 
 public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
@@ -52,12 +53,16 @@ public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
   @Override
   public JsonRpcResponse response(final JsonRpcRequestContext requestContext) {
-    final RollupGetZkEvmStateV0Parameter param =
-        requestContext.getRequiredParameter(0, RollupGetZkEvmStateV0Parameter.class);
+    final RollupGetZkEvmStateV0Parameter param;
+    try {
+      param = requestContext.getRequiredParameter(0, RollupGetZkEvmStateV0Parameter.class);
+    } catch (JsonRpcParameter.JsonRpcParameterException e) {
+      throw new RuntimeException(e);
+    }
     if (!IMPL_VERSION.equals(param.getZkStateManagerVersion())) {
       return new ShomeiJsonRpcErrorResponse(
           requestContext.getRequest().getId(),
-          JsonRpcError.INVALID_PARAMS,
+          RpcErrorType.INVALID_PARAMS,
           "UNSUPPORTED_VERSION",
           new JsonInvalidVersionMessage(param.getZkStateManagerVersion(), IMPL_VERSION));
     }
@@ -69,7 +74,7 @@ public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
       if (traceRaw.isEmpty()) {
         return new ShomeiJsonRpcErrorResponse(
             requestContext.getRequest().getId(),
-            JsonRpcError.INVALID_PARAMS,
+            RpcErrorType.INVALID_PARAMS,
             "BLOCK_MISSING_IN_CHAIN - block %d is missing".formatted(i));
       }
     }

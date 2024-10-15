@@ -37,9 +37,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -121,7 +121,7 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
     expectedResponse =
         new ShomeiJsonRpcErrorResponse(
             null,
-            JsonRpcError.INVALID_PARAMS,
+            RpcErrorType.INVALID_PARAMS,
             "BLOCK_MISSING_IN_CHAIN - block %d is missing".formatted(1));
     response = requestMethod.response(request);
     assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
@@ -131,7 +131,7 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
     expectedResponse =
         new ShomeiJsonRpcErrorResponse(
             null,
-            JsonRpcError.INVALID_PARAMS,
+            RpcErrorType.INVALID_PARAMS,
             "BLOCK_MISSING_IN_CHAIN - block %d is missing".formatted(2));
     response = requestMethod.response(request);
     assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);

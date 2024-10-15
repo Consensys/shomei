@@ -29,9 +29,9 @@ import java.util.Optional;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -66,7 +66,7 @@ public class RollupForkChoiceUpdatedTest {
     final JsonRpcResponse expectedResponse =
         new ShomeiJsonRpcErrorResponse(
             null,
-            JsonRpcError.INVALID_PARAMS,
+            RpcErrorType.INVALID_PARAMS,
             "Cannot set finalized 0 lower than the current shomei head 1 .");
 
     assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
@@ -80,7 +80,7 @@ public class RollupForkChoiceUpdatedTest {
     final JsonRpcResponse expectedResponse =
         new ShomeiJsonRpcErrorResponse(
             null,
-            JsonRpcError.UNAUTHORIZED,
+            RpcErrorType.UNAUTHORIZED,
             "The --enable-finalized-block-limit feature must be activated in order to set the finalized block limit.");
 
     assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
