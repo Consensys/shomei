@@ -16,7 +16,7 @@ buildscript {
 }
 
 plugins {
-    id 'com.diffplug.spotless' version '6.16.0'
+    id 'com.diffplug.spotless' version '6.25.0'
     id 'com.github.ben-manes.versions' version '0.46.0'
     id 'com.github.jk1.dependency-license-report' version '2.1'
     id 'io.spring.dependency-management' version '1.1.0'
@@ -61,8 +61,8 @@ allprojects {
         jar.preserveFileTimestamps = false
     }
 
-    sourceCompatibility = '17'
-    targetCompatibility = '17'
+    sourceCompatibility = '21'
+    targetCompatibility = '21'
 
     repositories {
         mavenLocal()
@@ -115,7 +115,6 @@ allprojects {
                 exclude '**/build/**'
             }
             removeUnusedImports()
-            googleJavaFormat('1.15.0')
             importOrder 'net.consensys', 'java', ''
             trimTrailingWhitespace()
             endWithNewline()
@@ -251,8 +250,8 @@ def dockerOrgName = project.hasProperty('dockerOrgName') ? project.getProperty("
 def dockerArtifactName = project.hasProperty("dockerArtifactName") ? project.getProperty("dockerArtifactName") : "linea-shomei"
 def dockerImageName = "${dockerOrgName}/${dockerArtifactName}"
 def dockerVariants = project.hasProperty("dockerVariants") ? project.getProperty("dockerVariants").split(",") : [
-        "openjdk-17",
-        "openjdk-17-debug",
+        "openjdk-21",
+        "openjdk-21-debug",
         "openjdk-latest"
 ]
 def archVariants = ["amd64", "arm64"]
