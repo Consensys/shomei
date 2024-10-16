@@ -23,7 +23,7 @@ the latest changes on testnets.
 
 ### Install Prerequisites
 
-* Java 17
+* Java 21
 
 ### Build and Test
 

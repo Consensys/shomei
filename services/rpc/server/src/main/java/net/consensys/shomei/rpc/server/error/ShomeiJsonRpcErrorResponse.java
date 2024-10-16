@@ -21,7 +21,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcErrorResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponseType;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
+import org.hyperledger.besu.plugin.services.rpc.RpcResponseType;
 
 @JsonPropertyOrder({"jsonrpc", "id", "code"})
 public class ShomeiJsonRpcErrorResponse extends JsonRpcErrorResponse {
@@ -29,13 +30,13 @@ public class ShomeiJsonRpcErrorResponse extends JsonRpcErrorResponse {
   private final JsonError jsonError;
 
   public ShomeiJsonRpcErrorResponse(
-      final Object id, final JsonRpcError error, final String message, Object data) {
+      final Object id, final RpcErrorType error, final String message, Object data) {
     super(id, error);
     this.jsonError = new JsonError(error, message, data);
   }
 
   public ShomeiJsonRpcErrorResponse(
-      final Object id, final JsonRpcError error, final String message) {
+      final Object id, final RpcErrorType error, final String message) {
     this(id, error, message, null);
   }
 
@@ -52,13 +53,13 @@ public class ShomeiJsonRpcErrorResponse extends JsonRpcErrorResponse {
 
   @Override
   @JsonIgnore
-  public JsonRpcResponseType getType() {
-    return JsonRpcResponseType.ERROR;
+  public RpcResponseType getType() {
+    return RpcResponseType.ERROR;
   }
 
   @SuppressWarnings("unused")
   private record JsonError(
-      @JsonIgnore JsonRpcError jsonRpcErrorCode,
+      @JsonIgnore RpcErrorType jsonRpcErrorCode,
       @JsonGetter("message") String message,
       @JsonGetter("data") @JsonInclude(JsonInclude.Include.NON_NULL) Object data) {
 

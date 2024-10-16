@@ -4,7 +4,7 @@ ARG VERSION="dev"
 
 RUN apt-get update  && \
     apt-get install --no-install-recommends -q --assume-yes ca-certificates=20* ca-certificates-java=20* && \
-    apt-get install --no-install-recommends -q --assume-yes curl=7* wget=1.21* jq=1.6* net-tools=1.60* netcat=1.2* openjdk-19-jdk-headless=19* libjemalloc-dev=5.* && \
+    apt-get install --no-install-recommends -q --assume-yes curl=7* wget=1.21* jq=1.6* net-tools=1.60* netcat=1.2* openjdk-21-jdk-headless=21* libjemalloc-dev=5.* && \
     apt-get clean  && \
     rm -rf /var/lib/apt/lists/*  && \
     adduser --disabled-password --gecos "" --home /opt/shomei shomei && \

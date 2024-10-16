@@ -36,10 +36,10 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcConfiguration;
 import org.hyperledger.besu.ethereum.api.jsonrpc.context.ContextKey;
 import org.hyperledger.besu.ethereum.api.jsonrpc.execution.JsonRpcExecutor;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcErrorResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponseType;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
+import org.hyperledger.besu.plugin.services.rpc.RpcResponseType;
 
 public class JsonRpcObjectExecutor {
   private static final ObjectWriter JSON_OBJECT_WRITER = createObjectWriter();
@@ -86,7 +86,7 @@ public class JsonRpcObjectExecutor {
   }
 
   protected static void handleJsonRpcError(
-      final RoutingContext routingContext, final Object id, final JsonRpcError error) {
+      final RoutingContext routingContext, final Object id, final RpcErrorType error) {
     final HttpServerResponse response = routingContext.response();
     if (!response.closed()) {
       response
@@ -101,7 +101,7 @@ public class JsonRpcObjectExecutor {
       final RoutingContext ctx)
       throws IOException {
     response.setStatusCode(status(jsonRpcResponse).code());
-    if (jsonRpcResponse.getType() == JsonRpcResponseType.NONE) {
+    if (jsonRpcResponse.getType() == RpcResponseType.NONE) {
       response.end();
     } else {
       try (final JsonResponseStreamer streamer =
@@ -114,7 +114,7 @@ public class JsonRpcObjectExecutor {
   private static HttpResponseStatus status(final JsonRpcResponse response) {
     return switch (response.getType()) {
       case UNAUTHORIZED -> HttpResponseStatus.UNAUTHORIZED;
-      case ERROR -> statusCodeFromError(((JsonRpcErrorResponse) response).getError());
+      case ERROR -> statusCodeFromError(((JsonRpcErrorResponse) response).getErrorType());
       default -> HttpResponseStatus.OK;
     };
   }
@@ -129,7 +129,7 @@ public class JsonRpcObjectExecutor {
         .with(JsonGenerator.Feature.AUTO_CLOSE_TARGET);
   }
 
-  private static HttpResponseStatus statusCodeFromError(final JsonRpcError error) {
+  private static HttpResponseStatus statusCodeFromError(final RpcErrorType error) {
     return switch (error) {
       case INVALID_REQUEST, PARSE_ERROR -> HttpResponseStatus.BAD_REQUEST;
       default -> HttpResponseStatus.OK;

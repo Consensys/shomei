@@ -36,9 +36,9 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,7 +68,7 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
     final JsonRpcResponse expectedResponse =
         new ShomeiJsonRpcErrorResponse(
             null,
-            JsonRpcError.INVALID_PARAMS,
+            RpcErrorType.INVALID_PARAMS,
             "UNSUPPORTED_VERSION",
             new JsonInvalidVersionMessage("invalidVersion", IMPL_VERSION));
     final JsonRpcResponse response = method.response(request);
@@ -82,7 +82,7 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
     final JsonRpcResponse expectedResponse =
         new ShomeiJsonRpcErrorResponse(
             null,
-            JsonRpcError.INVALID_PARAMS,
+            RpcErrorType.INVALID_PARAMS,
             "BLOCK_MISSING_IN_CHAIN - block %d is missing".formatted(0));
     final JsonRpcResponse response = method.response(request);
 

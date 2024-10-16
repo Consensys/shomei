@@ -14,6 +14,7 @@
 package net.consensys.shomei.rpc.server;
 
 import static net.consensys.shomei.rpc.server.JsonRpcObjectExecutor.handleJsonRpcError;
+import static org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType.INTERNAL_ERROR;
 
 import java.io.IOException;
 
@@ -21,7 +22,6 @@ import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcConfiguration;
 import org.hyperledger.besu.ethereum.api.jsonrpc.execution.JsonRpcExecutor;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,7 @@ public class JsonRpcExecutorHandler {
           throw new RuntimeException(e);
         }
       } catch (final RuntimeException e) {
-        handleJsonRpcError(ctx, null, JsonRpcError.INTERNAL_ERROR);
+        handleJsonRpcError(ctx, null, INTERNAL_ERROR);
       }
     };
   }
