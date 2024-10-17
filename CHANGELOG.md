@@ -1,14 +1,36 @@
 # Changelog
 
-## Next Release - 2.2.1
-
-### Breaking Changes
+## 2.3.0 - 2024-10-16
+Java 21 is required for this shomei release.  
 
 ### Additions and Improvements
-
-### Bug Fixes
+- add block head metrics [#100](https://github.com/Consensys/shomei/pull/100)
+- bump to latest besu dep (24.9.1), java 21, and docker simplification [#101](https://github.com/Consensys/shomei/pull/101)
 
 ### Release Link
+https://hub.docker.com/r/consensys/linea-shomei/tags?name=2.3.0
+
+
+
+## 2.2.2 - 2024-09-12
+
+### Bug Fixes
+- Added a fix for an issue on the getProof RPC call. The bug could have led to invalid proofs when leaves were deleted from the trie[#92](https://github.com/Consensys/shomei/pull/92)
+
+### Release Link
+https://hub.docker.com/r/consensys/linea-shomei/tags?name=2.2.2
+
+
+## 2.2.1 - 2024-09-09
+ 
+⚠️ A resync is only required if upgrading from a version prior to 2.1. 
+
+### Bug Fixes
+- create snapshot on archive creation, to address restart issue  [#89]
+
+### Release Link
+https://hub.docker.com/r/consensys/linea-shomei/tags?name=2.2.1
+
 
 ## 2.2.0
 ⚠️ This release introduces a breaking change to the RPC method `rollup_getProof` which has been renamed to `linea_getProof`.
