@@ -1,8 +1,8 @@
 # Shomei zkevm state manager
 
 
-**Shomei zkevm state manager** extends the Hyperledger Besu functionality.
-This component communicates with Besu in order to maintain and update the zkevm state
+**Shomei zkevm state manager** extends Besu functionality.
+This component communicates with Besu in order to maintain and update the zkevm state.
 
 ## Shomei developers
 
@@ -30,7 +30,7 @@ the latest changes on testnets.
 To build, clone this repo and run with `gradle`:
 
 ```shell script
-git clone https://github.com/ConsenSys/shomei.git
+git clone https://github.com/Consensys/shomei.git
 cd shomei && ./gradlew
 ```
 
@@ -65,7 +65,7 @@ The first mode is used for the generation of traces so that the prover can retri
 To use this mode, you need to activate it with these flags: `--enable-trace-generation=true` and `--trace-start-block-number=BLOCK_NUMBER`. The `--trace-start-block-number` flag allows you to define from when we want to start the generation of traces.
 This allows for a faster sync rather than generating traces for old blocks that we no longer need.
 
-it's important to enable `--min-confirmations-before-importing` if you have reorg in your network (in general 2 for goerli and 4 for mainnet in linea)
+It's important to enable `--min-confirmations-before-importing` if you have reorg in your network (suggest 4 for mainnet in linea)
 
 ```bash
 shomei --enable-trace-generation=true --trace-start-block-number=1970000
@@ -76,10 +76,10 @@ shomei --enable-trace-generation=true --trace-start-block-number=1970000
 The second mode is used to serve getProof for finalized blocks. This mode does not require the generation of traces, so you should use this `-enable-trace-generation=false` flag. In addition, you should add `--enable-finalized-block-limit=true`, `--use-finalized-block-number=BLOCK_NUMBER`, and `--use-finalized-block-hash=BLOCK_HASH`. 
 Setting these will allow Shomei to stop the sync at this block and thus be able to serve the proof for it. It is recommended to choose a finalized block. Then the node will stop and wait before moving forward. 
 As long as it does not move forward, it can serve the getProof of this block. 
-As soon as the coordinator calls `rollup_forkChoiceUpdated` (for passing the new finalized block), Shomei will again move forward to this last one and stop.
+As soon as the coordinator calls `rollup_forkChoiceUpdated` (for passing the new finalized block), Shomei will again move forward to this latest one and stop.
 It can thus serve the getProof for this last one and those before it (knowing that there is a cache to serve the last 128 finalized blocks encountered by the node since it started).
 
-it's important to enable `--min-confirmations-before-importing` if you have reorg in your network (in general 2 for goerli and 4 for mainnet in linea)
+It's important to enable `--min-confirmations-before-importing` if you have reorg in your network (suggest 4 for mainnet in linea)
 
 ```bash
 shomei --enable-trace-generation=false  --enable-finalized-block-limit=true --use-finalized-block-number=1855350 --use-finalized-block-hash=0xabc0cca83e3eec5a0a30db97dcd4fbbec07361f38c4395c9f79ecf15ee92a07c
