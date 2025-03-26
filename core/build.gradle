@@ -35,10 +35,108 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-    testImplementation 'ConsenSys:besu-shomei-plugin'
 
+    testImplementation 'org.hyperledger.besu.internal:dsl:24.9.2-DEBUG'
+    testImplementation 'tech.pegasys.discovery:discovery:25.3.0'
+    testImplementation 'org.hyperledger.besu.internal:core:24.9.2-DEBUG:test-support'
+    testImplementation 'org.apache.commons:commons-lang3:3.12.0'
+    testImplementation 'io.vertx:vertx-stack-depchain:4.5.13'
+    testImplementation 'org.hyperledger.besu.internal:api'
+    implementation 'org.apache.logging.log4j:log4j-slf4j-impl:2.20.0'
     testImplementation project(':util')
     testImplementation 'junit:junit'
     testImplementation 'org.assertj:assertj-core'
 
 }
+import java.nio.file.Files
+
+task downloadAndExtractBesu {
+    def besuVersion = "25.3.0"
+    def besuUrl = "https://github.com/hyperledger/besu/releases/download/${besuVersion}/besu-${besuVersion}.tar.gz"
+    def besuArchive = file("${rootProject.buildDir}/besu-${besuVersion}.tar.gz") // Store in parent build dir
+    def besuFinalDir = file("${rootProject.buildDir}/install/besu")  // Target install directory
+
+    def pluginVersion = "0.4.0"
+    def pluginUrl = "https://github.com/Consensys/besu-shomei-plugin/releases/download/v${pluginVersion}/besu-shomei-plugin-v${pluginVersion}.jar"
+    def pluginFile = file("${besuFinalDir}/plugins/besu-shomei-plugin-v${pluginVersion}.jar") // Path to place the plugin
+
+    outputs.dir besuFinalDir
+
+    doLast {
+        // Ensure Besu directory exists
+        delete besuFinalDir
+        besuFinalDir.mkdirs()
+
+        // Download Besu if not already present
+        if (!besuArchive.exists()) {
+            println "Downloading Besu ${besuVersion}..."
+            new URL(besuUrl).withInputStream { input ->
+                Files.copy(input, besuArchive.toPath())
+            }
+        } else {
+            println "Besu ${besuVersion} is already downloaded."
+        }
+
+        // Extract Besu directly to final directory
+        println "Extracting Besu to ${besuFinalDir}..."
+        copy {
+            from tarTree(resources.gzip(besuArchive))
+            include "besu-${besuVersion}/bin/**"
+            include "besu-${besuVersion}/lib/**"  // Adjust to lib/ if needed
+            eachFile { fileCopyDetails ->
+                fileCopyDetails.path = fileCopyDetails.path.replace("besu-${besuVersion}/", "")
+            }
+            into besuFinalDir
+        }
+
+        // Ensure bin and lib exist
+        if (!file("${besuFinalDir}/bin").exists() || !file("${besuFinalDir}/lib").exists()) {
+            throw new GradleException("Error: Missing bin/ or lib/ after extraction!")
+        }
+
+        // Create plugins directory
+        file("${besuFinalDir}/plugins").mkdirs()
+
+        // Download the plugin if not already present
+        if (!pluginFile.exists()) {
+            println "Downloading Besu Shomei Plugin ${pluginVersion}..."
+            new URL(pluginUrl).withInputStream { input ->
+                Files.copy(input, pluginFile.toPath())
+            }
+            println "Besu Shomei Plugin downloaded to ${pluginFile}."
+        } else {
+            println "Besu Shomei Plugin is already downloaded."
+        }
+    }
+}
+
+
+
+task acceptanceTest(type: Test) {
+
+    inputs.property "integration.date", LocalTime.now() // so it runs at every invocation
+
+    useJUnitPlatform {}
+
+    dependsOn tasks.named("downloadAndExtractBesu")
+    setSystemProperties(test.getSystemProperties())
+    def besuExecutable = file("${rootProject.buildDir}/install/besu/bin/besu").absolutePath
+    systemProperty 'acctests.runBesuExecutable', besuExecutable
+    def javaProjects = rootProject.subprojects
+    mustRunAfter javaProjects.test
+    description = 'Runs ALL Besu acceptance tests (mainnet and non-mainnet).'
+    group = 'verification'
+
+    jvmArgs "-XX:ErrorFile=${buildDir}/jvmErrorLogs/java_err_pid%p.log"
+
+    testLogging {
+        exceptionFormat = 'full'
+        showStackTraces = true
+        showStandardStreams = Boolean.getBoolean('acctests.showStandardStreams')
+        showExceptions = true
+        showCauses = true
+    }
+
+    doFirst { mkdir "${buildDir}/jvmErrorLogs" }
+}
+

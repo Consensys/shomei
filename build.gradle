@@ -79,6 +79,10 @@ allprojects {
             url "https://hyperledger.jfrog.io/artifactory/besu-maven/"
             content { includeGroupByRegex('org\\.hyperledger\\.besu($|\\..*)') }
         }
+        maven {
+            url 'https://splunk.jfrog.io/splunk/ext-releases-local'
+            content { includeGroupByRegex('com\\.splunk\\..*') }
+        }
         // besu-shomei-plugin for test fixture generation
         def besuShomeiPluginRelease = ivy {
             url 'https://github.com'
@@ -412,3 +416,4 @@ def buildTime() {
     df.setTimeZone(TimeZone.getTimeZone("UTC"))
     return df.format(new Date())
 }
+

@@ -34,8 +34,68 @@ package net.consensys.shomei;
 // import org.apache.tuweni.units.bigints.UInt256;
 // import org.junit.Test;
 
+
+import net.consensys.shomei.util.AcceptanceTestsUtils;
+import okhttp3.Call;
+import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcConfiguration;
+import org.hyperledger.besu.ethereum.api.jsonrpc.RpcApis;
+import org.hyperledger.besu.ethereum.core.Transaction;
+import org.hyperledger.besu.tests.acceptance.dsl.AcceptanceTestBase;
+import org.hyperledger.besu.tests.acceptance.dsl.account.Account;
+import org.hyperledger.besu.tests.acceptance.dsl.node.BesuNode;
+import org.hyperledger.besu.tests.acceptance.dsl.node.configuration.BesuNodeConfigurationBuilder;
+import org.hyperledger.besu.tests.acceptance.dsl.node.configuration.NodeConfigurationFactory;
+import org.hyperledger.besu.tests.acceptance.dsl.node.configuration.genesis.GenesisConfigurationFactory;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static java.util.Arrays.asList;
+
 @SuppressWarnings("unused")
-public class TrieLogShippingTests {
+public class TrieLogShippingTests extends AcceptanceTestBase {
+
+    private static final String GENESIS_FILE = "/dev/dev_london.json";
+
+    private final NodeConfigurationFactory node = new NodeConfigurationFactory();
+
+    @Test
+    public void testTrielogShippingWithNewContractUpdateA() throws IOException {
+        final String[] validators = {"validator1"};
+
+        final BesuNode validator1 =
+                besu.create(new BesuNodeConfigurationBuilder().name("validator1").miningEnabled()
+                        .jsonRpcConfiguration(createJsonRpcWithQbftEnabledConfig()).devMode(false)
+                        .genesisConfigProvider((nodes) ->
+                                this.node.createGenesisConfigForValidators(Arrays.asList(validators),
+                                        nodes, collection -> GenesisConfigurationFactory.createCliqueGenesisConfig(nodes,
+                                                new GenesisConfigurationFactory.CliqueOptions(1, 30000, false)))).build());
+
+        cluster.start(validator1);
+
+        final Account sender = accounts.createAccount("account1");
+        final Account receiver = accounts.createAccount("account2");
+
+        validator1.execute(accountTransactions.createTransfer(sender, 50));
+        cluster.verify(sender.balanceEquals(50));
+
+        AcceptanceTestsUtils acceptanceTestsUtils = new AcceptanceTestsUtils(validator1);
+        Call call = acceptanceTestsUtils.callRpcRequest(acceptanceTestsUtils.createGetTrieLogRequest(1));
+        System.out.println(call.execute().body().string());
+
+    }
+
+
+    public JsonRpcConfiguration createJsonRpcWithQbftEnabledConfig() {
+        return node.createJsonRpcWithRpcApiEnabledConfig(RpcApis.QBFT.name(), RpcApis.MINER.name(), "SHOMEI");
+    }
+
   /*
   // TODO activate when ZkTrieLogFactoryImpl will be available
   @Test
