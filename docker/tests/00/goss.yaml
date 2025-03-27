@@ -5,6 +5,6 @@
 file:
   /goss/Dockerfile:
     exists: true
-    contains:
+    contents:
       - "/ENV SHOMEI_RPC_HTTP_HOST 0.0.0.0/"
 
