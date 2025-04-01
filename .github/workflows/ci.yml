@@ -32,7 +32,7 @@ jobs:
 
       - name: Determine Shomei version
         id: project-version
-        uses: ./.github/actions/project-version
+        uses: ConsenSys/github-actions/java-get-project-version@main
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
@@ -131,7 +131,10 @@ jobs:
 
       - name: Docker Metadata
         id: docker-metadata
-        uses: ./.github/actions/docker-metadata
+        uses: ConsenSys/github-actions/java-docker-metadata@main
+        with:
+          publish-version: ${{ needs.assemble.outputs.publish-version }}
+          docker-repo: "consensys/linea-shomei"
 
       - name: Build and export to docker
         uses: docker/build-push-action@v6
@@ -209,7 +212,10 @@ jobs:
 
       - name: Docker Metadata
         id: docker-metadata
-        uses: ./.github/actions/docker-metadata
+        uses: ConsenSys/github-actions/java-docker-metadata@main
+        with:
+          publish-version: ${{ needs.assemble.outputs.publish-version }}
+          docker-repo: "consensys/linea-shomei"
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -220,6 +226,7 @@ jobs:
 
       - name: Build and push to registry
         uses: docker/build-push-action@v6
+        if: steps.docker-metadata.outputs.push == 'true'
         with:
           platforms: linux/amd64,linux/arm64
           file: docker/openjdk-21/Dockerfile
@@ -232,3 +239,54 @@ jobs:
           push: ${{ steps.docker-metadata.outputs.push }}
           tags: ${{ steps.docker-metadata.outputs.tags }}
 
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - assemble
+      - unitTests
+      - dockerTests
+      - dockerPublish      
+    environment: release
+    permissions:
+        contents: write
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: distribution
+          path: build/distributions/
+
+      - name: Generate Checksum
+        working-directory: ./build/distributions
+        run: |
+          shasum -a 256 "shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz" > "shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz.sha256"
+          shasum -a 256 "shomei-${{ needs.assemble.outputs.publish-version }}.zip" > "shomei-${{ needs.assemble.outputs.publish-version }}.zip.sha256"
+
+      - name: Determine Prerelease
+        id: determine-prerelease
+        run: |
+          if [[ "${{ needs.build.outputs.publish-version }}" == *-RC* ]]; then
+            echo "prerelease=true" >> $GITHUB_OUTPUT
+          else
+            echo "prerelease=false" >> $GITHUB_OUTPUT
+          fi
+      
+      # Create release tag and attach the distribution
+      - name: Shomei Release
+        id: release
+        uses: softprops/action-gh-release@v2.2.1
+        with:
+          files: |
+            build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
+            build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz.sha256
+            build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.zip
+            build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.zip.sha256
+
+          tag_name: ${{ needs.build.outputs.publish-version }}
+          body: |
+            # Shomei Release
+            ### Additions and Improvements
+            ### Bug Fixes            
+          draft: true
+          prerelease: ${{ steps.determine-prerelease.outputs.prerelease }}
+          preserve_order: true
