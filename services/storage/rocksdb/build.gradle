@@ -19,7 +19,7 @@ dependencies {
     implementation project(':services:storage:api')
     implementation 'org.slf4j:slf4j-api'
     implementation 'org.rocksdb:rocksdbjni'
-    implementation 'org.apache.tuweni:tuweni-bytes'
+    implementation 'io.consensys.tuweni:tuweni-bytes'
     implementation 'com.google.guava:guava'
     implementation 'info.picocli:picocli'
 
