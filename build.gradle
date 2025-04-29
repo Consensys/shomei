@@ -23,6 +23,7 @@ plugins {
     id 'net.ltgt.errorprone' version '3.0.1' apply false
     id 'java'
     id 'application'
+    id 'maven-publish'
 }
 
 apply plugin: 'application'
@@ -50,6 +51,7 @@ allprojects {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'net.ltgt.errorprone'
     apply from: "${rootDir}/gradle/versions.gradle"
+    apply plugin: 'maven-publish'
 
     version = rootProject.version
 
@@ -95,6 +97,17 @@ allprojects {
             filter { includeModule('ConsenSys', 'besu-shomei-plugin')}
         }
 
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                groupId "net.consensys.shomei"
+                version "${project.version}"
+                from components.java
+                artifact sourcesJar
+            }
+        }
     }
 
     dependencies {
@@ -187,7 +200,7 @@ allprojects {
     }
 }
 
-jar { enabled = false }
+jar { enabled = true }
 
 dependencies {
     implementation project(':shomei')
