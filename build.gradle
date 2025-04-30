@@ -21,8 +21,7 @@ plugins {
     id 'com.github.jk1.dependency-license-report' version '2.1'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'net.ltgt.errorprone' version '3.0.1' apply false
-    id 'java'
-    id 'application'
+    id 'org.jreleaser' version '1.17.0'
 }
 
 apply plugin: 'application'
@@ -49,6 +48,8 @@ allprojects {
     apply plugin: 'java-test-fixtures'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'net.ltgt.errorprone'
+    apply plugin: 'maven-publish'
+    apply plugin: 'signing'
     apply from: "${rootDir}/gradle/versions.gradle"
 
     version = rootProject.version
@@ -59,6 +60,11 @@ allprojects {
         from sourceSets.main.allSource
         jar.reproducibleFileOrder = true
         jar.preserveFileTimestamps = false
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        archiveClassifier = 'javadoc'
+        from javadoc.outputDirectory
     }
 
     sourceCompatibility = '21'
@@ -184,6 +190,137 @@ allprojects {
             check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
         }
         options.encoding = 'UTF-8'
+    }
+
+    signing {
+        useGpgCmd()
+        sign configurations.archives
+    }
+
+    publishing {
+        repositories {
+            maven {
+                url = rootProject.layout.buildDirectory.dir("staging-deploy")
+            }
+        }
+
+        publications {
+            create("MavenDeployment", MavenPublication) {
+                if (project != rootProject) {
+                    from components.java
+                    artifact sourcesJar { archiveClassifier.set('sources') }
+                    artifact tasks.javadocJar
+                }
+
+                groupId = 'io.consensys.shomei'
+                artifactId = project == rootProject ? project.name : "${rootProject.name}-${project.name}"
+                version = project.version
+
+                pom {
+                    name = project.name
+                    afterEvaluate { description = project.description }
+                    url = 'https://github.com/consensys/shomei'
+                    licenses {
+                        license {
+                            name = "The Apache License, Version 2.0"
+                            url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                        }
+                    }
+                    scm {
+                        connection = 'scm:https://github.com/consensys/tuweni.git'
+                        developerConnection = 'scm:git@github.com:consensys/tuweni.git'
+                        url = 'https://github.com/consensys/tuweni'
+                    }
+                    developers {
+                        developer {
+                            id = "consensys"
+                            name = 'Protocols Team'
+                            email = 'devops@consensys.net'
+                        }
+                    }
+                    issueManagement {
+                        system = "github"
+                        url = "https://www.github.com/consensys/shomei/issues"
+                    }
+
+                    withXml {
+                        def root = asNode()
+
+                        // Remove dependencyManagement section if it exists
+                        root.dependencyManagement.each { it.parent().remove(it) }
+
+                        def dependencies = root.dependencies[0] ?: root.appendNode('dependencies')
+                        dependencies.children().clear()
+
+                        // Add implementation dependencies with versions from dependency management
+                        configurations.implementation.allDependencies.each { dep ->
+                            if (dep.name != 'unspecified') {
+                                def node = dependencies.appendNode('dependency')
+                                node.appendNode('groupId', dep instanceof ProjectDependency ? "io.consensys.shomei" : dep.group)
+                                node.appendNode('artifactId', dep instanceof ProjectDependency ? "${rootProject.name}-${dep.name}" : dep.name)
+
+                                // Get version from dependency management if available
+                                def version = dep.version ?: project.dependencyManagement.managedVersions["${dep.group}:${dep.name}"]
+                                node.appendNode('version', version)
+                            }
+                        }
+
+                        // Add compileOnly dependencies as optional without trying to resolve them
+                        configurations.compileOnly.allDependencies.each { dep ->
+                            if (dep.name != 'unspecified') {
+                                def node = dependencies.appendNode('dependency')
+                                node.appendNode('groupId', dep instanceof ProjectDependency ? "io.consensys.shomei" : dep.group)
+                                node.appendNode('artifactId', dep instanceof ProjectDependency ? "${rootProject.name}-${dep.name}" : dep.name)
+                                // Get version from dependency management if available
+                                def version = dep.version ?: project.dependencyManagement.managedVersions["${dep.group}:${dep.name}"]
+                                node.appendNode('version', version)
+                                node.appendNode('optional', 'true')
+                            }
+                        }
+
+                        if (System.getenv('ENABLE_SIGNING') == 'true') {
+                            def pomFile = file("${project.buildDir}/generated-pom.xml")
+                            writeTo(pomFile)
+                            def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+                            artifact(pomAscFile) {
+                                classifier = null
+                                extension = 'pom.asc'
+                            }
+                        }
+                    }
+
+                    if (System.getenv('ENABLE_SIGNING') == 'true') {
+                        // create the signed artifacts
+                        tasks.signArchives.signatureFiles.each {
+                            artifact(it) {
+                                def matcher = it.file =~ /-(sources|javadoc)\.jar\.asc$/
+                                if (matcher.find()) {
+                                    classifier = matcher.group(1)
+                                } else {
+                                    classifier = null
+                                }
+                                extension = 'jar.asc'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    tasks.withType(Sign).configureEach {
+        onlyIf {
+            System.getenv('ENABLE_SIGNING') == 'true'
+        }
+    }
+
+    tasks.withType(GenerateModuleMetadata).configureEach {
+        enabled = false
+    }
+
+    // Ensure each project's publication task depends on its own POM generation
+    tasks.withType(PublishToMavenLocal).configureEach { publishTask ->
+        publishTask.dependsOn(tasks.withType(GenerateMavenPom))
     }
 }
 
@@ -412,3 +549,4 @@ def buildTime() {
     df.setTimeZone(TimeZone.getTimeZone("UTC"))
     return df.format(new Date())
 }
+
