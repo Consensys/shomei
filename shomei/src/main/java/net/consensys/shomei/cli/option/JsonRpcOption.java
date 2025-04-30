@@ -98,4 +98,37 @@ public class JsonRpcOption {
   public Integer getRpcHttpPort() {
     return rpcHttpPort;
   }
+
+  public static class Builder {
+    private final JsonRpcOption jsonRpcOption = new JsonRpcOption();
+
+    public Builder setRpcHttpHostAllowList(List<String> rpcHttpHostAllowList) {
+      this.jsonRpcOption.rpcHttpHostAllowList = rpcHttpHostAllowList;
+      return this;
+    }
+
+    public Builder setRpcHttpHost(String rpcHttpHost) {
+      this.jsonRpcOption.rpcHttpHost = rpcHttpHost;
+      return this;
+    }
+
+    public Builder setRpcHttpPort(Integer rpcHttpPort) {
+      this.jsonRpcOption.rpcHttpPort = rpcHttpPort;
+      return this;
+    }
+
+    public Builder setBesuRpcHttpHost(String besuRpcHttpHost) {
+      this.jsonRpcOption.besuRpcHttpHost = besuRpcHttpHost;
+      return this;
+    }
+
+    public Builder setBesuHttpPort(Integer besuRHttpPort) {
+      this.jsonRpcOption.besuRHttpPort = besuRHttpPort;
+      return this;
+    }
+
+    public JsonRpcOption build() {
+      return jsonRpcOption;
+    }
+  }
 }

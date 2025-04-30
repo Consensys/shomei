@@ -22,7 +22,7 @@ dependencies {
     implementation 'org.hyperledger.besu.internal:api'
 
     // Tuweni
-    implementation 'org.apache.tuweni:tuweni-bytes'
+    implementation 'io.consensys.tuweni:tuweni-bytes'
 
     // Vert.x dependencies
     implementation 'io.vertx:vertx-core'

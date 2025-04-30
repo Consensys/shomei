@@ -13,6 +13,7 @@
 
 package net.consensys.shomei;
 
+import io.netty.handler.logging.LogLevel;
 import net.consensys.shomei.cli.option.DataStorageOption;
 import net.consensys.shomei.cli.option.HashFunctionOption;
 import net.consensys.shomei.cli.option.JsonRpcOption;
@@ -28,6 +29,7 @@ import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfig
 import net.consensys.shomei.storage.RocksDBStorageProvider;
 import net.consensys.shomei.storage.StorageProvider;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
+import net.consensys.shomei.util.logging.LoggingConfiguration;
 import net.consensys.zkevm.HashProvider;
 
 import java.io.IOException;
@@ -38,6 +40,7 @@ import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.vertx.core.Vertx;
+import org.apache.logging.log4j.Level;
 import org.hyperledger.besu.datatypes.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,7 +65,7 @@ public class Runner {
       HashFunctionOption hashFunctionOption) {
     this.vertx = Vertx.vertx();
     setupHashFunction(hashFunctionOption);
-    metricsService = setupMetrics(metricsOption);
+    metricsService = metricsOption.isMetricsEnabled() ? setupMetrics(metricsOption) : null;
 
     final StorageProvider storageProvider =
         new RocksDBStorageProvider(
@@ -139,16 +142,18 @@ public class Runner {
                 .log();
           }
         });
-    vertx.deployVerticle(
-        metricsService,
-        res -> {
-          if (!res.succeeded()) {
-            LOG.atError()
-                .setMessage("Error occurred when starting the metrics service {}")
-                .addArgument(res.cause())
-                .log();
-          }
-        });
+    if (metricsService != null) {
+      vertx.deployVerticle(
+          metricsService,
+          res -> {
+            if (!res.succeeded()) {
+              LOG.atError()
+                  .setMessage("Error occurred when starting the metrics service {}")
+                  .addArgument(res.cause())
+                  .log();
+            }
+          });
+    }
   }
 
   public void stop() throws IOException {

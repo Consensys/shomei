@@ -23,7 +23,7 @@ import picocli.CommandLine;
 
 public class HashFunctionOption {
 
-  enum HashFunction {
+  public enum HashFunction {
     KECCAK256(HashProvider::keccak256),
     MIMC_BN254(HashProvider::mimcBn254),
     MIMC_BLS12_377(HashProvider::mimcBls12377);
@@ -56,5 +56,18 @@ public class HashFunctionOption {
 
   public Function<Bytes, Hash> getHashFunction() {
     return hashFunction.hashFunction;
+  }
+
+  public static class Builder {
+    private final HashFunctionOption hashFunctionOption = new HashFunctionOption();
+
+    public Builder setHashFunction(HashFunction hashFunction) {
+      this.hashFunctionOption.hashFunction = hashFunction;
+      return this;
+    }
+
+    public HashFunctionOption build() {
+      return hashFunctionOption;
+    }
   }
 }
