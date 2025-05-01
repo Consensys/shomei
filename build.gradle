@@ -276,8 +276,8 @@ subprojects {
 nexusPublishing {
     repositories {
         sonatype {
-            username = findProperty("nexusUsername") ?: System.getenv("JRELEASER_MAVENCENTRALUSERNAME")
-            password = findProperty("nexusPassword") ?: System.getenv("JRELEASER_MAVENCENTRALPASSWORD")
+            username = findProperty("nexusUsername") ?: System.getenv("MAVENCENTRAL_USERNAME")
+            password = findProperty("nexusPassword") ?: System.getenv("MAVENCENTRAL_PASSWORD")
         }
     }
 }
