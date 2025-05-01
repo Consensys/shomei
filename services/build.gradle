@@ -13,4 +13,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-jar { enabled = false }
+jar { enabled = true }

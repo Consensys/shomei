@@ -83,7 +83,7 @@ dependencyManagement {
     dependency 'org.slf4j:slf4j-api:2.0.6'
 
     // Tuweni
-    dependencySet(group: 'org.apache.tuweni', version: '2.3.1') {
+    dependencySet(group: 'io.consensys.tuweni', version: '2.7.0') {
       entry 'tuweni-units'
       entry 'tuweni-bytes'
     }

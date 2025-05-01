@@ -49,4 +49,17 @@ public class DataStorageOption {
     }
     return path;
   }
+
+  public static class Builder {
+    private final DataStorageOption dataStorageOption = new DataStorageOption();
+
+    public Builder setDataStoragePath(Path dataStoragePath) {
+      this.dataStorageOption.dataStoragePath = dataStoragePath.toString();
+      return this;
+    }
+
+    public DataStorageOption build() {
+      return dataStorageOption;
+    }
+  }
 }

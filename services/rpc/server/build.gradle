@@ -48,8 +48,8 @@ dependencies {
     implementation 'io.opentelemetry:opentelemetry-api'
 
     // Tuweni
-    implementation 'org.apache.tuweni:tuweni-bytes'
-    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'io.consensys.tuweni:tuweni-bytes'
+    implementation 'io.consensys.tuweni:tuweni-units'
 
     // Vert.x dependencies
     implementation 'io.vertx:vertx-auth-jwt'

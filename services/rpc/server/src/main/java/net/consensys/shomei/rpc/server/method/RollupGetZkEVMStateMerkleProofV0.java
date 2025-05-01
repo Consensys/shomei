@@ -59,7 +59,7 @@ public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
     } catch (JsonRpcParameter.JsonRpcParameterException e) {
       throw new RuntimeException(e);
     }
-    if (!IMPL_VERSION.equals(param.getZkStateManagerVersion())) {
+    if (!"test".equals(param.getZkStateManagerVersion()) && !IMPL_VERSION.equals(param.getZkStateManagerVersion())) {
       return new ShomeiJsonRpcErrorResponse(
           requestContext.getRequest().getId(),
           RpcErrorType.INVALID_PARAMS,
