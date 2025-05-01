@@ -13,7 +13,6 @@
 
 package net.consensys.shomei;
 
-import io.netty.handler.logging.LogLevel;
 import net.consensys.shomei.cli.option.DataStorageOption;
 import net.consensys.shomei.cli.option.HashFunctionOption;
 import net.consensys.shomei.cli.option.JsonRpcOption;
@@ -29,7 +28,6 @@ import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfig
 import net.consensys.shomei.storage.RocksDBStorageProvider;
 import net.consensys.shomei.storage.StorageProvider;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
-import net.consensys.shomei.util.logging.LoggingConfiguration;
 import net.consensys.zkevm.HashProvider;
 
 import java.io.IOException;
@@ -40,7 +38,6 @@ import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.vertx.core.Vertx;
-import org.apache.logging.log4j.Level;
 import org.hyperledger.besu.datatypes.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
