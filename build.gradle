@@ -193,16 +193,6 @@ allprojects {
 }
 
 subprojects {
-//    if (project.name == 'shomei') {
-//        logger.lifecycle("🛑 Skipping publishing setup for project :shomei")
-//        return
-//    }
-    println "🔍 ${project.path}: has java plugin = ${plugins.hasPlugin("java")}, components = ${components.collect { it.name }}"
-
-    if (!project.buildFile.exists()) {
-        logger.lifecycle("🛑 Skipping ${project.path} (no build.gradle found — likely an aggregator)")
-        return
-    }
 
     apply plugin: 'java-library'
     apply plugin: 'maven-publish'
