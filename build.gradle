@@ -193,6 +193,10 @@ allprojects {
 }
 
 subprojects {
+//    if (project.name == 'shomei') {
+//        logger.lifecycle("🛑 Skipping publishing setup for project :shomei")
+//        return
+//    }
     println "🔍 ${project.path}: has java plugin = ${plugins.hasPlugin("java")}, components = ${components.collect { it.name }}"
 
     if (!project.buildFile.exists()) {
@@ -239,38 +243,35 @@ subprojects {
         }
 
         repositories {
-            // local nexus docker repo for testing
+            // local nexus docker repo for testing.  to test use:
+            // ./gradlew publishMavenJavaPublicationToLocalNexusRepository -PskipSigning
             maven {
                 name = "localNexus"
                 url = uri("http://localhost:8081/repository/maven-releases/")
+                allowInsecureProtocol = true
+                url = uri("http://localhost:8081/repository/maven-snapshots/")
                 credentials {
                     username = "admin"
-                    password = "admin123"
+                    password = System.getenv("LOCAL_SONATYPE_PASSWORD")
                 }
             }
         }
     }
 
     if (!project.hasProperty("skipSigning")) {
-        apply plugin: 'signing'
+        afterEvaluate {
+            apply plugin: 'signing'
 
-        def pubKey = System.getenv("GPG_PUBLIC_KEY")
-        def secKey = System.getenv("GPG_SECRET_KEY")
-        def passphrase = System.getenv("GPG_PASSPHRASE")
 
-        if (pubKey && secKey && passphrase) {
-            signing {
-                useInMemoryPgpKeys(pubKey, secKey, passphrase)
-                sign publishing.publications["mavenJava"]
+            if (project.plugins.hasPlugin('signing')) {
+                def pub = project.extensions.findByType(PublishingExtension)?.publications?.findByName("mavenJava")
+                if (pub != null) {
+                    signing.sign(pub)
+                }
             }
-        } else {
-            logger.lifecycle("🔒 Signing plugin applied, but GPG keys missing for ${project.path}")
         }
-    } else {
-        logger.lifecycle("✋ Signing skipped for ${project.path} due to -PskipSigning")
     }
 }
-
 // Only define nexus publishing once
 nexusPublishing {
     repositories {
@@ -284,7 +285,6 @@ nexusPublishing {
 jar { enabled = false }
 
 dependencies {
-    implementation project(':shomei')
     errorprone 'com.google.errorprone:error_prone_core'
 }
 
