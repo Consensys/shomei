@@ -149,6 +149,7 @@ jobs:
 
   jreleaser:
     runs-on: ubuntu-latest
+    environment: publish
     permissions:
       contents: write
       # TODO might not need these permissions below
