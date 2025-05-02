@@ -147,9 +147,13 @@ jobs:
           curl -L https://github.com/goss-org/goss/releases/download/v0.3.22/goss-linux-arm64 -o ./docker/tests/goss-linux-arm64
           ./gradlew --no-daemon dockerTest
 
-  publishMavenCentral:
+  jreleaser:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    permissions:
+      contents: write
+      # TODO might not need these permissions below
+      id-token: write
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -162,17 +166,31 @@ jobs:
           distribution: 'adopt'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v3
-      - name: Publish on maven central
-        run: ./gradlew clean build publishToSonatype closeAndReleaseSonatypeStagingRepository
+      - name: Publish Staging
+        run: ./gradlew clean publish
         env:
-          GITHUB_USERNAME: ${{ github.actor }}
-          GITHUB_EMAIL: ${{ github.actor }}@users.noreply.github.com
-          GPG_PUBLIC_KEY: ${{ secrets.JRELEASER_GPG_PUBLIC_KEY }}
-          GPG_SECRET_KEY: ${{ secrets.JRELEASER_GPG_SECRET_KEY }}
-          GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
-          MAVENCENTRAL_USERNAME: ${{ secrets.JRELEASER_MAVENCENTRALUSERNAME }}
-          MAVENCENTRAL_PASSWORD: ${{ secrets.JRELEASER_MAVENCENTRALPASSWORD }}
-
+          BUILD_RELEASE: true
+      - name: Publish on maven central
+        run: ./gradlew jreleaserFullRelease
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_GITHUB_USERNAME: ${{ github.actor }}
+          JRELEASER_GITHUB_EMAIL: ${{ github.actor }}@users.noreply.github.com
+          JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.JRELEASER_GPG_PUBLIC_KEY }}
+          JRELEASER_GPG_SECRET_KEY: ${{ secrets.JRELEASER_GPG_SECRET_KEY }}
+          JRELEASER_GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
+          JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.JRELEASER_MAVENCENTRAL_USERNAME }}
+          JRELEASER_MAVENCENTRAL_PASSWORD: ${{ secrets.JRELEASER_MAVENCENTRAL_PASSWORD }}
+          BUILD_RELEASE: true
+      # Persist logs
+      - name: JReleaser release output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jreleaser-release
+          path: |
+            build/jreleaser/trace.log
+            build/jreleaser/output.properties
   publishDocker:
     needs: build
     if: github.event_name == 'push'

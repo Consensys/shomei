@@ -22,9 +22,10 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.0'
     id 'net.ltgt.errorprone' version '3.0.1' apply false
     id 'io.github.gradle-nexus.publish-plugin' version '1.3.0'
-    id 'signing'
     id 'java'
     id 'application'
+    id 'maven-publish'
+    id 'org.jreleaser' version '1.18.0'
 }
 
 apply plugin: 'application'
@@ -56,10 +57,8 @@ allprojects {
     apply plugin: 'java-test-fixtures'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'net.ltgt.errorprone'
+    apply plugin: 'maven-publish'
     apply from: "${rootDir}/gradle/versions.gradle"
-
-    version = rootProject.version
-
 
     java {
         withSourcesJar()
@@ -190,13 +189,17 @@ allprojects {
         }
         options.encoding = 'UTF-8'
     }
+    publishing {
+        repositories {
+            maven {
+                name = "staging"
+                url = uri("$buildDir/staging-deploy")
+            }
+        }
+    }
 }
 
 subprojects {
-//    if (project.name == 'shomei') {
-//        logger.lifecycle("🛑 Skipping publishing setup for project :shomei")
-//        return
-//    }
     println "🔍 ${project.path}: has java plugin = ${plugins.hasPlugin("java")}, components = ${components.collect { it.name }}"
 
     if (!project.buildFile.exists()) {
@@ -205,7 +208,6 @@ subprojects {
     }
 
     apply plugin: 'java-library'
-    apply plugin: 'maven-publish'
 
     publishing {
         publications {
@@ -213,8 +215,6 @@ subprojects {
                 from components.java
                 groupId = project.group.toString()
                 version = project.version.toString()
-                suppressPomMetadataWarningsFor("testFixturesApiElements")
-                suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
 
                 pom {
                     name.set("Shomei module: ${project.path}")
@@ -238,22 +238,58 @@ subprojects {
                             email.set("devops@consensys.net")
                         }
                     }
+                    withXml {
+                        def root = asNode()
+
+                        // Remove dependencyManagement section if it exists
+                        root.dependencyManagement.each { it.parent().remove(it) }
+
+                        def dependencies = root.dependencies[0] ?: root.appendNode('dependencies')
+                        dependencies.children().clear()
+
+                        // Add implementation dependencies with versions from dependency management
+                        configurations.implementation.allDependencies.each { dep ->
+                            if (dep.name != 'unspecified') {
+                                def node = dependencies.appendNode('dependency')
+                                node.appendNode('groupId', dep instanceof ProjectDependency ? "io.consensys.shomei" : dep.group)
+                                node.appendNode('artifactId', dep instanceof ProjectDependency ? "${rootProject.name}-${dep.name}" : dep.name)
+
+                                // Get version from dependency management if available
+                                def version = dep.version ?: project.dependencyManagement.managedVersions["${dep.group}:${dep.name}"]
+                                node.appendNode('version', version)
+                            }
+                        }
+
+                        // Add compileOnly dependencies as optional without trying to resolve them
+                        configurations.compileOnly.allDependencies.each { dep ->
+                            if (dep.name != 'unspecified') {
+                                def node = dependencies.appendNode('dependency')
+                                node.appendNode('groupId', dep instanceof ProjectDependency ? "io.consensys.shomei" : dep.group)
+                                node.appendNode('artifactId', dep instanceof ProjectDependency ? "${rootProject.name}-${dep.name}" : dep.name)
+                                // Get version from dependency management if available
+                                def version = dep.version ?: project.dependencyManagement.managedVersions["${dep.group}:${dep.name}"]
+                                node.appendNode('version', version)
+                                node.appendNode('optional', 'true')
+                            }
+                        }
+
+                        if (System.getenv('ENABLE_SIGNING') == 'true') {
+                            def pomFile = file("${project.buildDir}/generated-pom.xml")
+                            writeTo(pomFile)
+                            def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+                            artifact(pomAscFile) {
+                                classifier = null
+                                extension = 'pom.asc'
+                            }
+                        }
+                    }
                 }
             }
         }
-
         repositories {
-            // local nexus docker repo for testing.  to test use:
-            // ./gradlew publishMavenJavaPublicationToLocalNexusRepository -PskipSigning
             maven {
-                name = "localNexus"
-                url = uri("http://localhost:8081/repository/maven-releases/")
-                allowInsecureProtocol = true
-                url = uri("http://localhost:8081/repository/maven-snapshots/")
-                credentials {
-                    username = "admin"
-                    password = System.getenv("LOCAL_SONATYPE_PASSWORD")
-                }
+                name = "staging"
+                url = uri("$buildDir/staging-deploy")
             }
         }
     }
@@ -271,13 +307,29 @@ subprojects {
             }
         }
     }
-}
-// Only define nexus publishing once
-nexusPublishing {
-    repositories {
-        sonatype {
-            username = findProperty("nexusUsername") ?: System.getenv("MAVENCENTRAL_USERNAME")
-            password = findProperty("nexusPassword") ?: System.getenv("MAVENCENTRAL_PASSWORD")
+    jreleaser {
+        gitRootSearch = true
+        signing {
+            active = 'ALWAYS'
+            armored = true
+        }
+        deploy {
+            maven {
+                mavenCentral {
+                    'deploy' {
+                        active = 'ALWAYS'
+                        url = 'https://central.sonatype.com/api/v1/publisher'
+                        stagingRepository(
+                                layout.buildDirectory
+                                        .dir("staging-deploy")
+                                        .map { it.asFile.toPath() }
+                                        .get().toString())
+                        // It's taking about 15-20 mins to complete deployment
+                        retryDelay = 15
+                        maxRetries = 100
+                    }
+                }
+            }
         }
     }
 }
