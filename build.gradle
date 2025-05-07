@@ -260,6 +260,10 @@ subprojects {
 }
 
 jreleaser {
+    project {
+        description = 'Shomei - a zero-knowledge proof orchestrator'
+        copyright = 'Copyright 2025 ConsenSys'
+    }
     release {
         github {
             // Creating and tagging a release is done manually
@@ -305,6 +309,7 @@ tasks.all { t ->
 jar { enabled = false }
 
 dependencies {
+    implementation project(':shomei')
     errorprone 'com.google.errorprone:error_prone_core'
 }
 
