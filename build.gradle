@@ -201,6 +201,7 @@ subprojects {
             publications {
                 create("mavenJava", MavenPublication) {
                     from components.java
+                    artifactId = project.name == 'shomei' ? 'shomei' : "shomei-${project.name}"
                     groupId = groupVal
                     version = project.version.toString()
                     suppressPomMetadataWarningsFor("testFixturesApiElements")
