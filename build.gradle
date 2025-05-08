@@ -53,7 +53,6 @@ allprojects {
     apply plugin: 'java-test-fixtures'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'net.ltgt.errorprone'
-    apply plugin: 'maven-publish'
     apply from: "${rootDir}/gradle/versions.gradle"
 
     version = rootProject.version
@@ -194,50 +193,52 @@ def groupVal = project.findProperty("groupVal") ?: 'io.consensys.protocols.shome
 
 subprojects {
 
-    apply plugin: 'maven-publish'
+    if (name != 'shomei') {
+        apply plugin: 'maven-publish'
 
-    afterEvaluate { project ->
-        publishing {
-            publications {
-                create("mavenJava", MavenPublication) {
-                    from components.java
-                    artifactId = project.name == 'shomei' ? 'shomei' : "shomei-${project.name}"
-                    groupId = groupVal
-                    version = project.version.toString()
-                    suppressPomMetadataWarningsFor("testFixturesApiElements")
-                    suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
+        afterEvaluate { project ->
+            publishing {
+                publications {
+                    create("mavenJava", MavenPublication) {
+                        from components.java
+                        artifactId = project.name == 'shomei' ? 'shomei' : "shomei-${project.name}"
+                        groupId = groupVal
+                        version = project.version.toString()
+                        suppressPomMetadataWarningsFor("testFixturesApiElements")
+                        suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
 
-                    pom {
-                        name.set("Shomei module: ${project.path}")
-                        description.set("Module ${project.name} of shomei")
-                        url.set("https://github.com/consensys/shomei")
-                        licenses {
-                            license {
-                                name.set("Apache-2.0")
-                                url.set("https://www.apache.org/licenses/LICENSE-2.0")
-                            }
-                        }
-                        scm {
-                            connection.set("scm:git:https://github.com/consensys/shomei.git")
-                            developerConnection.set("scm:git:ssh://git@github.com:consensys/shomei.git")
+                        pom {
+                            name.set("Shomei module: ${project.path}")
+                            description.set("Module ${project.name} of shomei")
                             url.set("https://github.com/consensys/shomei")
-                        }
-                        developers {
-                            developer {
-                                id.set("consensys")
-                                name.set("Protocols Team")
-                                email.set("devops@consensys.net")
+                            licenses {
+                                license {
+                                    name.set("Apache-2.0")
+                                    url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                                }
+                            }
+                            scm {
+                                connection.set("scm:git:https://github.com/consensys/shomei.git")
+                                developerConnection.set("scm:git:ssh://git@github.com:consensys/shomei.git")
+                                url.set("https://github.com/consensys/shomei")
+                            }
+                            developers {
+                                developer {
+                                    id.set("consensys")
+                                    name.set("Protocols Team")
+                                    email.set("devops@consensys.net")
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            repositories {
-                // publish to a staging directory for jreleaser to release from:
-                // ./gradlew publish
-                maven {
-                    url = rootProject.layout.buildDirectory.dir("staging-deploy")
+                repositories {
+                    // publish to a staging directory for jreleaser to release from:
+                    // ./gradlew publish
+                    maven {
+                        url = rootProject.layout.buildDirectory.dir("staging-deploy")
+                    }
                 }
             }
         }
