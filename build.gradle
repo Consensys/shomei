@@ -21,6 +21,7 @@ plugins {
     id 'com.github.jk1.dependency-license-report' version '2.1'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'net.ltgt.errorprone' version '3.0.1' apply false
+    id 'org.jreleaser' version '1.16.0'
     id 'java'
     id 'application'
 }
@@ -45,20 +46,22 @@ application {
 }
 
 allprojects {
+    group = project.group
+    version = project.version
     apply plugin: 'java-library'
-    apply plugin: 'java-test-fixtures'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'net.ltgt.errorprone'
     apply from: "${rootDir}/gradle/versions.gradle"
-
     version = rootProject.version
 
+    java {
+        withSourcesJar()
+        withJavadocJar()
+    }
 
-    task sourcesJar(type: Jar, dependsOn: classes) {
-        archiveClassifier = 'sources'
-        from sourceSets.main.allSource
-        jar.reproducibleFileOrder = true
-        jar.preserveFileTimestamps = false
+    test {
+        // set a runtime shomei version for tests not executing from a jar
+        systemProperty "shomei.version", project.version
     }
 
     sourceCompatibility = '21'
@@ -69,7 +72,7 @@ allprojects {
         mavenCentral()
         maven {
             url "https://artifacts.consensys.net/public/maven/maven/"
-            content { includeGroupByRegex('tech\\.pegasys($|\\..*)')}
+            content { includeGroupByRegex('tech\\.pegasys($|\\..*)') }
         }
         maven {
             url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/"
@@ -92,7 +95,7 @@ allprojects {
         // restict this so we do not accidentally pull in other artifacts from github
         exclusiveContent {
             forRepositories(besuShomeiPluginRelease)
-            filter { includeModule('ConsenSys', 'besu-shomei-plugin')}
+            filter { includeModule('ConsenSys', 'besu-shomei-plugin') }
         }
 
     }
@@ -185,6 +188,115 @@ allprojects {
         }
         options.encoding = 'UTF-8'
     }
+}
+
+// config the deferred groupId
+def groupVal = project.findProperty("groupVal") ?: 'io.consensys.protocols.shomei'
+
+subprojects {
+
+    apply plugin: 'maven-publish'
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                versionMapping {
+                    allVariants {
+                        fromResolutionResult()
+                    }
+                }
+
+                from components.java
+                artifactId = project.name == 'shomei' ? 'shomei' : "shomei-${project.name}"
+                groupId = groupVal
+                version = project.version.toString()
+                suppressPomMetadataWarningsFor("testFixturesApiElements")
+                suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
+
+                pom {
+                    name.set("Shomei module: ${project.path}")
+                    description.set("Module ${project.name} of shomei")
+                    url.set("https://github.com/consensys/shomei")
+                    licenses {
+                        license {
+                            name.set("Apache-2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:https://github.com/consensys/shomei.git")
+                        developerConnection.set("scm:git:ssh://git@github.com:consensys/shomei.git")
+                        url.set("https://github.com/consensys/shomei")
+                    }
+                    developers {
+                        developer {
+                            id.set("consensys")
+                            name.set("Protocols Team")
+                            email.set("devops@consensys.net")
+                        }
+                    }
+                }
+            }
+        }
+
+        repositories {
+            // publish to a staging directory for jreleaser to release from:
+            // ./gradlew publish
+            maven {
+                url = rootProject.layout.buildDirectory.dir("staging-deploy")
+            }
+        }
+    }
+}
+
+jreleaser {
+    project {
+        description = 'Shomei - a zero-knowledge proof orchestrator'
+        copyright = 'Copyright 2025 ConsenSys'
+        java {
+            groupId = groupVal
+        }
+    }
+    release {
+        github {
+            // Creating and tagging a release is done manually
+            skipRelease = true
+            skipTag = true
+            // injecting a fake value to make JReleaser happy
+            token = "foobar"
+        }
+    }
+    signing {
+        active = 'ALWAYS'
+        armored = true
+        verify = true
+    }
+    deploy {
+        maven {
+            mavenCentral {
+                sonatype {
+                    active = 'ALWAYS'
+                    url = 'https://central.sonatype.com/api/v1/publisher'
+                    stagingRepository('build/staging-deploy')
+                    retryDelay = 60
+                    maxRetries = 100
+                }
+            }
+        }
+    }
+}
+
+// Create a task to prepare the jreleaser directory.
+task prepareJreleaserDirectory {
+  doLast {
+    file(rootProject.layout.buildDirectory.dir("jreleaser")).mkdirs()
+  }
+}
+
+// Make every task whose name starts with "jreleaser" depend on the preparation task.
+tasks.all { t ->
+  if (t.name.startsWith("jreleaser")) {
+    t.dependsOn prepareJreleaserDirectory
+  }
 }
 
 jar { enabled = false }
