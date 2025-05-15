@@ -279,6 +279,7 @@ jreleaser {
                     stagingRepository('build/staging-deploy')
                     retryDelay = 60
                     maxRetries = 100
+                    snapshotSupported = true
                 }
             }
         }

@@ -27,14 +27,14 @@ RUN apt-get update  && \
 RUN adduser --disabled-password --gecos "" --home /opt/shomei shomei && \
     chown shomei:shomei /opt/shomei && chmod 0755 /opt/shomei
 
+USER shomei
+WORKDIR /opt/shomei
+
 COPY --chown=shomei:shomei ${TAR_FILE} /tmp/shomei.tar.gz
 # Extract the tar.gz file and rename the directory
 RUN mkdir -p /opt/shomei && \
     tar -xzf /tmp/shomei.tar.gz -C /opt/shomei --strip-components=1 && \
     rm /tmp/shomei.tar.gz && chown -R shomei:shomei /opt/shomei
-
-USER shomei
-WORKDIR /opt/shomei
 
 # Expose services ports
 # 8888 HTTP JSON-RPC
