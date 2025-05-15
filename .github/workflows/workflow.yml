@@ -4,16 +4,16 @@ on:
   push:
     branches:
       - main
+      - maven_central_publishing
     tags:
       - 'v?[0-9]+.[0-9]+.[0-9]+**' # Matches release tags of the form major.minor.patch, e.g. 1.2.1
-  pull_request:
+  # pull_request:
 
 jobs:
   assemble:
     runs-on: ubuntu-latest
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -146,6 +146,40 @@ jobs:
           curl -L https://github.com/goss-org/goss/releases/download/v0.3.22/goss-linux-arm64 -o ./docker/tests/goss-linux-arm64
           ./gradlew --no-daemon dockerTest
 
+  publishMavenCentral:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: publish
+    permissions:
+      contents: write
+      id-token: write
+      packages: write    
+    if: github.event_name == 'push'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'adopt'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v3
+           
+      - name: Publish on maven central
+        run: |
+          ./gradlew clean build assemble publish jreleaserFullRelease
+        env:
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_GITHUB_USERNAME: ${{ github.actor }}
+          JRELEASER_GITHUB_EMAIL: ${{ github.actor }}@users.noreply.github.com
+          JRELEASER_GPG_PASSPHRASE : ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
+          JRELEASER_GPG_SECRET_KEY : ${{ secrets.JRELEASER_GPG_SECRET_KEY }}
+          JRELEASER_GPG_PUBLIC_KEY : ${{ secrets.JRELEASER_GPG_PUBLIC_KEY }}
+          JRELEASER_MAVENCENTRAL_USERNAME : ${{ secrets.JRELEASER_MAVENCENTRAL_USERNAME }}
+          JRELEASER_MAVENCENTRAL_PASSWORD : ${{ secrets.JRELEASER_MAVENCENTRAL_PASSWORD }}
+          BUILD_RELEASE: true
+
   publishDocker:
     needs: build
     if: github.event_name == 'push'
@@ -162,7 +196,7 @@ jobs:
           java-version: '21'
           distribution: 'adopt'
       - name: Login to Docker Hub for self hosted
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER_RW }}
           password: ${{ secrets.DOCKER_PAT_RW }}
@@ -187,7 +221,7 @@ jobs:
           distribution: 'adopt'
           architecture: aarch64
       - name: Login to Docker Hub for self hosted
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER_RW }}
           password: ${{ secrets.DOCKER_PAT_RW }}
