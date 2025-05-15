@@ -13,13 +13,18 @@
 
 package net.consensys.shomei.rpc.server;
 
+import java.util.Optional;
+
 import org.hyperledger.besu.util.platform.PlatformDetector;
 
 public class ShomeiVersion {
 
   public static final String CLIENT_IDENTITY = "shomei";
   public static final String IMPL_VERSION =
-      ShomeiVersion.class.getPackage().getImplementationVersion();
+      Optional.ofNullable(System.getProperty("shomei.version"))
+          .or(() -> Optional.ofNullable(
+              ShomeiVersion.class.getPackage().getImplementationVersion()))
+          .orElse("UNPUBLISHED_VERSION");
   public static final String OS = PlatformDetector.getOS();
   public static final String VM = PlatformDetector.getVM();
 

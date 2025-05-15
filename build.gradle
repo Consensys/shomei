@@ -21,7 +21,6 @@ plugins {
     id 'com.github.jk1.dependency-license-report' version '2.1'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'net.ltgt.errorprone' version '3.0.1' apply false
-    id 'maven-publish'
     id 'org.jreleaser' version '1.16.0'
     id 'java'
     id 'application'
@@ -50,17 +49,19 @@ allprojects {
     group = project.group
     version = project.version
     apply plugin: 'java-library'
-    apply plugin: 'java-test-fixtures'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'net.ltgt.errorprone'
-    apply plugin: 'maven-publish'
     apply from: "${rootDir}/gradle/versions.gradle"
-
     version = rootProject.version
 
     java {
         withSourcesJar()
         withJavadocJar()
+    }
+
+    test {
+        // set a runtime shomei version for tests not executing from a jar
+        systemProperty "shomei.version", project.version
     }
 
     sourceCompatibility = '21'
@@ -195,50 +196,53 @@ def groupVal = project.findProperty("groupVal") ?: 'io.consensys.protocols.shome
 subprojects {
 
     apply plugin: 'maven-publish'
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                versionMapping {
+                    allVariants {
+                        fromResolutionResult()
+                    }
+                }
 
-    afterEvaluate { project ->
-        publishing {
-            publications {
-                create("mavenJava", MavenPublication) {
-                    from components.java
-                    artifactId = project.name == 'shomei' ? 'shomei' : "shomei-${project.name}"
-                    groupId = groupVal
-                    version = project.version.toString()
-                    suppressPomMetadataWarningsFor("testFixturesApiElements")
-                    suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
+                from components.java
+                artifactId = project.name == 'shomei' ? 'shomei' : "shomei-${project.name}"
+                groupId = groupVal
+                version = project.version.toString()
+                suppressPomMetadataWarningsFor("testFixturesApiElements")
+                suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
 
-                    pom {
-                        name.set("Shomei module: ${project.path}")
-                        description.set("Module ${project.name} of shomei")
+                pom {
+                    name.set("Shomei module: ${project.path}")
+                    description.set("Module ${project.name} of shomei")
+                    url.set("https://github.com/consensys/shomei")
+                    licenses {
+                        license {
+                            name.set("Apache-2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:https://github.com/consensys/shomei.git")
+                        developerConnection.set("scm:git:ssh://git@github.com:consensys/shomei.git")
                         url.set("https://github.com/consensys/shomei")
-                        licenses {
-                            license {
-                                name.set("Apache-2.0")
-                                url.set("https://www.apache.org/licenses/LICENSE-2.0")
-                            }
-                        }
-                        scm {
-                            connection.set("scm:git:https://github.com/consensys/shomei.git")
-                            developerConnection.set("scm:git:ssh://git@github.com:consensys/shomei.git")
-                            url.set("https://github.com/consensys/shomei")
-                        }
-                        developers {
-                            developer {
-                                id.set("consensys")
-                                name.set("Protocols Team")
-                                email.set("devops@consensys.net")
-                            }
+                    }
+                    developers {
+                        developer {
+                            id.set("consensys")
+                            name.set("Protocols Team")
+                            email.set("devops@consensys.net")
                         }
                     }
                 }
             }
+        }
 
-            repositories {
-                // publish to a staging directory for jreleaser to release from:
-                // ./gradlew publish
-                maven {
-                    url = rootProject.layout.buildDirectory.dir("staging-deploy")
-                }
+        repositories {
+            // publish to a staging directory for jreleaser to release from:
+            // ./gradlew publish
+            maven {
+                url = rootProject.layout.buildDirectory.dir("staging-deploy")
             }
         }
     }
@@ -297,7 +301,7 @@ tasks.all { t ->
 jar { enabled = false }
 
 dependencies {
-    implementation project(':shomei')
+//    implementation project(':shomei')
     errorprone 'com.google.errorprone:error_prone_core'
 }
 

@@ -33,7 +33,6 @@ dependencies {
     implementation 'org.hyperledger.besu.internal:core'
     implementation 'org.hyperledger.besu.internal:rlp'
     implementation 'org.hyperledger.besu.internal:util'
-    implementation 'org.hyperledger.besu.internal:util'
     implementation 'io.micrometer:micrometer-core'
 
     // Jackson dependencies
