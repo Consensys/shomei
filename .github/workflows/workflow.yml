@@ -147,6 +147,7 @@ jobs:
           ./gradlew --no-daemon dockerTest
 
   publishMavenCentral:
+    needs: build
     runs-on: ubuntu-latest
     environment: publish
     permissions:

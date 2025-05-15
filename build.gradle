@@ -301,7 +301,7 @@ tasks.all { t ->
 jar { enabled = false }
 
 dependencies {
-//    implementation project(':shomei')
+    implementation project(':shomei')
     errorprone 'com.google.errorprone:error_prone_core'
 }
 
