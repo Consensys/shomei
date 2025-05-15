@@ -167,7 +167,11 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
            
       - name: Publish on maven central
-        run: ./gradlew clean build assemble publish jreleaserFullRelease --debug
+        run: |
+          ./gradlew clean build assemble publish
+          ls -la build/distributions/jreleaser
+          tree build/distributions/jreleaser
+          ./gradlew jreleaserFullRelease
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_GITHUB_USERNAME: ${{ github.actor }}
