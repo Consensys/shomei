@@ -258,6 +258,7 @@ jobs:
     needs:
       - assemble
       - unitTests
+      - publishMavenCentral
       - dockerTests
       - dockerPublish      
     environment: release
