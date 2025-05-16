@@ -25,6 +25,7 @@ public class ShomeiVersion {
           .or(() -> Optional.ofNullable(
               ShomeiVersion.class.getPackage().getImplementationVersion()))
           .orElse("UNPUBLISHED_VERSION");
+  public static final String TEST_VERSION = "test";
   public static final String OS = PlatformDetector.getOS();
   public static final String VM = PlatformDetector.getVM();
 

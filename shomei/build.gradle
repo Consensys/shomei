@@ -39,7 +39,7 @@ dependencies {
 
     implementation 'org.apache.commons:commons-lang3'
 
-    implementation 'org.apache.tuweni:tuweni-bytes'
+    implementation 'io.consensys.tuweni:tuweni-bytes'
     implementation 'org.hyperledger.besu:besu-datatypes'
 
     implementation 'info.picocli:picocli'

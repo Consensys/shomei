@@ -30,8 +30,8 @@ dependencies {
     implementation 'org.hyperledger.besu:plugin-api'
     implementation 'com.google.guava:guava'
 
-    implementation 'org.apache.tuweni:tuweni-bytes'
-    implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'io.consensys.tuweni:tuweni-bytes'
+    implementation 'io.consensys.tuweni:tuweni-units'
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
