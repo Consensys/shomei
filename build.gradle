@@ -281,19 +281,18 @@ jreleaser {
                     maxRetries = 100
                 }
             }
-        }
-        nexus2 {
-            'snapshot-deploy' {
-                active = 'SNAPSHOT'
-                snapshotUrl = 'https://central.sonatype.com/repository/maven-snapshots'
-                stagingRepository('build/staging-deploy')
-                retryDelay = 60
-                maxRetries = 100                
-                applyMavenCentralRules = true
-                snapshotSupported = true
-                closeRepository = true
-                releaseRepository = true
+        
+            nexus2 {
+                'snapshot-deploy' {
+                    active = 'SNAPSHOT'
+                    url = 'https://central.sonatype.com/repository/maven-snapshots'
+                    stagingRepository('build/staging-deploy')
+                    applyMavenCentralRules = true
+                    snapshotSupported = true
+                    closeRepository = true
+                    releaseRepository = true
 
+                }
             }
         }
     }

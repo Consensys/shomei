@@ -40,11 +40,11 @@ RUN mkdir -p /opt/shomei && \
 # 8888 HTTP JSON-RPC
 EXPOSE 8888
 # defaults for host interfaces
-ENV SHOMEI_RPC_HTTP_HOST 0.0.0.0
-ENV SHOMEI_PID_PATH "/tmp/pid"
-ENV OTEL_RESOURCE_ATTRIBUTES "service.name=shomei,service.version=$VERSION"
-ENV OLDPATH "${PATH}"
-ENV PATH "/opt/shomei/bin:${OLDPATH}"
+ENV SHOMEI_RPC_HTTP_HOST="0.0.0.0"
+ENV SHOMEI_PID_PATH="/tmp/pid"
+ENV OTEL_RESOURCE_ATTRIBUTES="service.name=shomei,service.version=$VERSION"
+ENV OLDPATH="${PATH}"
+ENV PATH="/opt/shomei/bin:${OLDPATH}"
 
 HEALTHCHECK --start-period=5s --interval=5s --timeout=1s --retries=10 CMD bash -c "[ -f /tmp/pid ]"
 
