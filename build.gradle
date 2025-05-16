@@ -21,6 +21,7 @@ plugins {
     id 'com.github.jk1.dependency-license-report' version '2.1'
     id 'io.spring.dependency-management' version '1.1.0'
     id 'net.ltgt.errorprone' version '3.0.1' apply false
+    id 'org.jreleaser' version '1.16.0'
     id 'java'
     id 'application'
 }
@@ -45,20 +46,22 @@ application {
 }
 
 allprojects {
+    group = project.group
+    version = project.version
     apply plugin: 'java-library'
-    apply plugin: 'java-test-fixtures'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'net.ltgt.errorprone'
     apply from: "${rootDir}/gradle/versions.gradle"
-
     version = rootProject.version
 
+    java {
+        withSourcesJar()
+        withJavadocJar()
+    }
 
-    task sourcesJar(type: Jar, dependsOn: classes) {
-        archiveClassifier = 'sources'
-        from sourceSets.main.allSource
-        jar.reproducibleFileOrder = true
-        jar.preserveFileTimestamps = false
+    test {
+        // set a runtime shomei version for tests not executing from a jar
+        systemProperty "shomei.version", project.version
     }
 
     sourceCompatibility = '21'
@@ -69,7 +72,7 @@ allprojects {
         mavenCentral()
         maven {
             url "https://artifacts.consensys.net/public/maven/maven/"
-            content { includeGroupByRegex('tech\\.pegasys($|\\..*)')}
+            content { includeGroupByRegex('tech\\.pegasys($|\\..*)') }
         }
         maven {
             url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/"
@@ -92,7 +95,7 @@ allprojects {
         // restict this so we do not accidentally pull in other artifacts from github
         exclusiveContent {
             forRepositories(besuShomeiPluginRelease)
-            filter { includeModule('ConsenSys', 'besu-shomei-plugin')}
+            filter { includeModule('ConsenSys', 'besu-shomei-plugin') }
         }
 
     }
@@ -187,6 +190,129 @@ allprojects {
     }
 }
 
+// config the deferred groupId
+def groupVal = project.findProperty("groupVal") ?: 'io.consensys.protocols.shomei'
+
+subprojects {
+
+    apply plugin: 'maven-publish'
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                versionMapping {
+                    allVariants {
+                        fromResolutionResult()
+                    }
+                }
+
+                from components.java
+                artifactId = project.name == 'shomei' ? 'shomei' : "shomei-${project.name}"
+                groupId = groupVal
+                version = project.version.toString()
+                suppressPomMetadataWarningsFor("testFixturesApiElements")
+                suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
+
+                pom {
+                    name.set("Shomei module: ${project.path}")
+                    description.set("Module ${project.name} of shomei")
+                    url.set("https://github.com/consensys/shomei")
+                    licenses {
+                        license {
+                            name.set("Apache-2.0")
+                            url.set("https://www.apache.org/licenses/LICENSE-2.0")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:https://github.com/consensys/shomei.git")
+                        developerConnection.set("scm:git:ssh://git@github.com:consensys/shomei.git")
+                        url.set("https://github.com/consensys/shomei")
+                    }
+                    developers {
+                        developer {
+                            id.set("consensys")
+                            name.set("Protocols Team")
+                            email.set("devops@consensys.net")
+                        }
+                    }
+                }
+            }
+        }
+
+        repositories {
+            // publish to a staging directory for jreleaser to release from:
+            // ./gradlew publish
+            maven {
+                url = rootProject.layout.buildDirectory.dir("staging-deploy")
+            }
+        }
+    }
+}
+
+jreleaser {
+    project {
+        description = 'Shomei - a zero-knowledge proof orchestrator'
+        copyright = 'Copyright 2025 ConsenSys'
+        java {
+            groupId = groupVal
+        }
+    }
+    release {
+        github {
+            // Creating and tagging a release is done manually
+            skipRelease = true
+            skipTag = true
+            // injecting a fake value to make JReleaser happy
+            token = "foobar"
+        }
+    }
+    signing {
+        active = 'ALWAYS'
+        armored = true
+        verify = true
+    }
+    deploy {
+        maven {
+            mavenCentral {
+                sonatype {
+                    active = 'RELEASE'
+                    url = 'https://central.sonatype.com/api/v1/publisher'
+                    stagingRepository('build/staging-deploy')
+                    retryDelay = 60
+                    maxRetries = 100
+                }
+            }
+        
+            nexus2 {
+                'snapshot' {
+                    active = 'SNAPSHOT'
+                    url = 'https://central.sonatype.com/repository/maven-snapshots'
+                    snapshotUrl = 'https://central.sonatype.com/repository/maven-snapshots'
+                    stagingRepository('build/staging-deploy')
+                    applyMavenCentralRules = true
+                    snapshotSupported = true
+                    closeRepository = true
+                    releaseRepository = true
+
+                }
+            }
+        }
+    }
+}
+
+// Create a task to prepare the jreleaser directory.
+task prepareJreleaserDirectory {
+  doLast {
+    file(rootProject.layout.buildDirectory.dir("jreleaser")).mkdirs()
+  }
+}
+
+// Make every task whose name starts with "jreleaser" depend on the preparation task.
+tasks.all { t ->
+  if (t.name.startsWith("jreleaser")) {
+    t.dependsOn prepareJreleaserDirectory
+  }
+}
+
 jar { enabled = false }
 
 dependencies {
@@ -231,6 +357,13 @@ def getCheckedOutGitCommitHash(length = 8) {
     }
 }
 
+task printVersion() {
+  doFirst {
+    println "specific-version=${calculateVersion()}"
+    println "publish-version=${project.version}"
+  }
+}
+
 distTar {
     doFirst {
         delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
@@ -243,172 +376,4 @@ distZip {
     doFirst {
         delete fileTree(dir: 'build/distributions', include: '*.zip')
     }
-}
-
-def dockerBuildVersion = project.hasProperty('release.releaseVersion') ? project.property('release.releaseVersion') : "${rootProject.version}"
-def dockerOrgName = project.hasProperty('dockerOrgName') ? project.getProperty("dockerOrgName") : "consensys"
-def dockerArtifactName = project.hasProperty("dockerArtifactName") ? project.getProperty("dockerArtifactName") : "linea-shomei"
-def dockerImageName = "${dockerOrgName}/${dockerArtifactName}"
-def dockerVariants = project.hasProperty("dockerVariants") ? project.getProperty("dockerVariants").split(",") : [
-        "openjdk-21",
-        "openjdk-21-debug",
-        "openjdk-latest"
-]
-def archVariants = ["amd64", "arm64"]
-
-// rename the top level dir from shomei-<version> to shomei and this makes it really
-// simple for use in docker
-task dockerDistUntar {
-    dependsOn distTar
-    dependsOn distZip
-    def dockerBuildDir = "build/docker-shomei/"
-    def distTarFile = distTar.outputs.files.singleFile
-    def distTarFileName = distTar.outputs.files.singleFile.name.replace(".tar.gz", "")
-
-    doFirst {
-        new File(dockerBuildDir).mkdir()
-        copy {
-            from tarTree(distTarFile)
-            into(dockerBuildDir)
-        }
-        project.delete(files("${dockerBuildDir}/shomei"))
-        file("${dockerBuildDir}/${distTarFileName}").renameTo("${dockerBuildDir}/shomei")
-    }
-}
-
-
-task dockerDist {
-    dependsOn dockerDistUntar
-    inputs.dir("build/docker-shomei/")
-    def dockerBuildDir = "build/docker-shomei/"
-
-    doLast {
-        for (def jvmVariant in dockerVariants) {
-            copy {
-                from file("${projectDir}/docker/${jvmVariant}/Dockerfile")
-                into(dockerBuildDir)
-            }
-            exec {
-                def image = "${dockerImageName}:${dockerBuildVersion}-${jvmVariant}"
-                def dockerPlatform = ""
-                if (project.hasProperty('docker-platform')){
-                    dockerPlatform = "--platform ${project.getProperty('docker-platform')}"
-                    println "Building for platform ${project.getProperty('docker-platform')}"
-                }
-                executable "sh"
-                workingDir dockerBuildDir
-                args "-c", "docker build ${dockerPlatform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
-            }
-        }
-
-        // tag the "default" (which is the variant in the zero position)
-        exec {
-            executable "sh"
-            args "-c", "docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${dockerImageName}:${dockerBuildVersion}'"
-        }
-        // create a static tag for the benchmark target
-        exec {
-            executable "sh"
-            args "-c", "docker tag '${dockerImageName}:${dockerBuildVersion}-${dockerVariants[0]}' '${dockerImageName}:benchmark'"
-        }
-    }
-}
-
-task dockerTest {
-    dependsOn dockerDist
-    def dockerReportsDir = "docker/reports/"
-
-    doFirst {
-        new File(dockerReportsDir).mkdir()
-    }
-
-    doLast {
-        def architecture = System.getenv('architecture')
-        for (def variant in dockerVariants) {
-            exec {
-                def image = project.hasProperty('release.releaseVersion') ? "${dockerImageName}:" + project.property('release.releaseVersion') : "${dockerImageName}:${project.version}"
-                workingDir "${projectDir}/docker/${variant}"
-                executable "sh"
-                args "-c", "architecture=${architecture} bash ../test.sh ${image}-${variant}"
-            }
-        }
-    }
-}
-
-task dockerUpload {
-    dependsOn dockerDist
-    def architecture = System.getenv('architecture')
-    def image = "${dockerImageName}:${dockerBuildVersion}"
-    def tags = []
-
-    if (!isInterimBuild(dockerBuildVersion)) {
-        // if this is a release build, upload the version and latest tags
-        logger.quiet("uploading release build")
-        tags.add("${dockerImageName}:" + dockerBuildVersion)
-        tags.add("${dockerImageName}:latest")
-    } else {
-        // otherwise, upload as develop
-        logger.quiet("uploading develop build")
-        tags.add("${dockerImageName}:develop")
-    }
-
-    doLast {
-        exec {
-            def archImage = "${image}-${architecture}"
-
-            logger.quiet("architecture: $architecture")
-            logger.quiet("image: $image")
-            logger.quiet("tags: $tags")
-            logger.quiet("archImage: $archImage")
-
-            def cmd = "true"
-            tags.each { tag -> cmd += " && docker tag '${image}' '${tag.trim()}-${architecture}' && docker push '${tag.trim()}-${architecture}'" }
-            executable "sh"
-            args "-c", cmd
-        }
-    }
-}
-
-task dockerManifest {
-    def tags = []
-
-    if (!isInterimBuild(dockerBuildVersion)) {
-        // if this is a release, create manifests for the version and latest tags
-        tags.add("${dockerImageName}:" + dockerBuildVersion)
-        tags.add("${dockerImageName}:latest")
-    } else {
-        // otherwise, create manifest for develop
-        tags.add("${dockerImageName}:develop")
-    }
-
-    doLast {
-        for (baseTag in tags) {
-
-            exec {
-                def targets = ""
-                archVariants.forEach { arch -> targets += "'${baseTag}-${arch}' " }
-                def cmd = "docker manifest create '${baseTag}' ${targets} && docker manifest push '${baseTag}'"
-                executable "sh"
-                args "-c", cmd
-            }
-        }
-    }
-}
-
-// aliases for the prior docker task names:
-task distDocker(dependsOn: dockerDist)
-task testDocker(dependsOn: dockerTest)
-task uploadDocker(dependsOn: dockerUpload)
-task manifestDocker(dependsOn: dockerManifest)
-
-
-def isInterimBuild(dockerBuildVersion) {
-    // any build version that is not major.minor.patch is treated as an interim build:
-    return !(dockerBuildVersion ==~ /[0-9]+\.[0-9]+\.[0-9]+/)
-}
-
-def buildTime() {
-    def df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'")
-    df.setTimeZone(TimeZone.getTimeZone("UTC"))
-    return df.format(new Date())
 }
