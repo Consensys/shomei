@@ -62,7 +62,7 @@ public class Runner {
       HashFunctionOption hashFunctionOption) {
     this.vertx = Vertx.vertx();
     setupHashFunction(hashFunctionOption);
-    metricsService = setupMetrics(metricsOption);
+    metricsService = metricsOption.isMetricsEnabled() ? setupMetrics(metricsOption) : null;
 
     final StorageProvider storageProvider =
         new RocksDBStorageProvider(
@@ -139,16 +139,18 @@ public class Runner {
                 .log();
           }
         });
-    vertx.deployVerticle(
-        metricsService,
-        res -> {
-          if (!res.succeeded()) {
-            LOG.atError()
-                .setMessage("Error occurred when starting the metrics service {}")
-                .addArgument(res.cause())
-                .log();
-          }
-        });
+    if (metricsService != null) {
+      vertx.deployVerticle(
+          metricsService,
+          res -> {
+            if (!res.succeeded()) {
+              LOG.atError()
+                  .setMessage("Error occurred when starting the metrics service {}")
+                  .addArgument(res.cause())
+                  .log();
+            }
+          });
+    }
   }
 
   public void stop() throws IOException {

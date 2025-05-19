@@ -99,4 +99,42 @@ public class SyncOption {
   public boolean isTraceGenerationEnabled() {
     return enableTraceGeneration;
   }
+
+  public static class Builder {
+    private final SyncOption syncOption = new SyncOption();
+
+    public Builder setTraceStartBlockNumber(long traceStartBlockNumber) {
+      this.syncOption.traceStartBlockNumber = traceStartBlockNumber;
+      return this;
+    }
+
+    public Builder setEnableTraceGeneration(boolean enableTraceGeneration) {
+      this.syncOption.enableTraceGeneration = enableTraceGeneration;
+      return this;
+    }
+
+    public Builder setMinConfirmationsBeforeImporting(long minConfirmationsBeforeImporting) {
+      this.syncOption.minConfirmationsBeforeImporting = minConfirmationsBeforeImporting;
+      return this;
+    }
+
+    public Builder setEnableFinalizedBlockLimit(boolean enableFinalizedBlockLimit) {
+      this.syncOption.enableFinalizedBlockLimit = enableFinalizedBlockLimit;
+      return this;
+    }
+
+    public Builder setFinalizedBlockNumberLimit(Long finalizedBlockNumberLimit) {
+      this.syncOption.finalizedBlockNumberLimit = finalizedBlockNumberLimit;
+      return this;
+    }
+
+    public Builder setFinalizedBlockHashLimit(String finalizedBlockHashLimit) {
+      this.syncOption.finalizedBlockHashLimit = finalizedBlockHashLimit;
+      return this;
+    }
+
+    public SyncOption build() {
+      return syncOption;
+    }
+  }
 }
