@@ -68,6 +68,11 @@ allprojects {
     targetCompatibility = '21'
 
     repositories {
+        maven {
+            url "https://artifacts.consensys.net/public/linea-besu/maven/"
+            content { includeGroupByRegex('io\\.consensys\\..*') }
+            content { includeGroupByRegex('org\\.hyperledger\\..*') }
+        }
         mavenLocal()
         mavenCentral()
         maven {
@@ -82,22 +87,24 @@ allprojects {
             url "https://hyperledger.jfrog.io/artifactory/besu-maven/"
             content { includeGroupByRegex('org\\.hyperledger\\.besu($|\\..*)') }
         }
-        // besu-shomei-plugin for test fixture generation
-        def besuShomeiPluginRelease = ivy {
-            url 'https://github.com'
+        ivy {
+            name = "besuShomeiGithubReleases"
+            url = "https://github.com"
+
             patternLayout {
-                artifact '/[organisation]/[module]/releases/download/v[revision]/[artifact]-v[revision].[ext]'
+                artifact "/Consensys/besu-shomei-plugin/releases/download/v[revision]/[module]-v[revision].[ext]"
             }
+
             metadataSources {
                 artifact()
             }
-        }
-        // restict this so we do not accidentally pull in other artifacts from github
-        exclusiveContent {
-            forRepositories(besuShomeiPluginRelease)
-            filter { includeModule('ConsenSys', 'besu-shomei-plugin') }
-        }
 
+            content {
+                includeGroup "ConsenSys"
+                includeModule "ConsenSys", "besu-shomei-plugin"
+                includeModule "ConsenSys", "besu-shomei-plugin-test-support"
+            }
+        }
     }
 
     dependencies {
