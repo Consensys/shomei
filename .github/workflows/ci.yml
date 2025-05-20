@@ -11,11 +11,30 @@ on:
       - main
 
 jobs:
+  validate:
+    runs-on: ubuntu-22.04
+    env:
+      TAG_VERSION: "${{ inputs.tag }}"
+    steps:
+      - name: Pre-process Release Tag
+        id: validate_release_tag
+        run: |
+          # strip all whitespace
+          TAG_VERSION="${CI_TAG_VERSION//[[:space:]]/}"
+          if [[ "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?(-.*)?$ ]]; then
+            echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT  # Set as output using the new syntax
+          fi
+    outputs:
+      tag_version: ${{ steps.validate_release_tag.outputs.tag_version }}
+
+
   assemble:
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
+      TAG_VERSION: ${{ needs.validate_release_tag.outputs.tag_version }}  # Use the output from the validate_release_tag step
+
     outputs:
       publish-version: ${{ steps.project-version.outputs.publish-version }}      
     steps:
