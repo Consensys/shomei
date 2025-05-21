@@ -110,8 +110,6 @@ jobs:
       - unitTests
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
-    env:
-      TAG_VERSION: ${{ needs.assemble.outputs.publish-version }}
     permissions:
       contents: write
       id-token: write
@@ -127,7 +125,8 @@ jobs:
           DISTRIBUTION: 'adopt'
            
       - name: Publish on maven central
-        environment:
+        env:
+          TAG_VERSION: ${{ needs.assemble.outputs.publish-version }}
         run: |
           ./gradlew clean build assemble publish jreleaserFullRelease
         env:
