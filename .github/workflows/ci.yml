@@ -127,9 +127,6 @@ jobs:
       - name: Publish on maven central
         env:
           TAG_VERSION: ${{ needs.assemble.outputs.publish-version }}
-        run: |
-          ./gradlew clean build assemble publish jreleaserFullRelease
-        env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_GITHUB_USERNAME: ${{ github.actor }}
           JRELEASER_GITHUB_EMAIL: ${{ github.actor }}@users.noreply.github.com
@@ -141,6 +138,8 @@ jobs:
           JRELEASER_NEXUS2_USERNAME : ${{ secrets.JRELEASER_MAVENCENTRAL_USERNAME }}
           JRELEASER_NEXUS2_PASSWORD : ${{ secrets.JRELEASER_MAVENCENTRAL_PASSWORD }}          
           BUILD_RELEASE: true          
+        run: |
+          ./gradlew clean build assemble publish jreleaserFullRelease
 
   dockerTests:
     needs: 
