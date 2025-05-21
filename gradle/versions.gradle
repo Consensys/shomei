@@ -44,8 +44,8 @@ dependencyManagement {
     }
 
     // besu-shomei plugin:
-    dependency 'ConsenSys:besu-shomei-plugin:0.6.4-PRERELEASE'
-    dependency 'ConsenSys:besu-shomei-plugin-test-support:0.6.4-PRERELEASE'
+    dependency 'ConsenSys:besu-shomei-plugin:0.7.0-SNAPSHOT'
+    dependency 'ConsenSys:besu-shomei-plugin-test-support:0.7.0-SNAPSHOT'
 
 
     dependency 'org.hyperledger.besu:gnark:1.3.0'

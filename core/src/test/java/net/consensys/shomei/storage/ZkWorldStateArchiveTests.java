@@ -15,7 +15,6 @@ package net.consensys.shomei.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.vertx.ext.unit.TestContext;
 import net.consensys.shomei.context.ShomeiContext;
 import net.consensys.shomei.exception.MissingTrieLogException;
 import net.consensys.shomei.metrics.MetricsService;
