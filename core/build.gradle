@@ -28,6 +28,7 @@ dependencies {
     implementation 'org.hyperledger.besu:besu-datatypes'
     implementation 'org.hyperledger.besu:evm'
     implementation 'org.hyperledger.besu:plugin-api'
+    implementation 'org.hyperledger.besu:plugin-api'
     implementation 'com.google.guava:guava'
 
     implementation 'io.consensys.tuweni:tuweni-bytes'
@@ -36,6 +37,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
     testImplementation 'ConsenSys:besu-shomei-plugin'
+    testImplementation 'ConsenSys:besu-shomei-plugin-test-support'
 
     testImplementation project(':util')
     testImplementation 'junit:junit'

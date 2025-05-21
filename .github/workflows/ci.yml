@@ -102,6 +102,21 @@ jobs:
           retention-days: 3
           if-no-files-found: error
 
+  debugPublishMavenCentral:
+    #if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - assemble
+      - unitTests
+    # 4 cpu, 16G ram
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
+      packages: write
+    steps:
+      - name: Debug TAG_VERSION
+        run: echo "TAG_VERSION=${{ needs.assemble.outputs.publish-version }}"
+
   publishMavenCentral:
     if: startsWith(github.ref, 'refs/tags/')
     needs:
