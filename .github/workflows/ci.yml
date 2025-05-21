@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - more-pub-errata
     tags:
       - 'v?[0-9]+.[0-9]+.[0-9]+**' # Matches release tags of the form major.minor.patch, e.g. v1.2.1
   pull_request:
@@ -109,7 +110,6 @@ jobs:
       - unitTests
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
-    environment: publish
     permissions:
       contents: write
       id-token: write
@@ -125,11 +125,8 @@ jobs:
           DISTRIBUTION: 'adopt'
            
       - name: Publish on maven central
-        with:
-          publish-version: ${{ needs.assemble.outputs.publish-version }}
-        run: |
-          ./gradlew -Pversion=${{ needs.build.outputs.publish-version }} clean build assemble publish jreleaserFullRelease
         env:
+          TAG_VERSION: ${{ needs.assemble.outputs.publish-version }}
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_GITHUB_USERNAME: ${{ github.actor }}
           JRELEASER_GITHUB_EMAIL: ${{ github.actor }}@users.noreply.github.com
@@ -141,6 +138,8 @@ jobs:
           JRELEASER_NEXUS2_USERNAME : ${{ secrets.JRELEASER_MAVENCENTRAL_USERNAME }}
           JRELEASER_NEXUS2_PASSWORD : ${{ secrets.JRELEASER_MAVENCENTRAL_PASSWORD }}          
           BUILD_RELEASE: true          
+        run: |
+          ./gradlew clean build assemble publish jreleaserFullRelease
 
   dockerTests:
     needs: 
