@@ -125,8 +125,10 @@ jobs:
           DISTRIBUTION: 'adopt'
            
       - name: Publish on maven central
+        with:
+          publish-version: ${{ needs.assemble.outputs.publish-version }}
         run: |
-          ./gradlew clean build assemble publish jreleaserFullRelease
+          ./gradlew -Pversion=${{ needs.build.outputs.publish-version }} clean build assemble publish jreleaserFullRelease
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_GITHUB_USERNAME: ${{ github.actor }}
@@ -277,7 +279,7 @@ jobs:
           tags: ${{ steps.docker-metadata.outputs.tags }}
 
   release:
-    # if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/')
     needs:
       - assemble
       - unitTests
