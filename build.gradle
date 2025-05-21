@@ -47,12 +47,12 @@ application {
 
 allprojects {
     group = project.group
-    version = project.version
+    version = calculateVersion()
+
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'net.ltgt.errorprone'
     apply from: "${rootDir}/gradle/versions.gradle"
-    version = rootProject.version
 
     java {
         withSourcesJar()
@@ -322,7 +322,14 @@ dependencies {
 
 @Memoized
 def calculateVersion() {
-    String version = rootProject.version
+    String version = System.getenv("TAG_VERSION") ?: rootProject.version
+    // Regex pattern for basic calendar versioning, with provision to omit patch rev
+    def versionPattern = ~/\d+\.\d+(\.\d+)?(-.*)?/
+    if (! (version =~ versionPattern)) {
+        println("Supplied project version is malformed: ${project.version}, aborting")
+        throw new GradleException("Supplied project version is malformed: ${version}")
+    }
+
     if (version.endsWith("-SNAPSHOT")) {
         version = version.replace("-SNAPSHOT", "-dev-" + getCheckedOutGitCommitHash())
     }
