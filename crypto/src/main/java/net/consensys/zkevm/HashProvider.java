@@ -15,7 +15,6 @@ package net.consensys.zkevm;
 
 import java.util.function.Function;
 
-import com.sun.jna.Native;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.datatypes.Hash;
