@@ -13,9 +13,9 @@
 
 package net.consensys.shomei.observer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 
@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TrieLogObserverTest {
 

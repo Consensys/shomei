@@ -19,7 +19,7 @@ import net.consensys.zkevm.HashProvider;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class HashProviderTest {
 

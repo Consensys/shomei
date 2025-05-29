@@ -23,17 +23,17 @@ import net.consensys.shomei.trie.model.FlattenedLeaf;
 import net.consensys.shomei.trie.trace.Trace;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.rlp.RLPOutput;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class PersistedWorldStateStorageTest {
   private static final FlattenedLeaf FLAT_LEAF = new FlattenedLeaf(1L, Bytes.EMPTY);
@@ -61,17 +61,19 @@ public class PersistedWorldStateStorageTest {
 
   private static final Hash HASH_TEST = Hash.hash(BYTES_TEST);
 
-  @Rule public final TemporaryFolder tempData = new TemporaryFolder();
+
+  @TempDir
+  Path tempData;
   protected PersistedWorldStateStorage storage;
   protected TrieLogManager trieLogManager;
   protected TraceManager traceManager;
   protected WorldStateUpdater updater;
 
-  @Before
+  @BeforeEach
   public void setup() {
     var provider =
         new RocksDBStorageProvider(
-            new RocksDBConfigurationBuilder().databaseDir(tempData.getRoot().toPath()).build());
+            new RocksDBConfigurationBuilder().databaseDir(tempData.getRoot()).build());
     storage =
         new PersistedWorldStateStorage(
             provider.getFlatLeafStorage(),
@@ -82,10 +84,9 @@ public class PersistedWorldStateStorageTest {
     traceManager = provider.getTraceManager();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     storage.close();
-    tempData.delete();
   }
 
   @Test

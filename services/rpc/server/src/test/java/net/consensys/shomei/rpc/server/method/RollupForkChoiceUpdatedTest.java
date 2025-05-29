@@ -14,6 +14,7 @@
 package net.consensys.shomei.rpc.server.method;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,13 +33,13 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class RollupForkChoiceUpdatedTest {
 
   @Mock public ZkWorldStateArchive worldStateArchive;
@@ -47,9 +48,9 @@ public class RollupForkChoiceUpdatedTest {
 
   public RollupForkChoiceUpdated method;
 
-  @Before
+  @BeforeEach
   public void setup() {
-    when(fullSyncDownloader.getFullSyncRules()).thenReturn(fullSyncRules);
+    lenient().when(fullSyncDownloader.getFullSyncRules()).thenReturn(fullSyncRules);
     method = new RollupForkChoiceUpdated(worldStateArchive, fullSyncDownloader);
   }
 

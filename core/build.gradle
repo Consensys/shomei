@@ -40,7 +40,8 @@ dependencies {
     testImplementation 'ConsenSys:besu-shomei-plugin-test-support'
 
     testImplementation project(':util')
-    testImplementation 'junit:junit'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+
     testImplementation 'org.assertj:assertj-core'
 
 }

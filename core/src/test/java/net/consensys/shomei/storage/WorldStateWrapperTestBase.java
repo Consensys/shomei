@@ -23,7 +23,7 @@ import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 
 import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public abstract class WorldStateWrapperTestBase {
 

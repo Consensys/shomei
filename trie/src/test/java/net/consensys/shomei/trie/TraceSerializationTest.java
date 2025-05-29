@@ -36,14 +36,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.rlp.RLP;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TraceSerializationTest {
 
   private static final ObjectMapper JSON_OBJECT_MAPPER = new ObjectMapper();
 
-  @Before
+  @BeforeEach
   public void setup() {
     JSON_OBJECT_MAPPER.registerModules(JsonTraceParser.modules);
   }

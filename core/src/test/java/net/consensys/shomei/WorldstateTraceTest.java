@@ -42,14 +42,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class WorldstateTraceTest {
 
   private static final ObjectMapper JSON_OBJECT_MAPPER = new ObjectMapper();
 
-  @Before
+  @BeforeEach
   public void setup() {
     JSON_OBJECT_MAPPER.registerModules(JsonTraceParser.modules);
   }

@@ -29,7 +29,7 @@ import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ZkWorldStateArchiveTests {
   ShomeiContext testContext = ShomeiContext.ShomeiContextImpl.getOrCreate();
