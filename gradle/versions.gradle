@@ -1,6 +1,7 @@
 dependencyManagement {
   imports {
     mavenBom "org.hyperledger.besu:bom:${besuVersion}"
+    mavenBom "org.apache.logging.log4j:log4j-bom:2.24.3"
   }
 
   dependencies {
