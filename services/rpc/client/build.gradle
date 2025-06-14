@@ -19,7 +19,7 @@ dependencies {
     implementation project(':services:rpc:common')
 
     // Hyperledger Besu dependencies
-    implementation 'org.hyperledger.besu.internal:api'
+    implementation 'org.hyperledger.besu.internal:besu-ethereum-api'
 
     // Tuweni
     implementation 'io.consensys.tuweni:tuweni-bytes'

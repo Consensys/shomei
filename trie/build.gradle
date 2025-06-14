@@ -16,9 +16,9 @@ dependencies {
 
     // Hyperledger Besu dependencies
     implementation 'org.hyperledger.besu:besu-datatypes'
-    implementation 'org.hyperledger.besu.internal:algorithms'
-    implementation 'org.hyperledger.besu.internal:rlp'
-    implementation 'org.hyperledger.besu.internal:trie'
+    implementation 'org.hyperledger.besu.internal:besu-crypto-algorithms'
+    implementation 'org.hyperledger.besu.internal:besu-ethereum-rlp'
+    implementation 'org.hyperledger.besu.internal:besu-ethereum-trie'
 
     // JSON serialization/deserialization library
     implementation 'com.fasterxml.jackson.core:jackson-databind'

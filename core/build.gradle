@@ -22,13 +22,12 @@ dependencies {
     implementation project(':services:storage:rocksdb')
     implementation project(':services:metrics')
 
-    implementation 'org.hyperledger.besu.internal:trie'
-    implementation 'org.hyperledger.besu.internal:core'
-    implementation 'org.hyperledger.besu.internal:rlp'
+    implementation 'org.hyperledger.besu.internal:besu-ethereum-trie'
+    implementation 'org.hyperledger.besu.internal:besu-ethereum-core'
+    implementation 'org.hyperledger.besu.internal:besu-ethereum-rlp'
     implementation 'org.hyperledger.besu:besu-datatypes'
-    implementation 'org.hyperledger.besu:evm'
-    implementation 'org.hyperledger.besu:plugin-api'
-    implementation 'org.hyperledger.besu:plugin-api'
+    implementation 'org.hyperledger.besu:besu-evm'
+    implementation 'org.hyperledger.besu:besu-plugin-api'
     implementation 'com.google.guava:guava'
 
     implementation 'io.consensys.tuweni:tuweni-bytes'

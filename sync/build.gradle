@@ -21,9 +21,9 @@ dependencies {
 
     implementation 'io.vertx:vertx-core'
 
-    implementation 'org.hyperledger.besu.internal:metrics-core'
-    implementation 'org.hyperledger.besu.internal:pipeline'
-    implementation 'org.hyperledger.besu.internal:tasks'
+    implementation 'org.hyperledger.besu.internal:besu-metrics-core'
+    implementation 'org.hyperledger.besu.internal:besu-services-pipeline'
+    implementation 'org.hyperledger.besu.internal:besu-services-tasks'
 
     implementation 'com.google.guava:guava'
 
