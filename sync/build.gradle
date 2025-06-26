@@ -21,16 +21,22 @@ dependencies {
 
     implementation 'io.vertx:vertx-core'
 
-    implementation 'org.hyperledger.besu.internal:metrics-core'
-    implementation 'org.hyperledger.besu.internal:pipeline'
-    implementation 'org.hyperledger.besu.internal:tasks'
+    implementation 'org.hyperledger.besu.internal:besu-metrics-core'
+    implementation 'org.hyperledger.besu.internal:besu-services-pipeline'
+    implementation 'org.hyperledger.besu.internal:besu-services-tasks'
 
     implementation 'com.google.guava:guava'
 
-    testImplementation 'junit:junit'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core'
-    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine'
+    testImplementation 'org.mockito:mockito-junit-jupiter'
+    // Force desired log4j backend for test, vertx is
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-api:2.24.3'
+    testRuntimeOnly 'org.apache.logging.log4j:log4j-core:2.24.3'
+
+
 }
 
 

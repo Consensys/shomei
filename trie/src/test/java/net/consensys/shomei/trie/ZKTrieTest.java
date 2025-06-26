@@ -24,7 +24,7 @@ import net.consensys.zkevm.HashProvider;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ZKTrieTest {
 

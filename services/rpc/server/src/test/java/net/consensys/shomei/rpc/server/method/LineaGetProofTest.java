@@ -17,8 +17,8 @@ import static net.consensys.shomei.trie.ZKTrie.EMPTY_TRIE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
@@ -38,31 +38,31 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class LineaGetProofTest {
 
   @Mock public ZkWorldStateArchive worldStateArchive;
   public LineaGetProof method;
 
-  @Before
+  @BeforeEach
   public void setup() {
     final ZkEvmWorldState zkEvmWorldState = mock(ZkEvmWorldState.class);
     final WorldStateStorage worldStateStorage = mock(WorldStateStorage.class);
-    when(worldStateArchive.getCurrentBlockHash()).thenReturn(Hash.EMPTY);
-    when(worldStateArchive.getCachedWorldState(eq(1L))).thenReturn(Optional.of(zkEvmWorldState));
-    when(worldStateArchive.getCachedWorldState(eq(Hash.EMPTY)))
+    lenient().when(worldStateArchive.getCurrentBlockHash()).thenReturn(Hash.EMPTY);
+    lenient().when(worldStateArchive.getCachedWorldState(eq(1L))).thenReturn(Optional.of(zkEvmWorldState));
+    lenient().when(worldStateArchive.getCachedWorldState(eq(Hash.EMPTY)))
         .thenReturn(Optional.of(zkEvmWorldState));
-    when(zkEvmWorldState.getZkEvmWorldStateStorage()).thenReturn(worldStateStorage);
-    when(zkEvmWorldState.getStateRootHash()).thenReturn(Hash.wrap(EMPTY_TRIE.getTopRootHash()));
-    when(worldStateStorage.getTrieNode(any(Bytes.class), any(Bytes.class)))
+    lenient().when(zkEvmWorldState.getZkEvmWorldStateStorage()).thenReturn(worldStateStorage);
+    lenient().when(zkEvmWorldState.getStateRootHash()).thenReturn(Hash.wrap(EMPTY_TRIE.getTopRootHash()));
+    lenient().when(worldStateStorage.getTrieNode(any(Bytes.class), any(Bytes.class)))
         .thenReturn(Optional.of(EMPTY_TRIE.getTopRootHash()));
-    when(worldStateStorage.getNearestKeys(any(Bytes.class)))
+    lenient().when(worldStateStorage.getNearestKeys(any(Bytes.class)))
         .thenReturn(
             new TrieStorage.Range(
                 Map.entry(Bytes.of(0x01), FlattenedLeaf.HEAD),

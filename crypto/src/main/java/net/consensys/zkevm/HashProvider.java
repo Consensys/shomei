@@ -15,10 +15,10 @@ package net.consensys.zkevm;
 
 import java.util.function.Function;
 
-import com.sun.jna.Native;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.nativelib.common.BesuNativeLibraryLoader;
 import org.hyperledger.besu.nativelib.gnark.LibGnark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +34,7 @@ public class HashProvider {
   static {
     boolean enabled;
     try {
-      Native.register(LibGnark.class, "gnark_jni");
+      BesuNativeLibraryLoader.registerJNA(LibGnark.class, "gnark_jni");
       enabled = true;
     } catch (final Throwable t) {
       LOG.atError()

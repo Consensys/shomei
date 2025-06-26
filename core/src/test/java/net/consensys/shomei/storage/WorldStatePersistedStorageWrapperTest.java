@@ -17,21 +17,24 @@ import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfig
 import net.consensys.shomei.storage.worldstate.PersistedWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
+import java.nio.file.Path;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
+
 
 public class WorldStatePersistedStorageWrapperTest extends WorldStateWrapperTestBase {
 
-  @Rule public final TemporaryFolder tempData = new TemporaryFolder();
+  @TempDir
+  Path tempData;
   protected PersistedWorldStateStorage storage;
 
-  @Before
+  @BeforeEach
   public void setup() {
     var provider =
         new RocksDBStorageProvider(
-            new RocksDBConfigurationBuilder().databaseDir(tempData.getRoot().toPath()).build());
+            new RocksDBConfigurationBuilder().databaseDir(tempData.getRoot()).build());
 
     storage =
         new PersistedWorldStateStorage(
@@ -40,10 +43,9 @@ public class WorldStatePersistedStorageWrapperTest extends WorldStateWrapperTest
             provider.getTraceManager());
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     storage.close();
-    tempData.delete();
   }
 
   @Override

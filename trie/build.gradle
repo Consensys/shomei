@@ -16,18 +16,15 @@ dependencies {
 
     // Hyperledger Besu dependencies
     implementation 'org.hyperledger.besu:besu-datatypes'
-    implementation 'org.hyperledger.besu.internal:algorithms'
-    implementation 'org.hyperledger.besu.internal:rlp'
-    implementation 'org.hyperledger.besu.internal:trie'
+    implementation 'org.hyperledger.besu.internal:besu-crypto-algorithms'
+    implementation 'org.hyperledger.besu.internal:besu-ethereum-rlp'
+    implementation 'org.hyperledger.besu.internal:besu-ethereum-trie'
 
     // JSON serialization/deserialization library
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
     // Google Guava library
     implementation 'com.google.guava:guava'
-
-    // Google Gson library
-    implementation 'com.google.code.gson:gson'
 
     // Apache Tuweni library
     implementation 'io.consensys.tuweni:tuweni-bytes'
@@ -37,6 +34,7 @@ dependencies {
     implementation project(':crypto')
     implementation project(':util')
 
-    testImplementation 'junit:junit'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+
     testImplementation 'org.assertj:assertj-core'
 }

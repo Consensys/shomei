@@ -30,14 +30,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.hyperledger.besu.datatypes.Hash;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class FullSyncDownloaderTest {
 
   @Mock ZkWorldStateArchive zkWorldStateArchive;
@@ -45,7 +45,7 @@ public class FullSyncDownloaderTest {
   private FullSyncDownloader fullSyncDownloader;
   private TrieLogBlockingQueue blockingQueue;
 
-  @Before
+  @BeforeEach
   public void setup() {
     blockingQueue =
         spy(

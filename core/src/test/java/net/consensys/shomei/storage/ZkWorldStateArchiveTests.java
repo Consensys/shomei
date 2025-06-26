@@ -15,6 +15,7 @@ package net.consensys.shomei.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import net.consensys.shomei.context.ShomeiContext;
 import net.consensys.shomei.exception.MissingTrieLogException;
 import net.consensys.shomei.metrics.MetricsService;
 import net.consensys.shomei.metrics.NoOpMetricsService;
@@ -28,13 +29,13 @@ import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ZkWorldStateArchiveTests {
-
+  ShomeiContext testContext = ShomeiContext.ShomeiContextImpl.getOrCreate();
   ZkWorldStateArchive archive = new ZkWorldStateArchive(new InMemoryStorageProvider());
   TrieLogLayerConverter converter = new TrieLogLayerConverter(archive.getHeadWorldStateStorage());
-  ZkTrieLogFactory encoder = new ZkTrieLogFactory();
+  ZkTrieLogFactory encoder = new ZkTrieLogFactory(testContext);
   MetricsService noopMetrics = new NoOpMetricsService();
 
   @Test

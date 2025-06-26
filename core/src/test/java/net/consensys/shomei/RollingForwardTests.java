@@ -44,8 +44,8 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.rlp.RLP;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RollingForwardTests {
 
@@ -56,7 +56,7 @@ public class RollingForwardTests {
   private final ZkEvmWorldState zkEvmWorldState =
       new ZkEvmWorldState(storageProvider.getWorldStateStorage(), traceManager);
 
-  @Before
+  @BeforeEach
   public void setup() {
     JSON_OBJECT_MAPPER.registerModules(JsonTraceParser.modules);
   }

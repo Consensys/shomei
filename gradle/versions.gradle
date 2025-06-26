@@ -1,14 +1,10 @@
 dependencyManagement {
-  dependencies {
-    // Apache
-    dependencySet(group: 'org.apache.logging.log4j', version: '2.20.0') {
-      entry 'log4j-api'
-      entry 'log4j-core'
-      entry 'log4j-slf4j2-impl'
-    }
+  imports {
+    mavenBom "org.hyperledger.besu:bom:${besuVersion}"
+    mavenBom "org.apache.logging.log4j:log4j-bom:2.24.3"
+  }
 
-    // Commons
-    dependency 'org.apache.commons:commons-lang3:3.12.0'
+  dependencies {
 
     // Error Prone
     dependencySet(group: 'com.google.errorprone', version: '2.18.0') {
@@ -19,96 +15,24 @@ dependencyManagement {
     }
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
-    // Guava
-    dependency 'com.google.guava:guava:32.1.2-jre'
-
-    // Hyperledger Besu
-    dependencySet(group: 'org.hyperledger.besu', version: '24.9.1') {
-      entry 'besu-datatypes'
-      entry 'evm'
-      entry 'plugin-api'
-    }
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '24.9.1') {
-      entry 'api'
-      entry 'util'
-      entry 'algorithms'
-      entry 'rlp'
-      entry 'trie'
-      entry 'core'
-      entry('metrics-core') {
-        // We include netty-all so omit the separated jars
-        exclude 'io.netty:netty-tcnative-boringssl-static'
-      }
-      entry 'pipeline'
-      entry 'tasks'
-    }
-
     // besu-shomei plugin:
-    dependency 'ConsenSys:besu-shomei-plugin:0.2.1'
+    dependency 'ConsenSys:besu-shomei-plugin:0.7.0'
+    dependency 'ConsenSys:besu-shomei-plugin-test-support:0.7.0'
 
+    dependency 'org.assertj:assertj-core:3.24.2' // or latest
 
-    dependency 'org.hyperledger.besu:gnark:0.8.3'
-
-    // Jackson
-    dependencySet(group:'com.fasterxml.jackson.core', version:'2.14.2') {
-      entry 'jackson-databind'
-    }
-
-    dependencySet(group:'com.fasterxml.jackson.core', version:'2.14.2') {
-      entry 'jackson-datatype-jdk8'
-    }
-
-    // JNA
-    dependency 'net.java.dev.jna:jna:5.13.0'
-
-    // JUnit
-    dependency 'junit:junit-dep:4.11'
-    dependency 'junit:junit:4.13.2'
-    dependency 'org.assertj:assertj-core:3.24.2'
-    dependency 'org.junit.vintage:junit-vintage-engine:5.8.2'
-
-    // Mockito
-    dependency 'org.mockito:mockito-core:5.14.2'
-
-    // OpenTelemetry
-    dependency 'io.opentelemetry:opentelemetry-api:1.19.0'
-
-    // Picocli
-    dependency 'info.picocli:picocli:4.7.1'
-
-    // RocksDB
-    dependency 'org.rocksdb:rocksdbjni:8.0.0'
-
-    // SLF4J
-    dependency 'org.slf4j:slf4j-api:2.0.6'
-
-    // Tuweni
-    dependencySet(group: 'io.consensys.tuweni', version: '2.7.0') {
-      entry 'tuweni-units'
-      entry 'tuweni-bytes'
-    }
-
-    // Vert.x
-    dependencySet(group: 'io.vertx', version: '4.2.7') {
-      entry 'vertx-auth-jwt'
-      entry 'vertx-codegen'
-      entry 'vertx-core'
-      entry 'vertx-junit5'
-      entry 'vertx-unit'
-      entry 'vertx-web'
-      entry 'vertx-web-client'
-      entry 'vertx-auth-jwt'
-      entry 'vertx-micrometer-metrics'
-    }
-
-    // Prometheus
+    // micrometer Prometheus metrics
     dependencySet(group: 'io.micrometer', version: '1.11.1') {
       entry 'micrometer-core'
       entry 'micrometer-registry-prometheus'
     }
 
-    // Other
-    dependency 'com.google.code.gson:gson:2.10.1'
-    dependency 'com.google.guava:guava:31.1-jre'
+    // TODO: remove these once they are included in upstream besu bom:
+    dependencySet(group: 'org.hyperledger.besu.internal', version: "${besuVersion}") {
+      entry 'pipeline'
+      entry 'tasks'
+    }
+
+
   }
 }

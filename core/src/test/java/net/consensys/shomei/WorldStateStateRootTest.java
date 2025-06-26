@@ -33,7 +33,7 @@ import net.consensys.zkevm.HashProvider;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 // TODO add the location in the tests for consistency
 public class WorldStateStateRootTest {

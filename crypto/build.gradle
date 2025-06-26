@@ -22,13 +22,14 @@ dependencies {
     implementation 'org.hyperledger.besu:besu-datatypes'
 
     implementation 'org.hyperledger.besu:gnark'
+    implementation 'org.hyperledger.besu:besu-native-common'
     implementation 'net.java.dev.jna:jna'
 
     api 'org.slf4j:slf4j-api'
     implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
     implementation 'org.apache.logging.log4j:log4j-core'
 
-    testImplementation 'junit:junit'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.assertj:assertj-core'
 
 
