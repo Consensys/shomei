@@ -60,32 +60,32 @@ public class LineaGetTrielogProof implements JsonRpcMethod {
 
   @Override
   public JsonRpcResponse response(final JsonRpcRequestContext requestContext) {
-    
+
     final String serializedTrieLogLayer = getSerializedTrieLogLayer(requestContext);
     final Hash parentBlockHash = getParentBlockHash(requestContext);
-    
+
     try {
       final Bytes trieLogBytes = Bytes.fromHexString(serializedTrieLogLayer);
       final TrieLogLayer trieLogLayer = trieLogLayerConverter.decodeTrieLog(RLP.input(trieLogBytes));
-      
-      Optional<ZkEvmWorldState> worldState = 
+
+      Optional<ZkEvmWorldState> worldState =
           worldStateArchive.getCachedWorldState(parentBlockHash);
-      
+
       if (worldState.isPresent()) {
         final WorldStateProofProvider worldStateProofProvider =
             new WorldStateProofProvider(worldState.get());
-        
-        final Map<AccountKey, List<StorageSlotKey>> accountsWithStorageKeys = 
+
+        final Map<AccountKey, List<StorageSlotKey>> accountsWithStorageKeys =
             collectAccountsAndStorageKeys(trieLogLayer);
-        
+
         final List<MerkleAccountProof> accountProofs = new ArrayList<>();
-        
+
         for (final Map.Entry<AccountKey, List<StorageSlotKey>> entry : accountsWithStorageKeys.entrySet()) {
-          final MerkleAccountProof accountProof = 
+          final MerkleAccountProof accountProof =
               worldStateProofProvider.getAccountProof(entry.getKey(), entry.getValue());
           accountProofs.add(accountProof);
         }
-        
+
         return new JsonRpcSuccessResponse(
             requestContext.getRequest().getId(),
             accountProofs);
@@ -105,25 +105,25 @@ public class LineaGetTrielogProof implements JsonRpcMethod {
 
   private Map<AccountKey, List<StorageSlotKey>> collectAccountsAndStorageKeys(
       final TrieLogLayer trieLogLayer) {
-    
+
     final Map<AccountKey, List<StorageSlotKey>> result = new HashMap<>();
-    
+
     trieLogLayer.streamAccountChanges().forEach(accountEntry -> {
       final AccountKey accountKey = accountEntry.getKey();
       result.putIfAbsent(accountKey, new ArrayList<>());
     });
-    
+
     trieLogLayer.streamStorageChanges().forEach(storageEntry -> {
       final AccountKey accountKey = storageEntry.getKey();
       final List<StorageSlotKey> storageKeys = storageEntry.getValue().keySet()
           .stream().collect(Collectors.toList());
-      
+
       result.merge(accountKey, storageKeys, (existing, newKeys) -> {
         existing.addAll(newKeys);
         return existing;
       });
     });
-    
+
     return result;
   }
 

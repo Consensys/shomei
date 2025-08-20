@@ -34,7 +34,6 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
-import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
