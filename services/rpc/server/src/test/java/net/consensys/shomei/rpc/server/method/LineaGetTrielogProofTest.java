@@ -14,6 +14,10 @@
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.trie.ZKTrie.EMPTY_TRIE;
+
+import net.consensys.shomei.trie.ZKTrie;
+import net.consensys.shomei.storage.InMemoryStorageProvider;
+import net.consensys.shomei.storage.TraceManager;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -64,77 +68,49 @@ public class LineaGetTrielogProofTest {
   @Mock public ZkWorldStateArchive worldStateArchive;
   @Mock public TrieLogLayerConverter trieLogLayerConverter;
 
-  private LineaGetTrielogProof method;
   private Hash testParentBlockHash;
   private Hash testBlockHash;
   private Address testAddress;
   private AccountKey testAccountKey;
-  private ZkAccount testAccount;
-  private TrieLogLayer testTrieLogLayer;
+  private ZkAccount testAccount, testPriorAccount;
 
   @BeforeEach
   public void setup() {
-    // Setup test data
+    // Setup common test data used across tests
     testParentBlockHash = Hash.fromHexString("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef");
     testBlockHash = Hash.fromHexString("0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890");
     testAddress = Address.fromHexString("0x1000000000000000000000000000000000000001");
     testAccountKey = new AccountKey(testAddress);
     
-    // Create test account (this represents the UPDATED state)
+    // Create shared test accounts (used by multiple tests)
+    testPriorAccount = new ZkAccount(
+        testAccountKey,
+        UInt256.valueOf(1), // Prior nonce
+        Wei.of(1000),      // Prior balance
+        ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
+        Hash.ZERO,
+        safeByte32(Hash.ZERO),
+        UInt256.ZERO
+    );
+    
     testAccount = new ZkAccount(
         testAccountKey,
         UInt256.valueOf(2), // Updated nonce
         Wei.of(2000),      // Updated balance
-        Hash.wrap(EMPTY_TRIE.getTopRootHash()),
+        ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
         Hash.ZERO,
         safeByte32(Hash.ZERO),
         UInt256.ZERO
     );
 
-    // Create prior account state (this represents the PRE-STATE we want to prove)
-    ZkAccount priorAccount = new ZkAccount(
-        testAccountKey,
-        UInt256.valueOf(1), // Prior nonce
-        Wei.of(1000),      // Prior balance
-        Hash.wrap(EMPTY_TRIE.getTopRootHash()),
-        Hash.ZERO,
-        safeByte32(Hash.ZERO),
-        UInt256.ZERO
-    );
-
-    // Create test TrieLogLayer
-    testTrieLogLayer = new TrieLogLayer();
-    testTrieLogLayer.setBlockHash(testBlockHash);
-    testTrieLogLayer.setBlockNumber(100L);
-    // Account existed before (priorAccount) and was updated (testAccount)
-    testTrieLogLayer.addAccountChange(testAccountKey, priorAccount, testAccount, false);
-    // Storage slot had a prior value and was updated
-    testTrieLogLayer.addStorageChange(testAccountKey, new StorageSlotKey(UInt256.valueOf(1)), UInt256.valueOf(10), UInt256.valueOf(42), false);
-
-    // Setup mocks
-    final ZkEvmWorldState zkEvmWorldState = mock(ZkEvmWorldState.class);
-    final WorldStateStorage worldStateStorage = mock(WorldStateStorage.class);
-    
-    lenient().when(worldStateArchive.getCachedWorldState(eq(testParentBlockHash)))
-        .thenReturn(Optional.of(zkEvmWorldState));
+    // Setup basic mocks used by all tests
     lenient().when(worldStateArchive.getTrieLogLayerConverter())
         .thenReturn(trieLogLayerConverter);
-    lenient().when(zkEvmWorldState.getZkEvmWorldStateStorage()).thenReturn(worldStateStorage);
-    lenient().when(zkEvmWorldState.getStateRootHash()).thenReturn(Hash.wrap(EMPTY_TRIE.getTopRootHash()));
-    lenient().when(worldStateStorage.getTrieNode(any(Bytes.class), any(Bytes.class)))
-        .thenReturn(Optional.of(EMPTY_TRIE.getTopRootHash()));
-    lenient().when(worldStateStorage.getNearestKeys(any(Bytes.class)))
-        .thenReturn(
-            new TrieStorage.Range(
-                Map.entry(Bytes.of(0x01), FlattenedLeaf.HEAD),
-                Optional.empty(),
-                Map.entry(Bytes.of(0x02), FlattenedLeaf.TAIL)));
-
-    method = new LineaGetTrielogProof(worldStateArchive, trieLogLayerConverter);
   }
 
   @Test
   public void shouldReturnCorrectMethodName() {
+    final LineaGetTrielogProof method = new LineaGetTrielogProof(worldStateArchive, trieLogLayerConverter);
     assertThat(method.getName()).isEqualTo("linea_getTrielogProof");
   }
 
@@ -144,6 +120,7 @@ public class LineaGetTrielogProofTest {
     when(worldStateArchive.getCachedWorldState(eq(testParentBlockHash)))
         .thenReturn(Optional.empty());
     
+    final LineaGetTrielogProof method = new LineaGetTrielogProof(worldStateArchive, trieLogLayerConverter);
     final String serializedTrieLog = "0x1234"; // dummy serialized trielog
     final JsonRpcRequestContext request = createRequest(serializedTrieLog, testParentBlockHash.toHexString());
 
@@ -160,6 +137,7 @@ public class LineaGetTrielogProofTest {
   @Test
   public void shouldReturnErrorWhenTrielogSerializationInvalid() {
     // Given
+    final LineaGetTrielogProof method = new LineaGetTrielogProof(worldStateArchive, trieLogLayerConverter);
     final String invalidSerializedTrieLog = "0xinvalid";
     final JsonRpcRequestContext request = createRequest(invalidSerializedTrieLog, testParentBlockHash.toHexString());
 
@@ -174,7 +152,26 @@ public class LineaGetTrielogProofTest {
 
   @Test
   public void shouldReturnProofsForValidTrielogWithAccountAndStorageChanges() {
-    // Given
+    // Given - create real world state with the account and storage for the parent state
+    final StorageSlotKey storageSlot = new StorageSlotKey(UInt256.valueOf(1));
+    final ZkEvmWorldState realWorldState = createRealWorldState(Map.of(
+        testPriorAccount, Map.of(storageSlot, UInt256.valueOf(10))
+    ));
+
+    // Create test TrieLogLayer with real state changes
+    final TrieLogLayer testTrieLogLayer = new TrieLogLayer();
+    testTrieLogLayer.setBlockHash(testBlockHash);
+    testTrieLogLayer.setBlockNumber(100L);
+    // Account existed before (priorAccount) and was updated (testAccount)
+    testTrieLogLayer.addAccountChange(testAccountKey, testPriorAccount, testAccount, false);
+    // Storage slot had a prior value and was updated
+    testTrieLogLayer.addStorageChange(testAccountKey, new StorageSlotKey(UInt256.valueOf(1)), UInt256.valueOf(10), UInt256.valueOf(42), false);
+
+    // Setup method with real world state
+    final LineaGetTrielogProof method = new LineaGetTrielogProof(worldStateArchive, trieLogLayerConverter);
+    lenient().when(worldStateArchive.getCachedWorldState(eq(testParentBlockHash)))
+        .thenReturn(Optional.of(realWorldState));
+
     final String serializedTrieLog = createRealisticSerializedTrieLog();
     when(trieLogLayerConverter.decodeTrieLog(any())).thenReturn(testTrieLogLayer);
     
@@ -198,14 +195,16 @@ public class LineaGetTrielogProofTest {
     assertThat(proof).isNotNull();
     assertThat(proof.getAccountProof()).isNotNull();
     assertThat(proof.getStorageProofs()).isNotNull();
-    // Should have one storage proof for the storage slot we added
+    
+    
+    // With real world state containing actual storage, we should now get the storage proof
     assertThat(proof.getStorageProofs()).hasSize(1);
   }
 
   @Test
   public void shouldReturnProofsForTrielogWithOnlyAccountChanges() {
-    // Given
-    ZkAccount priorAccount = new ZkAccount(
+    // Given - create prior account with empty storage (DEFAULT_TRIE_ROOT means no storage)
+    ZkAccount priorAccountNoStorage = new ZkAccount(
         testAccountKey,
         UInt256.valueOf(1),
         Wei.of(1000),
@@ -215,11 +214,22 @@ public class LineaGetTrielogProofTest {
         UInt256.ZERO
     );
     
+    // Create real world state with account but no storage
+    final ZkEvmWorldState worldStateForAccountOnly = createRealWorldState(Map.of(
+        priorAccountNoStorage, Map.of()
+    ));
+    
+    // Create trielog for account-only changes
     TrieLogLayer accountOnlyTrieLog = new TrieLogLayer();
     accountOnlyTrieLog.setBlockHash(testBlockHash);
     accountOnlyTrieLog.setBlockNumber(100L);
-    accountOnlyTrieLog.addAccountChange(testAccountKey, priorAccount, testAccount, false);
+    accountOnlyTrieLog.addAccountChange(testAccountKey, priorAccountNoStorage, testAccount, false);
     // No storage changes
+    
+    // Setup method with real world state
+    final LineaGetTrielogProof methodForAccountOnly = new LineaGetTrielogProof(worldStateArchive, trieLogLayerConverter);
+    lenient().when(worldStateArchive.getCachedWorldState(eq(testParentBlockHash)))
+        .thenReturn(Optional.of(worldStateForAccountOnly));
     
     final String serializedTrieLog = createRealisticSerializedTrieLog();
     when(trieLogLayerConverter.decodeTrieLog(any())).thenReturn(accountOnlyTrieLog);
@@ -227,7 +237,7 @@ public class LineaGetTrielogProofTest {
     final JsonRpcRequestContext request = createRequest(serializedTrieLog, testParentBlockHash.toHexString());
 
     // When
-    final JsonRpcResponse response = method.response(request);
+    final JsonRpcResponse response = methodForAccountOnly.response(request);
 
     // Then
     assertThat(response).isInstanceOf(JsonRpcSuccessResponse.class);
@@ -243,11 +253,19 @@ public class LineaGetTrielogProofTest {
 
   @Test
   public void shouldReturnEmptyProofsForEmptyTrielog() {
-    // Given
+    // Given - create empty real world state
+    final ZkEvmWorldState emptyWorldState = createRealWorldState(Map.of());
+    
+    // Create empty trielog  
     TrieLogLayer emptyTrieLog = new TrieLogLayer();
     emptyTrieLog.setBlockHash(testBlockHash);
     emptyTrieLog.setBlockNumber(100L);
     // No account or storage changes
+    
+    // Setup method with empty world state
+    final LineaGetTrielogProof methodForEmptyTest = new LineaGetTrielogProof(worldStateArchive, trieLogLayerConverter);
+    lenient().when(worldStateArchive.getCachedWorldState(eq(testParentBlockHash)))
+        .thenReturn(Optional.of(emptyWorldState));
     
     final String serializedTrieLog = createRealisticSerializedTrieLog();
     when(trieLogLayerConverter.decodeTrieLog(any())).thenReturn(emptyTrieLog);
@@ -255,7 +273,7 @@ public class LineaGetTrielogProofTest {
     final JsonRpcRequestContext request = createRequest(serializedTrieLog, testParentBlockHash.toHexString());
 
     // When
-    final JsonRpcResponse response = method.response(request);
+    final JsonRpcResponse response = methodForEmptyTest.response(request);
 
     // Then
     assertThat(response).isInstanceOf(JsonRpcSuccessResponse.class);
@@ -269,30 +287,15 @@ public class LineaGetTrielogProofTest {
 
   @Test
   public void shouldHandleMultipleAccountsAndStorageSlots() {
-    // Given
-    TrieLogLayer multiAccountTrieLog = new TrieLogLayer();
-    multiAccountTrieLog.setBlockHash(testBlockHash);
-    multiAccountTrieLog.setBlockNumber(100L);
-    
-    // Add multiple accounts with proper prior states
+    // Given - create accounts with proper prior states and storage
     Address address2 = Address.fromHexString("0x2000000000000000000000000000000000000002");
     AccountKey accountKey2 = new AccountKey(address2);
-    
-    ZkAccount priorAccount1 = new ZkAccount(
-        testAccountKey,
-        UInt256.valueOf(1),
-        Wei.of(1000),
-        Hash.wrap(EMPTY_TRIE.getTopRootHash()),
-        Hash.ZERO,
-        safeByte32(Hash.ZERO),
-        UInt256.ZERO
-    );
     
     ZkAccount priorAccount2 = new ZkAccount(
         accountKey2,
         UInt256.valueOf(1),
         Wei.of(1500),
-        Hash.wrap(EMPTY_TRIE.getTopRootHash()),
+        ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
         Hash.ZERO,
         safeByte32(Hash.ZERO),
         UInt256.ZERO
@@ -302,13 +305,27 @@ public class LineaGetTrielogProofTest {
         accountKey2,
         UInt256.valueOf(3),
         Wei.of(3000),
-        Hash.wrap(EMPTY_TRIE.getTopRootHash()),
+        ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
         Hash.ZERO,
         safeByte32(Hash.ZERO),
         UInt256.ZERO
     );
     
-    multiAccountTrieLog.addAccountChange(testAccountKey, priorAccount1, testAccount, false);
+    // Create real world state with both accounts and their storage
+    final ZkEvmWorldState multiAccountWorldState = createRealWorldState(Map.of(
+        testPriorAccount, Map.of(
+            new StorageSlotKey(UInt256.valueOf(1)), UInt256.valueOf(5),
+            new StorageSlotKey(UInt256.valueOf(2)), UInt256.valueOf(10)
+        ),
+        priorAccount2, Map.of(new StorageSlotKey(UInt256.valueOf(1)), UInt256.valueOf(20))
+    ));
+    
+    // Create trielog for multi-account changes
+    TrieLogLayer multiAccountTrieLog = new TrieLogLayer();
+    multiAccountTrieLog.setBlockHash(testBlockHash);
+    multiAccountTrieLog.setBlockNumber(100L);
+    
+    multiAccountTrieLog.addAccountChange(testAccountKey, testPriorAccount, testAccount, false);
     multiAccountTrieLog.addAccountChange(accountKey2, priorAccount2, account2, false);
     
     // Add multiple storage slots for first account (with proper prior values)
@@ -318,13 +335,18 @@ public class LineaGetTrielogProofTest {
     // Add storage slot for second account (with proper prior value)
     multiAccountTrieLog.addStorageChange(accountKey2, new StorageSlotKey(UInt256.valueOf(1)), UInt256.valueOf(20), UInt256.valueOf(100), false);
     
+    // Setup method with multi-account world state
+    final LineaGetTrielogProof methodForMultiTest = new LineaGetTrielogProof(worldStateArchive, trieLogLayerConverter);
+    lenient().when(worldStateArchive.getCachedWorldState(eq(testParentBlockHash)))
+        .thenReturn(Optional.of(multiAccountWorldState));
+    
     final String serializedTrieLog = createRealisticSerializedTrieLog();
     when(trieLogLayerConverter.decodeTrieLog(any())).thenReturn(multiAccountTrieLog);
     
     final JsonRpcRequestContext request = createRequest(serializedTrieLog, testParentBlockHash.toHexString());
 
     // When
-    final JsonRpcResponse response = method.response(request);
+    final JsonRpcResponse response = methodForMultiTest.response(request);
 
     // Then
     assertThat(response).isInstanceOf(JsonRpcSuccessResponse.class);
@@ -335,12 +357,12 @@ public class LineaGetTrielogProofTest {
     
     assertThat(accountProofs).hasSize(2);
     
-    // Find proofs for each account
+    // Find proofs for each account (using address as key, not account hash)
     Optional<MerkleAccountProof> proof1 = accountProofs.stream()
-        .filter(p -> p.getAccountProof().getKey().equals(testAccountKey.accountHash()))
+        .filter(p -> p.getAccountProof().getKey().equals(testAddress))
         .findFirst();
     Optional<MerkleAccountProof> proof2 = accountProofs.stream()
-        .filter(p -> p.getAccountProof().getKey().equals(accountKey2.accountHash()))
+        .filter(p -> p.getAccountProof().getKey().equals(address2))
         .findFirst();
     
     assertThat(proof1).isPresent();
@@ -361,6 +383,45 @@ public class LineaGetTrielogProofTest {
               serializedTrieLog,
               parentBlockHash
             }));
+  }
+
+
+
+  /**
+   * Creates a real ZkEvmWorldState initialized with the specified accounts and their storage.
+   * This eliminates the need for complex mocks and provides a reliable foundation for testing.
+   */
+  private ZkEvmWorldState createRealWorldState(Map<ZkAccount, Map<StorageSlotKey, UInt256>> accountsWithStorage) {
+    // Create a real world state using InMemoryStorageProvider
+    final InMemoryStorageProvider storageProvider = new InMemoryStorageProvider();
+    final TraceManager traceManager = storageProvider.getTraceManager();
+    final ZkEvmWorldState worldState = new ZkEvmWorldState(storageProvider.getWorldStateStorage(), traceManager);
+    
+    // Create a TrieLogLayer to set up the initial state
+    final TrieLogLayer setupLayer = new TrieLogLayer();
+    setupLayer.setBlockHash(Hash.ZERO);
+    setupLayer.setBlockNumber(0L);
+    
+    // Add each account and its storage to the setup layer
+    for (Map.Entry<ZkAccount, Map<StorageSlotKey, UInt256>> entry : accountsWithStorage.entrySet()) {
+      final ZkAccount account = entry.getKey();
+      final Map<StorageSlotKey, UInt256> storage = entry.getValue();
+      final AccountKey accountKey = new AccountKey(account.getAddress());
+      
+      // Add the account
+      setupLayer.addAccountChange(accountKey, null, account, false);
+      
+      // Add each storage slot
+      for (Map.Entry<StorageSlotKey, UInt256> storageEntry : storage.entrySet()) {
+        setupLayer.addStorageChange(accountKey, storageEntry.getKey(), null, storageEntry.getValue(), false);
+      }
+    }
+    
+    // Roll forward to create the state and commit
+    worldState.getAccumulator().rollForward(setupLayer);
+    worldState.commit(0L, Hash.ZERO, true);
+    
+    return worldState;
   }
 
   private String createRealisticSerializedTrieLog() {
