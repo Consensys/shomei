@@ -34,6 +34,7 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
+import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -298,5 +299,110 @@ public class TrieLogLayerConverter {
       offset += length;
     }
     return HashProvider.trieHash(mutableBytes);
+  }
+
+  /**
+   * Encode a TrieLogLayer to RLP format.
+   * This creates properly formatted serialized trielogs that can be decoded by decodeTrieLog().
+   */
+  public Bytes encodeTrieLog(TrieLogLayer trieLogLayer) {
+    BytesValueRLPOutput rlpOutput = new BytesValueRLPOutput();
+    
+    rlpOutput.startList(); // Main trielog list
+    
+    // Block hash and number
+    rlpOutput.writeBytes(trieLogLayer.getBlockHash());
+    rlpOutput.writeLongScalar(trieLogLayer.getBlockNumber());
+    
+    // Account changes
+    trieLogLayer.streamAccountChanges().forEach(accountEntry -> {
+      AccountKey accountKey = accountEntry.getKey();
+      
+      rlpOutput.startList(); // Account entry list
+      
+      // Address
+      rlpOutput.writeBytes(accountKey.address().getOriginalUnsafeValue());
+      
+      // Code changes (null for simplicity in tests)
+      rlpOutput.writeNull();
+      
+      // Account changes
+      rlpOutput.startList(); // Account value changes list
+      
+      // Prior account values (nonce, balance, storage root, keccak code hash)
+      rlpOutput.startList(); // Prior account list
+      var prior = accountEntry.getValue().getPrior();
+      if (prior != null) {
+        rlpOutput.writeLongScalar(prior.getNonce().toLong()); // Prior nonce
+        rlpOutput.writeUInt256Scalar(prior.getBalance()); // Prior balance
+        rlpOutput.writeBytes(prior.getStorageRoot()); // Prior storage root
+        rlpOutput.writeBytes(prior.getCodeHash()); // Prior keccak code hash
+      } else {
+        rlpOutput.writeLongScalar(0); // No prior nonce
+        rlpOutput.writeUInt256Scalar(UInt256.ZERO); // No prior balance
+        rlpOutput.writeBytes(Hash.EMPTY_TRIE_HASH); // No prior storage root
+        rlpOutput.writeBytes(Hash.EMPTY); // No prior code hash
+      }
+      rlpOutput.endList(); // End prior account list
+      
+      // New account value  
+      var updated = accountEntry.getValue().getUpdated();
+      if (updated != null) {
+        rlpOutput.startList(); // New account list
+        rlpOutput.writeLongScalar(updated.getNonce().toLong());
+        rlpOutput.writeUInt256Scalar(updated.getBalance());
+        rlpOutput.writeBytes(updated.getStorageRoot()); // Storage root
+        rlpOutput.writeBytes(updated.getCodeHash()); // Keccak code hash
+        rlpOutput.endList(); // End new account list
+      } else {
+        rlpOutput.writeNull(); // No new account value
+      }
+      
+      // Is cleared flag (0 = false)
+      rlpOutput.writeInt(0);
+      
+      rlpOutput.endList(); // End account value changes list
+      
+      // Storage changes
+      if (trieLogLayer.hasStorageChanges(accountKey)) {
+        rlpOutput.startList(); // Storage changes list
+        
+        trieLogLayer.streamStorageChanges(accountKey).forEach(storageEntry -> {
+          StorageSlotKey slotKey = storageEntry.getKey();
+          var slotValue = storageEntry.getValue();
+          
+          rlpOutput.startList(); // Storage slot entry list
+          rlpOutput.writeBytes(Hash.hash(slotKey.slotKey().getOriginalUnsafeValue())); // Keccak hash of slot key
+          
+          // Prior value
+          if (slotValue.getPrior() != null) {
+            rlpOutput.writeUInt256Scalar(slotValue.getPrior());
+          } else {
+            rlpOutput.writeNull();
+          }
+          
+          // New value
+          if (slotValue.getUpdated() != null) {
+            rlpOutput.writeUInt256Scalar(slotValue.getUpdated());
+          } else {
+            rlpOutput.writeNull();
+          }
+          
+          rlpOutput.writeInt(0); // Is cleared flag
+          rlpOutput.writeUInt256Scalar(slotKey.slotKey().getOriginalUnsafeValue()); // Actual slot key
+          rlpOutput.endList(); // End storage slot entry list
+        });
+        
+        rlpOutput.endList(); // End storage changes list
+      } else {
+        rlpOutput.writeNull(); // No storage changes
+      }
+      
+      rlpOutput.endList(); // End account entry list
+    });
+    
+    rlpOutput.endList(); // End main trielog list
+     
+    return rlpOutput.encoded();
   }
 }

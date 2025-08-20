@@ -172,7 +172,8 @@ public class LineaGetTrielogProofTest {
     lenient().when(worldStateArchive.getCachedWorldState(eq(testParentBlockHash)))
         .thenReturn(Optional.of(realWorldState));
 
-    final String serializedTrieLog = createRealisticSerializedTrieLog();
+    // Use fake hex string and mock the decode method
+    final String serializedTrieLog = "0x1234567890abcdef"; // dummy serialized trielog
     when(trieLogLayerConverter.decodeTrieLog(any())).thenReturn(testTrieLogLayer);
     
     final JsonRpcRequestContext request = createRequest(serializedTrieLog, testParentBlockHash.toHexString());
@@ -231,7 +232,8 @@ public class LineaGetTrielogProofTest {
     lenient().when(worldStateArchive.getCachedWorldState(eq(testParentBlockHash)))
         .thenReturn(Optional.of(worldStateForAccountOnly));
     
-    final String serializedTrieLog = createRealisticSerializedTrieLog();
+    // Use fake hex string and mock the decode method
+    final String serializedTrieLog = "0x1234567890abcdef"; // dummy serialized trielog
     when(trieLogLayerConverter.decodeTrieLog(any())).thenReturn(accountOnlyTrieLog);
     
     final JsonRpcRequestContext request = createRequest(serializedTrieLog, testParentBlockHash.toHexString());
@@ -267,7 +269,8 @@ public class LineaGetTrielogProofTest {
     lenient().when(worldStateArchive.getCachedWorldState(eq(testParentBlockHash)))
         .thenReturn(Optional.of(emptyWorldState));
     
-    final String serializedTrieLog = createRealisticSerializedTrieLog();
+    // Use fake hex string and mock the decode method
+    final String serializedTrieLog = "0x1234567890abcdef"; // dummy serialized trielog
     when(trieLogLayerConverter.decodeTrieLog(any())).thenReturn(emptyTrieLog);
     
     final JsonRpcRequestContext request = createRequest(serializedTrieLog, testParentBlockHash.toHexString());
@@ -340,7 +343,8 @@ public class LineaGetTrielogProofTest {
     lenient().when(worldStateArchive.getCachedWorldState(eq(testParentBlockHash)))
         .thenReturn(Optional.of(multiAccountWorldState));
     
-    final String serializedTrieLog = createRealisticSerializedTrieLog();
+    // Use fake hex string and mock the decode method
+    final String serializedTrieLog = "0x1234567890abcdef"; // dummy serialized trielog
     when(trieLogLayerConverter.decodeTrieLog(any())).thenReturn(multiAccountTrieLog);
     
     final JsonRpcRequestContext request = createRequest(serializedTrieLog, testParentBlockHash.toHexString());
@@ -385,8 +389,6 @@ public class LineaGetTrielogProofTest {
             }));
   }
 
-
-
   /**
    * Creates a real ZkEvmWorldState initialized with the specified accounts and their storage.
    * This eliminates the need for complex mocks and provides a reliable foundation for testing.
@@ -424,12 +426,4 @@ public class LineaGetTrielogProofTest {
     return worldState;
   }
 
-  private String createRealisticSerializedTrieLog() {
-    // Create a minimal but realistic RLP-encoded trielog
-    // For testing purposes, we'll create a simple hex string that represents encoded trielog data
-    // In a real scenario, this would be actual RLP-encoded TrieLogLayer data
-    
-    // This is a simplified representation - in practice, the TrieLogLayerConverter would handle the actual encoding/decoding
-    return "0x" + Bytes.random(64).toHexString().substring(2); // Remove the 0x prefix and add it back
-  }
 }
