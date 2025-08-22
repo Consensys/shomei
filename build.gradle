@@ -62,6 +62,7 @@ allprojects {
     test {
         // set a runtime shomei version for tests not executing from a jar
         systemProperty "shomei.version", project.version
+        useJUnitPlatform()
     }
 
     sourceCompatibility = '21'

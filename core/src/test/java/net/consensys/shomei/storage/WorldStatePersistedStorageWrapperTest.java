@@ -34,7 +34,7 @@ public class WorldStatePersistedStorageWrapperTest extends WorldStateWrapperTest
   public void setup() {
     var provider =
         new RocksDBStorageProvider(
-            new RocksDBConfigurationBuilder().databaseDir(tempData.getRoot()).build());
+            new RocksDBConfigurationBuilder().databaseDir(tempData).build());
 
     storage =
         new PersistedWorldStateStorage(
@@ -45,7 +45,9 @@ public class WorldStatePersistedStorageWrapperTest extends WorldStateWrapperTest
 
   @AfterEach
   public void tearDown() {
-    storage.close();
+    if (storage != null) {
+      storage.close();
+    }
   }
 
   @Override
