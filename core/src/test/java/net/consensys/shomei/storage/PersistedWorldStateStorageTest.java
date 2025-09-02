@@ -73,7 +73,7 @@ public class PersistedWorldStateStorageTest {
   public void setup() {
     var provider =
         new RocksDBStorageProvider(
-            new RocksDBConfigurationBuilder().databaseDir(tempData.getRoot()).build());
+            new RocksDBConfigurationBuilder().databaseDir(tempData).build());
     storage =
         new PersistedWorldStateStorage(
             provider.getFlatLeafStorage(),
@@ -86,7 +86,9 @@ public class PersistedWorldStateStorageTest {
 
   @AfterEach
   public void tearDown() {
-    storage.close();
+    if (storage != null) {
+      storage.close();
+    }
   }
 
   @Test
