@@ -119,4 +119,6 @@ public interface KeyValueStorage extends Closeable {
   KeyValueStorageTransaction startTransaction() throws StorageException;
 
   record KeyValuePair(byte[] key, byte[] value) {}
+
+  SegmentIdentifier getSegmentIdentifier();
 }

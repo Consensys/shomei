@@ -19,6 +19,7 @@ import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeUInt256;
 import net.consensys.shomei.MutableZkAccount;
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.ZkValue;
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.storage.TraceManager;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes;
@@ -63,14 +65,24 @@ public class ZkEvmWorldState {
 
   private final TraceManager traceManager;
 
+  private final Optional<AtomicCompositeTransaction> maybeAtomic;
+
   public ZkEvmWorldState(
-      final WorldStateStorage zkEvmWorldStateStorage, final TraceManager traceManager) {
+      final WorldStateStorage zkEvmWorldStateStorage,
+      final TraceManager traceManager,
+      final Optional<AtomicCompositeTransaction> maybeAtomic) {
     this.stateRoot = zkEvmWorldStateStorage.getWorldStateRootHash().orElse(DEFAULT_TRIE_ROOT);
     this.blockNumber = zkEvmWorldStateStorage.getWorldStateBlockNumber().orElse(-1L);
     this.blockHash = zkEvmWorldStateStorage.getWorldStateBlockHash().orElse(Hash.EMPTY);
     this.accumulator = new ZkEvmWorldStateUpdateAccumulator();
     this.zkEvmWorldStateStorage = zkEvmWorldStateStorage;
     this.traceManager = traceManager;
+    this.maybeAtomic = maybeAtomic;
+  }
+
+  public ZkEvmWorldState(
+      final WorldStateStorage zkEvmWorldStateStorage, final TraceManager traceManager) {
+    this(zkEvmWorldStateStorage, traceManager, Optional.empty());
   }
 
   public WorldStateStorage getZkEvmWorldStateStorage() {
@@ -85,8 +97,10 @@ public class ZkEvmWorldState {
         .log();
     long start = System.currentTimeMillis();
     final WorldStateStorage.WorldStateUpdater worldStateUpdater =
-        (WorldStateStorage.WorldStateUpdater) zkEvmWorldStateStorage.updater();
-    final TraceManager.TraceManagerUpdater traceUpdater = traceManager.updater();
+        (WorldStateStorage.WorldStateUpdater) zkEvmWorldStateStorage
+            .updater(maybeAtomic);
+    final TraceManager.TraceManagerUpdater traceUpdater = traceManager
+        .updater(maybeAtomic);
 
     final State state = generateNewState(worldStateUpdater, generateTrace);
 
@@ -118,6 +132,7 @@ public class ZkEvmWorldState {
     // persist
     worldStateUpdater.commit();
     traceUpdater.commit();
+    maybeAtomic.ifPresent(AtomicCompositeTransaction::commit);
     accumulator.reset();
   }
 

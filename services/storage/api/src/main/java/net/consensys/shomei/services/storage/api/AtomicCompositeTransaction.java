@@ -11,20 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package net.consensys.shomei.storage;
+package net.consensys.shomei.services.storage.api;
 
-import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
-import net.consensys.shomei.storage.worldstate.WorldStateStorage;
+/**
+ * Atomic composite transaction wraps transactions across multiple segments
+ * and offers an atomic commit.
+ */
+public interface AtomicCompositeTransaction {
 
-import java.util.Optional;
+  /**
+   * Gets a wrapped transaction for a specific segment.
+   *
+   * @param segment the segment identifier
+   * @return the wrapped transaction for this segment
+   */
+  KeyValueStorageTransaction wrapAsSegmentTransaction(SegmentIdentifier segment);
 
-public interface StorageProvider {
-
-  WorldStateStorage getWorldStateStorage();
-
-  TraceManager getTraceManager();
-
-  TrieLogManager getTrieLogManager();
-
-  Optional<AtomicCompositeTransaction> getAtomicCompositeTransaction();
+  /**
+   * Commits all wrapped transactions atomically.
+   */
+  void commit();
 }

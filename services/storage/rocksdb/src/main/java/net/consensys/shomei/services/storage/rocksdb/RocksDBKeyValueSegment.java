@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import net.consensys.shomei.services.storage.api.BidirectionalIterator;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.SegmentIdentifier;
 import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
 import net.consensys.shomei.services.storage.api.SnapshotKeyValueStorage;
 import net.consensys.shomei.services.storage.api.StorageException;
@@ -97,6 +98,11 @@ public class RocksDBKeyValueSegment implements SnappableKeyValueStorage {
   @Override
   public KeyValueStorageTransaction startTransaction() throws StorageException {
     return segment.startTransaction();
+  }
+
+  @Override
+  public SegmentIdentifier getSegmentIdentifier() {
+    return segment.getSegmentIdentifier();
   }
 
   @Override

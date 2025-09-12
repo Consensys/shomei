@@ -16,6 +16,7 @@ package net.consensys.shomei.storage;
 import net.consensys.shomei.exception.MissingTrieLogException;
 import net.consensys.shomei.metrics.MetricsService;
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trielog.TrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
@@ -28,6 +29,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Supplier;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.hyperledger.besu.datatypes.Hash;
@@ -43,6 +45,7 @@ public class ZkWorldStateArchive implements Closeable {
   private final TrieLogManager trieLogManager;
   private final TraceManager traceManager;
   private final WorldStateStorage headWorldStateStorage;
+  private final Supplier<Optional<AtomicCompositeTransaction>> atomicCompositeTransactionSupplier;
   private final ZkEvmWorldState headWorldState;
   private final TrieLogLayerConverter trieLogLayerConverter;
   private final ConcurrentSkipListMap<TrieLogIdentifier, WorldStateStorage> cachedWorldStates =
@@ -58,6 +61,7 @@ public class ZkWorldStateArchive implements Closeable {
         storageProvider.getTrieLogManager(),
         storageProvider.getTraceManager(),
         storageProvider.getWorldStateStorage(),
+        storageProvider::getAtomicCompositeTransaction,
         enableFinalizedBlockLimit,
         MetricsService.MetricsServiceProvider.getMetricsService());
   }
@@ -66,11 +70,13 @@ public class ZkWorldStateArchive implements Closeable {
       final TrieLogManager trieLogManager,
       final TraceManager traceManager,
       final WorldStateStorage headWorldStateStorage,
+      final Supplier<Optional<AtomicCompositeTransaction>> atomicCompositeTransactionSupplier,
       final boolean enableFinalizedBlockLimit,
       final MetricsService metricsService) {
     this.trieLogManager = trieLogManager;
     this.traceManager = traceManager;
     this.headWorldStateStorage = headWorldStateStorage;
+    this.atomicCompositeTransactionSupplier = atomicCompositeTransactionSupplier;
     this.headWorldState = fromWorldStateStorage(headWorldStateStorage);
     this.trieLogLayerConverter = new TrieLogLayerConverter(headWorldStateStorage);
     if (enableFinalizedBlockLimit) {
@@ -117,7 +123,8 @@ public class ZkWorldStateArchive implements Closeable {
   }
 
   private ZkEvmWorldState fromWorldStateStorage(WorldStateStorage storage) {
-    return new ZkEvmWorldState(storage, traceManager);
+    assert atomicCompositeTransactionSupplier != null;
+    return new ZkEvmWorldState(storage, traceManager, atomicCompositeTransactionSupplier.get());
   }
 
   public void importBlock(

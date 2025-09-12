@@ -35,8 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** The Rocks db snapshot transaction. */
-public class RocksDBTransaction implements KeyValueStorageTransaction, AutoCloseable {
-  private static final Logger LOG = LoggerFactory.getLogger(RocksDBSnapshotTransaction.class);
+public class RocksDBSegmentedTransaction implements KeyValueStorageTransaction, AutoCloseable {
+  private static final Logger LOG = LoggerFactory.getLogger(RocksDBSnapshotSegmentedTransaction.class);
   private static final String NO_SPACE_LEFT_ON_DEVICE = "No space left on device";
 
   protected final OptimisticTransactionDB db;
@@ -52,7 +52,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
    * @param db the db
    * @param columnFamilyHandle the column family handle
    */
-  public RocksDBTransaction(
+  public RocksDBSegmentedTransaction(
       final OptimisticTransactionDB db, final ColumnFamilyHandle columnFamilyHandle) {
 
     this.db = db;
@@ -96,7 +96,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
   }
 
   @Override
-  public RocksDBTransaction put(final byte[] key, final byte[] value) {
+  public RocksDBSegmentedTransaction put(final byte[] key, final byte[] value) {
     throwIfClosed();
 
     try {
@@ -112,7 +112,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
   }
 
   @Override
-  public RocksDBTransaction remove(final byte[] key) {
+  public RocksDBSegmentedTransaction remove(final byte[] key) {
     throwIfClosed();
 
     try {
@@ -199,10 +199,10 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
     isClosed.set(true);
   }
 
-  public static class RocksDBSnapshotTransaction extends RocksDBTransaction {
+  public static class RocksDBSnapshotSegmentedTransaction extends RocksDBSegmentedTransaction {
     private final Snapshot snapshot;
 
-    public RocksDBSnapshotTransaction(
+    public RocksDBSnapshotSegmentedTransaction(
         final OptimisticTransactionDB db, final ColumnFamilyHandle columnFamilyHandle) {
       super(db, columnFamilyHandle);
       this.snapshot = db.getSnapshot();

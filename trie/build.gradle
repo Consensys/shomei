@@ -33,6 +33,7 @@ dependencies {
     // Project dependencies
     implementation project(':crypto')
     implementation project(':util')
+    implementation project(':services:storage:api')
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'

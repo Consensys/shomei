@@ -13,6 +13,7 @@
 
 package net.consensys.shomei.storage;
 
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.services.storage.api.KeyValueStorage;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
 import net.consensys.shomei.trie.trace.Trace;
@@ -29,7 +30,7 @@ import org.hyperledger.besu.datatypes.Hash;
 public interface TraceManager {
   String ZK_STATE_ROOT_PREFIX = "zkStateRoot";
 
-  TraceManagerUpdater updater();
+  TraceManagerUpdater updater(Optional<AtomicCompositeTransaction> maybeAtomicTx);
 
   Optional<Bytes> getTrace(final long blockNumber);
 
@@ -59,8 +60,12 @@ public interface TraceManager {
     }
 
     @Override
-    public TraceManagerUpdater updater() {
-      return new TraceManagerUpdater(traceStorage.startTransaction());
+    public TraceManagerUpdater updater(final Optional<AtomicCompositeTransaction> maybeAtomic) {
+      return new TraceManagerUpdater(
+          maybeAtomic.map(atx ->
+                  atx.wrapAsSegmentTransaction(
+                      traceStorage.getSegmentIdentifier()))
+              .orElse(traceStorage.startTransaction()));
     }
   }
 

@@ -126,7 +126,7 @@ public class PersistedWorldStateStorageTest {
   void mutateWorldStateStorage() {
     updater.putFlatLeaf(Bytes.of(1), FLAT_LEAF);
     updater.putTrieNode(Bytes.of(1), Bytes.of(1), BYTES_TEST);
-    TraceManager.TraceManagerUpdater traceManagerTransaction = traceManager.updater();
+    TraceManager.TraceManagerUpdater traceManagerTransaction = traceManager.updater(Optional.empty());
     traceManagerTransaction.saveZkStateRootHash(1337L, HASH_TEST);
     traceManagerTransaction.saveTrace(80085, TRACE_TEST);
     traceManagerTransaction.commit();

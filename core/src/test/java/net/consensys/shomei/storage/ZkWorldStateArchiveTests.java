@@ -112,6 +112,7 @@ public class ZkWorldStateArchiveTests {
             archive.getTrieLogManager(),
             archive.getTraceManager(),
             archive.getHeadWorldStateStorage(),
+            () -> Optional.empty(),
             false,
             noopMetrics);
 
@@ -122,6 +123,7 @@ public class ZkWorldStateArchiveTests {
             archive.getTrieLogManager(),
             archive.getTraceManager(),
             archive.getHeadWorldStateStorage(),
+            () -> Optional.empty(),
             true,
             noopMetrics);
 

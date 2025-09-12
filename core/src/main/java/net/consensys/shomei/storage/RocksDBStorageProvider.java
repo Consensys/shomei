@@ -18,14 +18,19 @@ import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdenti
 import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames.ZK_TRIE_LOG;
 import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames.ZK_TRIE_NODE;
 
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.services.storage.api.KeyValueStorage;
+import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.SegmentIdentifier;
 import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
+import net.consensys.shomei.services.storage.rocksdb.RocksDBFlatTransaction;
 import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentedStorage;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
 import net.consensys.shomei.storage.TrieLogManager.TrieLogManagerImpl;
 import net.consensys.shomei.storage.worldstate.PersistedWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -86,5 +91,30 @@ public class RocksDBStorageProvider implements StorageProvider {
       ref.compareAndExchange(null, provider.get());
     }
     return ref.get();
+  }
+
+  @Override
+  public Optional<AtomicCompositeTransaction> getAtomicCompositeTransaction() {
+    return Optional.of(
+        new RocksDBAtomicCompositeTransaction(
+            segmentedStorage.getRocksDBFlatTransaction()));
+  }
+
+  static class RocksDBAtomicCompositeTransaction implements AtomicCompositeTransaction {
+    private final RocksDBFlatTransaction flatTx;
+
+    RocksDBAtomicCompositeTransaction(RocksDBFlatTransaction flatTx) {
+      this.flatTx = flatTx;
+    }
+
+    @Override
+    public KeyValueStorageTransaction wrapAsSegmentTransaction(final SegmentIdentifier segment) {
+      return null;
+    }
+
+    @Override
+    public void commit() {
+      flatTx.commit();
+    }
   }
 }

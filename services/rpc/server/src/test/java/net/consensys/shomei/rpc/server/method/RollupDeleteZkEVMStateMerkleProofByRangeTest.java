@@ -30,6 +30,7 @@ import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.util.bytes.MimcSafeBytes;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,7 +86,7 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
             accountStateTrie.readWithTrace(
                 Hash.wrap(Bytes32.random()), MimcSafeBytes.safeByte32(Bytes32.random())));
 
-    final TraceManager.TraceManagerUpdater updater = traceManager.updater();
+    final TraceManager.TraceManagerUpdater updater = traceManager.updater(Optional.empty());
     updater.saveZkStateRootHash(0, Hash.wrap(accountStateTrie.getTopRootHash()));
     updater.saveZkStateRootHash(1, Hash.wrap(accountStateTrie.getTopRootHash()));
     updater.saveZkStateRootHash(2, Hash.wrap(accountStateTrie.getTopRootHash()));

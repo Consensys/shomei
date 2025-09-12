@@ -13,6 +13,7 @@
 
 package net.consensys.shomei.trie.storage;
 
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 
 import java.util.Map;
@@ -53,6 +54,11 @@ public interface TrieStorage {
 
   /** Returns an updater that can be used to update the storage. */
   TrieUpdater updater();
+
+  /** Returns an updater that can be used to update the storage with optional atomic transaction. */
+  default TrieUpdater updater(final Optional<AtomicCompositeTransaction> maybeAtomic) {
+    return updater();
+  }
 
   /** Interface for a trie updater. */
   interface TrieUpdater {
