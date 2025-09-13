@@ -194,11 +194,11 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
 
       @Override
       public synchronized void commit() {
-
-        // if we are using an atomicTransaction for the updater, commit it.
-        maybeAtomic.ifPresentOrElse(AtomicCompositeTransaction::commit, () -> {
-
-          // Otherwise, if we are using the outer AtomicReferences, commit and update:
+        if (maybeAtomic.isPresent()) {
+          // it is the caller's responsibility to commit the composite transaction
+          return;
+        } else {
+          // commit and refresh the worldstate transactions:
           flatLeafTx.getAndUpdate(flatTx -> {
             flatTx.commit();
             return flatLeafStorage.startTransaction();
@@ -207,7 +207,7 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
             trieTx.commit();
             return trieNodeStorage.startTransaction();
           });
-        });
+        }
       }
     };
   }
