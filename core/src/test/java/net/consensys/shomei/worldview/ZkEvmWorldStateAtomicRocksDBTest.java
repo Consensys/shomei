@@ -13,22 +13,23 @@
 
 package net.consensys.shomei.worldview;
 
-import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
-import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
-import net.consensys.shomei.storage.RocksDBStorageProvider;
-import net.consensys.shomei.storage.StorageProvider;
-import org.hyperledger.besu.datatypes.Hash;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.mockito.internal.verification.Times;
-
-import java.nio.file.Path;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
+import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
+import net.consensys.shomei.storage.RocksDBStorageProvider;
+import net.consensys.shomei.storage.StorageProvider;
+
+import java.nio.file.Path;
+import java.util.Optional;
+
+import org.hyperledger.besu.datatypes.Hash;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.internal.verification.Times;
 
 /**
  * Integration test that validates ZkEvmWorldState correctly uses RocksDBFlatTransaction
@@ -39,7 +40,7 @@ import static org.mockito.Mockito.verify;
 public class ZkEvmWorldStateAtomicRocksDBTest {
 
   @TempDir Path tempDir;
-  
+
   private ZkEvmWorldState worldState;
 
   @Test

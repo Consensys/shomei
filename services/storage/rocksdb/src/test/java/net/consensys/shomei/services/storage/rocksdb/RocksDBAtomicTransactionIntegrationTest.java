@@ -20,7 +20,6 @@ import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdenti
 import static net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBFactoryConfiguration.DEFAULT_ROCKSDB_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import net.consensys.shomei.config.ShomeiConfig;
 import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
@@ -71,7 +70,7 @@ class RocksDBAtomicTransactionIntegrationTest {
   void shouldCreateAtomicTransactionAcrossMultipleSegments() {
     // Given - Get atomic transaction
     RocksDBFlatTransaction atomicTx = segmentedStorage.getRocksDBFlatTransaction();
-    
+
     // When - create wrapped transactions for different segments
     var leafSegment = ZK_LEAF_INDEX.getSegmentIdentifier();
     var trieSegment = ZK_TRIE_NODE.getSegmentIdentifier();
@@ -85,7 +84,7 @@ class RocksDBAtomicTransactionIntegrationTest {
     assertThat(leafTx).isNotNull();
     assertThat(trieTx).isNotNull();
     assertThat(traceTx).isNotNull();
-    
+
     atomicTx.close();
   }
 
@@ -96,7 +95,7 @@ class RocksDBAtomicTransactionIntegrationTest {
     var trieSegment = ZK_TRIE_NODE.getSegmentIdentifier();
     var leafStorage = segmentedStorage.getKeyValueStorageForSegment(leafSegment);
     var trieStorage = segmentedStorage.getKeyValueStorageForSegment(trieSegment);
-    
+
     RocksDBFlatTransaction atomicTx = segmentedStorage.getRocksDBFlatTransaction();
     KeyValueStorageTransaction leafTx = atomicTx.wrapAsSegmentTransaction(leafSegment);
     KeyValueStorageTransaction trieTx = atomicTx.wrapAsSegmentTransaction(trieSegment);
@@ -104,14 +103,14 @@ class RocksDBAtomicTransactionIntegrationTest {
     // When - write to multiple segments
     leafTx.put(key1, value1);
     trieTx.put(key2, value2);
-    
+
     // Wrapped transactions should not commit the underlying transaction
     leafTx.commit();
     trieTx.commit();
-    
+
     // When - commit the atomic transaction
     atomicTx.commit();
-    
+
     // Then - data should be visible in both segments
     assertThat(leafStorage.get(key1)).contains(value1);
     assertThat(trieStorage.get(key2)).contains(value2);
@@ -121,20 +120,20 @@ class RocksDBAtomicTransactionIntegrationTest {
   void shouldRollbackDataAtomicallyAcrossSegments() {
     // Given - Get atomic transaction and segment transactions
     RocksDBFlatTransaction atomicTx = segmentedStorage.getRocksDBFlatTransaction();
-    
+
     var leafSegment = ZK_LEAF_INDEX.getSegmentIdentifier();
     var trieSegment = ZK_TRIE_NODE.getSegmentIdentifier();
-    
+
     KeyValueStorageTransaction leafTx = atomicTx.wrapAsSegmentTransaction(leafSegment);
     KeyValueStorageTransaction trieTx = atomicTx.wrapAsSegmentTransaction(trieSegment);
 
     // When - write to multiple segments
     leafTx.put(key1, value1);
     trieTx.put(key2, value2);
-    
+
     // When - rollback the atomic transaction
     atomicTx.rollback();
-    
+
     // Then - data should not be visible in any segment
     var leafStorage = segmentedStorage.getKeyValueStorageForSegment(leafSegment);
     var trieStorage = segmentedStorage.getKeyValueStorageForSegment(trieSegment);
@@ -146,25 +145,25 @@ class RocksDBAtomicTransactionIntegrationTest {
   void shouldReadUncommittedDataWithinTransaction() {
     // Given - Get atomic transaction and segment transactions
     RocksDBFlatTransaction atomicTx = segmentedStorage.getRocksDBFlatTransaction();
-    
+
     var leafSegment = ZK_LEAF_INDEX.getSegmentIdentifier();
     KeyValueStorageTransaction leafTx = atomicTx.wrapAsSegmentTransaction(leafSegment);
 
     // When - write data within transaction
     leafTx.put(key1, value1);
-    
+
     // Then - should be able to read uncommitted data within the same transaction
     Optional<byte[]> result = leafTx.get(key1);
     assertThat(result).contains(value1);
-    
+
     atomicTx.close();
   }
 
-  @Test 
+  @Test
   void shouldHandleMultipleOperationsOnSameSegment() {
     // Given - Get atomic transaction and segment transaction
     RocksDBFlatTransaction atomicTx = segmentedStorage.getRocksDBFlatTransaction();
-    
+
     var leafSegment = ZK_LEAF_INDEX.getSegmentIdentifier();
     KeyValueStorageTransaction leafTx = atomicTx.wrapAsSegmentTransaction(leafSegment);
 
@@ -178,9 +177,9 @@ class RocksDBAtomicTransactionIntegrationTest {
     // Then - operations should work correctly within transaction
     assertThat(result1).contains(value1);
     assertThat(result2).isEmpty(); // removed within transaction
-    
+
     atomicTx.commit();
-    
+
     // Verify final state after commit
     var leafStorage = segmentedStorage.getKeyValueStorageForSegment(leafSegment);
     assertThat(leafStorage.get(key1)).contains(value1);
@@ -191,14 +190,14 @@ class RocksDBAtomicTransactionIntegrationTest {
   void shouldImplementAtomicCompositeTransactionInterface() {
     // Given - Get atomic transaction as interface
     AtomicCompositeTransaction atomicTx = segmentedStorage.getRocksDBFlatTransaction();
-    
+
     // When - use through interface
     var leafSegment = ZK_LEAF_INDEX.getSegmentIdentifier();
     KeyValueStorageTransaction leafTx = atomicTx.wrapAsSegmentTransaction(leafSegment);
-    
+
     leafTx.put(key1, value1);
     atomicTx.commit();
-    
+
     // Then - should work correctly through interface
     var leafStorage = segmentedStorage.getKeyValueStorageForSegment(leafSegment);
     assertThat(leafStorage.get(key1)).contains(value1);

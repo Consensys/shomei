@@ -195,10 +195,13 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
       @Override
       public synchronized void commit() {
         if (maybeAtomic.isPresent()) {
-          // it is the caller's responsibility to commit the composite transaction
-          return;
+          // it is the caller's responsibility to commit the composite transaction,
+          // the segmented transaction commits are no-ops, but we commit here just to
+          // be thorough and future-proof:
+          atomicFlatLeafTx.ifPresent(KeyValueStorageTransaction::commit);
+          atomicTrieNodeTx.ifPresent(KeyValueStorageTransaction::commit);
         } else {
-          // commit and refresh the worldstate transactions:
+          // commit and refresh the outer worldstate transactions:
           flatLeafTx.getAndUpdate(flatTx -> {
             flatTx.commit();
             return flatLeafStorage.startTransaction();
