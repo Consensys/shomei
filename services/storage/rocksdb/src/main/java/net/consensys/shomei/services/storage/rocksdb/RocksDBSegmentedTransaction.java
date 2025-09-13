@@ -242,5 +242,21 @@ public class RocksDBSegmentedTransaction implements KeyValueStorageTransaction, 
         final WriteOptions writeOptions, final ReadOptions readOptions) {
       super(db, columnFamilyHandle, innerTx, writeOptions, readOptions);
     }
+
+    @Override
+    public void commit() throws StorageException {
+      // No-op - actual commit is handled by the atomic transaction
+    }
+
+    @Override
+    public void rollback() {
+      // No-op - actual rollback is handled by the atomic transaction
+    }
+
+    @Override
+    public void close() {
+      // Don't close the shared transaction - it's managed by the atomic transaction
+      // Only close options if they're not shared
+    }
   }
 }

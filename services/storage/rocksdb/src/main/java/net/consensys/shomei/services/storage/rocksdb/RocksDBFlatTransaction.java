@@ -45,7 +45,7 @@ public class RocksDBFlatTransaction implements AtomicCompositeTransaction, AutoC
   private final WriteOptions writeOptions;
   private final ReadOptions readOptions;
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
-  private Function<RocksDBSegmentIdentifier, ColumnFamilyHandle> columnFamilyMapper;
+  private final Function<RocksDBSegmentIdentifier, ColumnFamilyHandle> columnFamilyMapper;
 
   /**
    * Instantiates a new raw/flat RocksDb transaction.
@@ -56,6 +56,7 @@ public class RocksDBFlatTransaction implements AtomicCompositeTransaction, AutoC
       Function<RocksDBSegmentIdentifier, ColumnFamilyHandle> columnFamilyMapper) {
 
     this.db = db;
+    this.columnFamilyMapper = columnFamilyMapper;
     this.writeOptions = new WriteOptions();
     this.innerTx = db.beginTransaction(writeOptions);
     this.readOptions = new ReadOptions().setVerifyChecksums(false);
