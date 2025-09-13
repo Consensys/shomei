@@ -31,4 +31,9 @@ public interface AtomicCompositeTransaction {
    * Commits all wrapped transactions atomically.
    */
   void commit();
+
+  /**
+   * Rolls back all wrapped transactions atomically.
+   */
+  void rollback();
 }

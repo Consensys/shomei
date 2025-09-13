@@ -47,19 +47,29 @@ public class RocksDBSegmentedTransaction implements KeyValueStorageTransaction, 
   protected final AtomicBoolean isClosed = new AtomicBoolean(false);
 
   /**
-   * Instantiates a new RocksDb snapshot transaction.
+   * Instantiates a new RocksDb segmented transaction.
    *
-   * @param db the db
+   * @param db                 the db
    * @param columnFamilyHandle the column family handle
    */
-  public RocksDBSegmentedTransaction(
-      final OptimisticTransactionDB db, final ColumnFamilyHandle columnFamilyHandle) {
-
+  public RocksDBSegmentedTransaction(final OptimisticTransactionDB db,
+      final ColumnFamilyHandle columnFamilyHandle) {
     this.db = db;
     this.columnFamilyHandle = columnFamilyHandle;
     this.writeOptions = new WriteOptions();
     this.innerTx = db.beginTransaction(writeOptions);
     this.readOptions = new ReadOptions().setVerifyChecksums(false);
+
+  }
+
+  protected RocksDBSegmentedTransaction(final OptimisticTransactionDB db,
+      final ColumnFamilyHandle columnFamilyHandle, Transaction innerTx, WriteOptions writeOptions,
+      ReadOptions readOptions) {
+    this.db = db;
+    this.columnFamilyHandle = columnFamilyHandle;
+    this.writeOptions = writeOptions;
+    this.innerTx = innerTx;
+    this.readOptions = readOptions;
   }
 
   /**
@@ -222,6 +232,15 @@ public class RocksDBSegmentedTransaction implements KeyValueStorageTransaction, 
       readOptions.close();
       snapshot.close();
       isClosed.set(true);
+    }
+  }
+
+  public static class RocksDBWrappedSegmentedTransaction extends RocksDBSegmentedTransaction {
+
+    RocksDBWrappedSegmentedTransaction(final OptimisticTransactionDB db,
+        final ColumnFamilyHandle columnFamilyHandle, final Transaction innerTx,
+        final WriteOptions writeOptions, final ReadOptions readOptions) {
+      super(db, columnFamilyHandle, innerTx, writeOptions, readOptions);
     }
   }
 }

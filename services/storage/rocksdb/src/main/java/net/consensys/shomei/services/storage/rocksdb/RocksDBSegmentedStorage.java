@@ -188,13 +188,17 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
       throwIfClosed();
       final WriteOptions options = new WriteOptions();
       options.setIgnoreMissingColumnFamilies(true);
-      return new RocksDBFlatTransaction(db);
+      return new RocksDBFlatTransaction(db, this::getSegmentBySegmentId);
   }
 
   public SnappableKeyValueStorage getKeyValueStorageForSegment(
       final RocksDBSegmentIdentifier segmentId) {
     throwIfClosed();
     return new RocksDBKeyValueSegment(columnHandlesByName.get(segmentId));
+  }
+
+  public ColumnFamilyHandle getSegmentBySegmentId(RocksDBSegmentIdentifier segmentId) {
+    return columnHandlesByName.get(segmentId).getHandle();
   }
 
   protected class RocksDBSegment {

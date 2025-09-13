@@ -20,10 +20,7 @@ import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdenti
 
 import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.services.storage.api.KeyValueStorage;
-import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
-import net.consensys.shomei.services.storage.api.SegmentIdentifier;
 import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
-import net.consensys.shomei.services.storage.rocksdb.RocksDBFlatTransaction;
 import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentedStorage;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
 import net.consensys.shomei.storage.TrieLogManager.TrieLogManagerImpl;
@@ -95,26 +92,6 @@ public class RocksDBStorageProvider implements StorageProvider {
 
   @Override
   public Optional<AtomicCompositeTransaction> getAtomicCompositeTransaction() {
-    return Optional.of(
-        new RocksDBAtomicCompositeTransaction(
-            segmentedStorage.getRocksDBFlatTransaction()));
-  }
-
-  static class RocksDBAtomicCompositeTransaction implements AtomicCompositeTransaction {
-    private final RocksDBFlatTransaction flatTx;
-
-    RocksDBAtomicCompositeTransaction(RocksDBFlatTransaction flatTx) {
-      this.flatTx = flatTx;
-    }
-
-    @Override
-    public KeyValueStorageTransaction wrapAsSegmentTransaction(final SegmentIdentifier segment) {
-      return null;
-    }
-
-    @Override
-    public void commit() {
-      flatTx.commit();
-    }
+    return Optional.of(segmentedStorage.getRocksDBFlatTransaction());
   }
 }

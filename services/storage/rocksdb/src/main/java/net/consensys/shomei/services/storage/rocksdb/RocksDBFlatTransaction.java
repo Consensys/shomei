@@ -13,10 +13,14 @@
 
 package net.consensys.shomei.services.storage.rocksdb;
 
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
+import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.SegmentIdentifier;
 import net.consensys.shomei.services.storage.api.StorageException;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.OptimisticTransactionDB;
@@ -32,22 +36,26 @@ import org.slf4j.LoggerFactory;
  * multiple RocksDB segments with a single transaction.
  *
  */
-public class RocksDBFlatTransaction implements AutoCloseable {
+public class RocksDBFlatTransaction implements AtomicCompositeTransaction, AutoCloseable {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDBFlatTransaction.class);
   private static final String NO_SPACE_LEFT_ON_DEVICE = "No space left on device";
 
+  private final OptimisticTransactionDB db;
   private final Transaction innerTx;
   private final WriteOptions writeOptions;
   private final ReadOptions readOptions;
   private final AtomicBoolean isClosed = new AtomicBoolean(false);
+  private Function<RocksDBSegmentIdentifier, ColumnFamilyHandle> columnFamilyMapper;
 
   /**
    * Instantiates a new raw/flat RocksDb transaction.
    *
    * @param db the db
    */
-  public RocksDBFlatTransaction(final OptimisticTransactionDB db) {
+  public RocksDBFlatTransaction(final OptimisticTransactionDB db,
+      Function<RocksDBSegmentIdentifier, ColumnFamilyHandle> columnFamilyMapper) {
 
+    this.db = db;
     this.writeOptions = new WriteOptions();
     this.innerTx = db.beginTransaction(writeOptions);
     this.readOptions = new ReadOptions().setVerifyChecksums(false);
@@ -111,9 +119,16 @@ public class RocksDBFlatTransaction implements AutoCloseable {
     }
   }
 
+  @Override
+  public KeyValueStorageTransaction wrapAsSegmentTransaction(final SegmentIdentifier segment) {
+    return new RocksDBSegmentedTransaction.RocksDBWrappedSegmentedTransaction(
+        db, columnFamilyMapper.apply((RocksDBSegmentIdentifier) segment), innerTx, writeOptions, readOptions);
+  }
+
   /**
    * Commit and close the current transaction
    */
+  @Override
   public void commit() throws StorageException {
     throwIfClosed();
     try {
@@ -132,6 +147,7 @@ public class RocksDBFlatTransaction implements AutoCloseable {
   /**
    * Rollback and close the current transaction
    */
+  @Override
   public void rollback() {
     try {
       innerTx.rollback();
