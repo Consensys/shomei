@@ -18,21 +18,32 @@ import static org.assertj.core.api.Assertions.assertThat;
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.datatypes.Address;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPInput;
 import org.junit.jupiter.api.Test;
 
 public class TrieLogLayerConverterTest {
 
-  private final String trieLogFixture = "0xf90189a097beef3f7046e4d64d51d848e95bf487bbfd7f6949c506419a6f8a6a6d0591dd831c4f77f8ba94407c019cb116c67ed58b27fe51801a14f185ed3d80f8a1f84e822108880688220d56c402a6a056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a0c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470f84e822109880688220d56c1c32ca056e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421a0c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a4708080f8a694f58b398cecb1aa5424ed0e37797da0ec734eeb3d80f88df8440180a054de39a823f8be0ff8700960aeb1d6c9e592e1ab4bddfb79461e584ab44b6e11a0ad680f3433e6e75823323e35afeef01b50e767225c37b70f663f1b091b4e6d78f8440180a054de39a823f8be0ff8700960aeb1d6c9e592e1ab4bddfb79461e584ab44b6e11a0ad680f3433e6e75823323e35afeef01b50e767225c37b70f663f1b091b4e6d788080";
-  private final TrieLogLayerConverter converter = new TrieLogLayerConverter(new InMemoryWorldStateStorage());
+  // fixture generated from besu-shomei-plugin TrieLogFactoryTests.trielogfixture
+  private static final String TRIELOG_FIXTURE = "0xf8d6a0000000000000000000000000000000000000000000000000000000000000000001f847940000000000000000000000000000000000000000c98086feeddeadbeef8080e6e5a0290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e56380018080f8699400000000000000000000000000000000deadbeef80f85080f84c80880de0b6b3a7640000a0c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470a0c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a4708080";
+  private static final AccountKey MOCK_ACCOUNT = new AccountKey(Address.fromHexString("0xdeadbeef"));
 
+
+  private final TrieLogLayerConverter converter = new TrieLogLayerConverter(new InMemoryWorldStateStorage());
 
   @Test
   public void assertTrieLogDecoding() {
     var trielog = converter.decodeTrieLog(new BytesValueRLPInput(
-        Bytes.fromHexString(trieLogFixture), true));
+        Bytes.fromHexString(TRIELOG_FIXTURE), true));
 
     assertThat(trielog).isNotNull();
-
+    var mockAccount = trielog.getAccount(MOCK_ACCOUNT);
+    assertThat(mockAccount).isPresent();
+    assertThat(mockAccount.get().getNonce()).isEqualTo(UInt256.ZERO);
+    assertThat(mockAccount.get().getBalance()).isEqualTo(Wei.fromEth(1));
+    assertThat(mockAccount.get().getCodeHash()).isEqualTo(Hash.EMPTY);
   }
 }
