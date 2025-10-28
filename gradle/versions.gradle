@@ -1,7 +1,7 @@
 dependencyManagement {
   imports {
     mavenBom "org.hyperledger.besu:bom:${besuVersion}"
-    mavenBom "org.apache.logging.log4j:log4j-bom:2.24.3"
+    mavenBom "org.apache.logging.log4j:log4j-bom:2.25.2"
   }
 
   dependencies {
@@ -16,13 +16,13 @@ dependencyManagement {
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
     // besu-shomei plugin:
-    dependency 'ConsenSys:besu-shomei-plugin:0.7.0'
-    dependency 'ConsenSys:besu-shomei-plugin-test-support:0.7.0'
+    dependency 'ConsenSys:besu-shomei-plugin:0.7.5'
+    dependency 'ConsenSys:besu-shomei-plugin-test-support:0.7.5'
 
-    dependency 'org.assertj:assertj-core:3.24.2' // or latest
+    dependency 'org.assertj:assertj-core:3.27.3'
 
     // micrometer Prometheus metrics
-    dependencySet(group: 'io.micrometer', version: '1.11.1') {
+    dependencySet(group: 'io.micrometer', version: '1.15.5') {
       entry 'micrometer-core'
       entry 'micrometer-registry-prometheus'
     }
@@ -32,7 +32,6 @@ dependencyManagement {
       entry 'pipeline'
       entry 'tasks'
     }
-
 
   }
 }

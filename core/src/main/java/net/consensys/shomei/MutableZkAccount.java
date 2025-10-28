@@ -14,7 +14,7 @@
 package net.consensys.shomei;
 
 import net.consensys.shomei.trielog.AccountKey;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -26,8 +26,8 @@ public class MutableZkAccount extends ZkAccount {
 
   public MutableZkAccount(
       final AccountKey accountKey,
-      final MimcSafeBytes<Bytes32> keccakCodeHash,
-      final Hash mimcCodeHash,
+      final ShomeiSafeBytes<Bytes32> keccakCodeHash,
+      final Hash shomeiCodeHash,
       final long codeSize,
       final long nonce,
       final Wei balance,
@@ -37,7 +37,7 @@ public class MutableZkAccount extends ZkAccount {
         UInt256.valueOf(nonce),
         balance,
         storageRoot,
-        mimcCodeHash,
+        shomeiCodeHash,
         keccakCodeHash,
         UInt256.valueOf(codeSize));
   }
@@ -46,12 +46,12 @@ public class MutableZkAccount extends ZkAccount {
     super(toCopy);
   }
 
-  public void setKeccakCodeHash(final MimcSafeBytes<Bytes32> keccakCodeHash) {
+  public void setKeccakCodeHash(final ShomeiSafeBytes<Bytes32> keccakCodeHash) {
     this.keccakCodeHash = keccakCodeHash;
   }
 
-  public void setMimcCodeHash(final Hash mimcCodeHash) {
-    this.mimcCodeHash = mimcCodeHash;
+  public void setShomeiCodeHash(final Hash shomeiCodeHash) {
+    this.shomeiCodeHash = shomeiCodeHash;
   }
 
   public void setCodeSize(final UInt256 codeSize) {

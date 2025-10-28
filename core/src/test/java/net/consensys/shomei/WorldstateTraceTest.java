@@ -20,7 +20,7 @@ import static net.consensys.shomei.util.TestFixtureGenerator.createDumAddress;
 import static net.consensys.shomei.util.TestFixtureGenerator.createDumDigest;
 import static net.consensys.shomei.util.TestFixtureGenerator.createDumFullBytes;
 import static net.consensys.shomei.util.TestFixtureGenerator.getAccountOne;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
@@ -30,7 +30,8 @@ import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.AccountKey;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
 import net.consensys.zkevm.HashProvider;
 
 import java.io.IOException;
@@ -63,7 +64,7 @@ public class WorldstateTraceTest {
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
-    Trace trace = accountStateTrie.readWithTrace(hkey, MimcSafeBytes.safeByte32(key));
+    Trace trace = accountStateTrie.readWithTrace(hkey, ShomeiSafeBytesProvider.safeByte32(key));
 
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(trace))
         .isEqualToIgnoringWhitespace(getResources("testTraceReadZero.json"));
@@ -72,9 +73,9 @@ public class WorldstateTraceTest {
   @Test
   public void testTraceReadSimpleValue() throws IOException {
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
-    final Hash hkey = HashProvider.trieHash(key);
+    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
+    final ShomeiSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
+    final Hash hkey = key.hash();
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -206,9 +207,9 @@ public class WorldstateTraceTest {
         ZKTrie.createTrie(
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
-    final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
-    final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final ShomeiSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final Hash slotKeyHash = slotKey.hash();
+    final ShomeiSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
 
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
@@ -251,9 +252,9 @@ public class WorldstateTraceTest {
         ZKTrie.createTrie(
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
-    final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
-    final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final ShomeiSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final Hash slotKeyHash = slotKey.hash();
+    final ShomeiSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
     accountStateTrie.putWithTrace(
@@ -272,9 +273,9 @@ public class WorldstateTraceTest {
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
     // Write again, somewhere else
-    final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
-    final Hash newSlotKeyHash = HashProvider.trieHash(newSlotKey);
-    final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
+    final ShomeiSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
+    final Hash newSlotKeyHash = newSlotKey.hash();
+    final ShomeiSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
     Trace trace4 = account2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 

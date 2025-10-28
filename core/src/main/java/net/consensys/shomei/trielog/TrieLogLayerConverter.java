@@ -14,7 +14,8 @@
 package net.consensys.shomei.trielog;
 
 import static net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper.WRAP_ACCOUNT;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
+import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeByte32;
+import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeCode;
 
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
@@ -28,7 +29,6 @@ import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
@@ -248,23 +248,23 @@ public class TrieLogLayerConverter {
     in.leaveList();
 
     Bytes32 keccakCodeHash;
-    Bytes32 mimcCodeHash;
+    Bytes32 shomeiCodeHash;
     UInt256 codeSize;
 
     if (newCode.isEmpty()) {
       if (priorAccount.account == null) {
         keccakCodeHash = ZkAccount.EMPTY_KECCAK_CODE_HASH.getOriginalUnsafeValue();
-        mimcCodeHash = ZkAccount.EMPTY_CODE_HASH;
+        shomeiCodeHash = ZkAccount.EMPTY_CODE_HASH;
         codeSize = UInt256.ZERO;
       } else {
         keccakCodeHash = priorAccount.account.getCodeHash();
-        mimcCodeHash = priorAccount.account.getMimcCodeHash();
+        shomeiCodeHash = priorAccount.account.getShomeiCodeHash();
         codeSize = priorAccount.account.getCodeSize();
       }
     } else {
       final Bytes code = newCode.get();
       keccakCodeHash = HashProvider.keccak256(code);
-      mimcCodeHash = prepareMimcCodeHash(code);
+      shomeiCodeHash = computeShomeiCodeHash(code);
       codeSize = UInt256.valueOf(code.size());
     }
 
@@ -273,30 +273,22 @@ public class TrieLogLayerConverter {
         nonce,
         balance,
         storageRoot,
-        Hash.wrap(mimcCodeHash),
+        Hash.wrap(shomeiCodeHash),
         safeByte32(keccakCodeHash),
         codeSize);
   }
 
   /**
-   * The MiMC hasher operates over field elements and the overall operation should be ZK friendly.
+   * The Poseidon hasher operates over field elements and the overall operation should be ZK friendly.
    * Each opcode making up the code to hash fit on a single byte. Since it would be too inefficient
-   * to use one field element per opcode we group them in “limbs” of 16 bytes (so 16 opcodes per
+   * to use one field element per opcode we group them in “limbs” of 2 bytes (so 2 opcodes per
    * limbs).
    *
    * @param code bytecode
-   * @return mimc code hash
+   * @return poseidon code hash
    */
-  private static Hash prepareMimcCodeHash(final Bytes code) {
-    final int sizeChunk = Bytes32.SIZE / 2;
-    final int numChunks = (int) Math.ceil((double) code.size() / sizeChunk);
-    final MutableBytes mutableBytes = MutableBytes.create(numChunks * Bytes32.SIZE);
-    int offset = 0;
-    for (int i = 0; i < numChunks; i++) {
-      int length = Math.min(sizeChunk, code.size() - offset);
-      mutableBytes.set(i * Bytes32.SIZE + (Bytes32.SIZE - length), code.slice(offset, length));
-      offset += length;
-    }
-    return HashProvider.trieHash(mutableBytes);
+  private static Hash computeShomeiCodeHash(final Bytes code) {
+    return safeCode(code).hash();
   }
+
 }

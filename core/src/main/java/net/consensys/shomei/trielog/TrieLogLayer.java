@@ -17,8 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.ZkValue;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
-import net.consensys.zkevm.HashProvider;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -90,17 +89,17 @@ public class TrieLogLayer {
   }
 
   public AccountKey addAccountChange(
-      final MimcSafeBytes<Address> address,
+      final ShomeiSafeBytes<Address> address,
       final ZkAccount oldValue,
       final ZkAccount newValue,
       final boolean isCleared) {
-    final AccountKey accountKey = new AccountKey(HashProvider.trieHash(address), address);
+    final AccountKey accountKey = new AccountKey(address.hash(), address);
     addAccountChange(accountKey, oldValue, newValue, isCleared);
     return accountKey;
   }
 
   public AccountKey addAccountChange(
-      final MimcSafeBytes<Address> address, final ZkAccount oldValue, final ZkAccount newValue) {
+          final ShomeiSafeBytes<Address> address, final ZkAccount oldValue, final ZkAccount newValue) {
     return addAccountChange(address, oldValue, newValue, false);
   }
 

@@ -13,14 +13,15 @@
 
 package net.consensys.shomei;
 
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
+import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeByte32;
 import static net.consensys.zkevm.HashProvider.keccak256;
 import static net.consensys.zkevm.HashProvider.trieHash;
 
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.trielog.TrieLogAccountValue;
 import net.consensys.shomei.util.bytes.BytesBuffer;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
 
 import java.util.Objects;
 
@@ -34,13 +35,13 @@ import org.hyperledger.besu.datatypes.Wei;
 /** A ZkAccount is a representation of an Ethereum account in the ZkEvm world. */
 public class ZkAccount {
 
-  public static final MimcSafeBytes<Bytes32> EMPTY_KECCAK_CODE_HASH =
+  public static final ShomeiSafeBytes<Bytes32> EMPTY_KECCAK_CODE_HASH =
       safeByte32(keccak256(Bytes.EMPTY));
   public static final Hash EMPTY_CODE_HASH = trieHash(Bytes32.ZERO);
 
   protected AccountKey accountKey;
-  protected MimcSafeBytes<Bytes32> keccakCodeHash;
-  protected Hash mimcCodeHash;
+  protected ShomeiSafeBytes<Bytes32> keccakCodeHash;
+  protected Hash shomeiCodeHash;
 
   protected UInt256 codeSize;
   protected UInt256 nonce;
@@ -52,15 +53,15 @@ public class ZkAccount {
       final UInt256 nonce,
       final Wei balance,
       final Hash storageRoot,
-      final Hash mimcCodeHash,
-      final MimcSafeBytes<Bytes32> keccakCodeHash,
+      final Hash shomeiCodeHash,
+      final ShomeiSafeBytes<Bytes32> keccakCodeHash,
       final UInt256 codeSize) {
     this.accountKey = accountKey;
     this.nonce = nonce;
     this.balance = balance;
     this.storageRoot = storageRoot;
     this.keccakCodeHash = keccakCodeHash;
-    this.mimcCodeHash = mimcCodeHash;
+    this.shomeiCodeHash = shomeiCodeHash;
     this.codeSize = codeSize;
   }
 
@@ -69,15 +70,15 @@ public class ZkAccount {
       final long nonce,
       final Wei balance,
       final Hash storageRoot,
-      final Hash mimcCodeHash,
-      final MimcSafeBytes<Bytes32> keccakCodeHash,
+      final Hash shomeiCodeHash,
+      final ShomeiSafeBytes<Bytes32> keccakCodeHash,
       final long codeSize) {
     this(
         accountKey,
         UInt256.valueOf(nonce),
         balance,
         storageRoot,
-        mimcCodeHash,
+            shomeiCodeHash,
         keccakCodeHash,
         UInt256.valueOf(codeSize));
   }
@@ -88,7 +89,7 @@ public class ZkAccount {
         accountValue.getNonce(),
         accountValue.getBalance(),
         accountValue.getStorageRoot(),
-        accountValue.getMimcCodeHash(),
+        accountValue.getShomeiCodeHash(),
         safeByte32(accountValue.getCodeHash()),
         accountValue.getCodeSize());
   }
@@ -99,7 +100,7 @@ public class ZkAccount {
         toCopy.nonce,
         toCopy.balance,
         toCopy.storageRoot,
-        toCopy.mimcCodeHash,
+        toCopy.shomeiCodeHash,
         toCopy.keccakCodeHash,
         toCopy.codeSize);
   }
@@ -132,7 +133,7 @@ public class ZkAccount {
    *
    * @return the account address
    */
-  public MimcSafeBytes<Address> getAddress() {
+  public ShomeiSafeBytes<Address> getAddress() {
     return accountKey.address();
   }
 
@@ -164,12 +165,12 @@ public class ZkAccount {
   }
 
   /**
-   * Returns the mimc code hash
+   * Returns the Shomei code hash
    *
-   * @return the mimc code hash
+   * @return the Shomei code hash
    */
-  public Hash getMimcCodeHash() {
-    return mimcCodeHash;
+  public Hash getShomeiCodeHash() {
+    return shomeiCodeHash;
   }
 
   /**
@@ -191,13 +192,13 @@ public class ZkAccount {
   }
 
   /**
-   * Returns the encoded bytes of the account as a safe representation for the mimc algorithm
+   * Returns the encoded bytes of the account as a safe representation for the hash algorithm
    *
-   * @return
+   * @return encoded bytes
    */
-  public MimcSafeBytes<Bytes> getEncodedBytes() {
-    return MimcSafeBytes.concatenateSafeElements(
-        nonce, balance, storageRoot, mimcCodeHash, keccakCodeHash, codeSize);
+  public ShomeiSafeBytes<Bytes> getEncodedBytes() {
+    return ShomeiSafeBytesProvider.concatenateSafeElements(
+        nonce, balance, storageRoot, shomeiCodeHash, keccakCodeHash, codeSize);
   }
 
   @Override
@@ -211,7 +212,7 @@ public class ZkAccount {
     ZkAccount zkAccount = (ZkAccount) o;
     return Objects.equals(accountKey, zkAccount.accountKey)
         && Objects.equals(keccakCodeHash, zkAccount.keccakCodeHash)
-        && Objects.equals(mimcCodeHash, zkAccount.mimcCodeHash)
+        && Objects.equals(shomeiCodeHash, zkAccount.shomeiCodeHash)
         && Objects.equals(codeSize, zkAccount.codeSize)
         && Objects.equals(nonce, zkAccount.nonce)
         && Objects.equals(balance, zkAccount.balance)
@@ -221,7 +222,7 @@ public class ZkAccount {
   @Override
   public int hashCode() {
     return Objects.hash(
-        accountKey, keccakCodeHash, mimcCodeHash, codeSize, nonce, balance, storageRoot);
+        accountKey, keccakCodeHash, shomeiCodeHash, codeSize, nonce, balance, storageRoot);
   }
 
   @Override
@@ -231,8 +232,8 @@ public class ZkAccount {
         + accountKey
         + ", keccakCodeHash="
         + keccakCodeHash
-        + ", mimcCodeHash="
-        + mimcCodeHash
+        + ", shomeiCodeHash="
+        + shomeiCodeHash
         + ", codeSize="
         + codeSize
         + ", nonce="

@@ -14,12 +14,12 @@
 package net.consensys.shomei.trie;
 
 import static net.consensys.shomei.trie.DigestGenerator.createDumDigest;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.trie.model.LeafOpening;
 import net.consensys.shomei.trie.storage.InMemoryStorage;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
 import net.consensys.zkevm.HashProvider;
 
 import org.apache.tuweni.bytes.Bytes;
@@ -68,10 +68,10 @@ public class ZKTrieTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
 
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.trieHash(key);
+    final ShomeiSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(42));
+    final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, value);
     zkTrie.commit();
@@ -92,10 +92,10 @@ public class ZKTrieTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.trieHash(key);
+    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final ShomeiSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final ShomeiSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
+    final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, dumValue);
 
@@ -127,9 +127,9 @@ public class ZKTrieTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final ShomeiSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
+    final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, value);
 

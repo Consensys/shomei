@@ -16,7 +16,7 @@ package net.consensys.shomei.util;
 import static net.consensys.shomei.ZkAccount.EMPTY_CODE_HASH;
 import static net.consensys.shomei.ZkAccount.EMPTY_KECCAK_CODE_HASH;
 import static net.consensys.shomei.trie.ZKTrie.DEFAULT_TRIE_ROOT;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
+import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeByte32;
 
 import net.consensys.shomei.MutableZkAccount;
 import net.consensys.shomei.ZkAccount;
@@ -24,7 +24,7 @@ import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 import net.consensys.shomei.trielog.AccountKey;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
@@ -83,7 +83,7 @@ public class TestFixtureGenerator {
     return mutableBytes;
   }
 
-  public static MimcSafeBytes<Bytes32> createDumFullBytes(int value) {
+  public static ShomeiSafeBytes<Bytes32> createDumFullBytes(int value) {
     MutableBytes32 mutableBytes = MutableBytes32.create();
     mutableBytes.set(0, (byte) value);
     return safeByte32(mutableBytes);

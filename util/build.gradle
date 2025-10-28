@@ -13,6 +13,8 @@ tasks.named('jar') {
 }
 
 dependencies {
+    implementation project(':crypto')
+    
     implementation 'io.consensys.tuweni:tuweni-bytes'
     implementation 'io.consensys.tuweni:tuweni-units'
     implementation 'org.hyperledger.besu:besu-datatypes'

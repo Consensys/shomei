@@ -30,7 +30,7 @@ public class TrieLogAccountValue {
   private final Hash storageRoot;
   private final Hash codeHash;
 
-  private final Hash mimcCodeHash;
+  private final Hash shomeiCodeHash;
 
   private final UInt256 codeSize;
 
@@ -39,13 +39,13 @@ public class TrieLogAccountValue {
       final Wei balance,
       final Hash storageRoot,
       final Hash codeHash,
-      final Hash mimcCodeHash,
+      final Hash shomeiCodeHash,
       final UInt256 codeSize) {
     this.nonce = nonce;
     this.balance = balance;
     this.storageRoot = storageRoot;
     this.codeHash = codeHash;
-    this.mimcCodeHash = mimcCodeHash;
+    this.shomeiCodeHash = shomeiCodeHash;
     this.codeSize = codeSize;
   }
 
@@ -54,7 +54,7 @@ public class TrieLogAccountValue {
     this.balance = zkAccount.getBalance();
     this.storageRoot = zkAccount.getStorageRoot();
     this.codeHash = zkAccount.getCodeHash();
-    this.mimcCodeHash = zkAccount.getMimcCodeHash();
+    this.shomeiCodeHash = zkAccount.getShomeiCodeHash();
     this.codeSize = zkAccount.getCodeSize();
   }
 
@@ -95,12 +95,12 @@ public class TrieLogAccountValue {
   }
 
   /**
-   * The mimc hash of the EVM bytecode associated with this account.
+   * The shomei hash of the EVM bytecode associated with this account.
    *
-   * @return the mimc hash of the account code.
+   * @return the shomei hash of the account code.
    */
-  public Hash getMimcCodeHash() {
-    return mimcCodeHash;
+  public Hash getShomeiCodeHash() {
+    return shomeiCodeHash;
   }
 
   /**
@@ -119,7 +119,7 @@ public class TrieLogAccountValue {
     out.writeUInt256Scalar(balance);
     out.writeBytes(storageRoot);
     out.writeBytes(codeHash);
-    out.writeBytes(mimcCodeHash);
+    out.writeBytes(shomeiCodeHash);
     out.writeUInt256Scalar(codeSize);
     out.endList();
   }
@@ -131,7 +131,7 @@ public class TrieLogAccountValue {
     final Wei balance = Wei.of(in.readUInt256Scalar());
     Bytes32 storageRoot;
     Bytes32 keccakCodeHash;
-    Bytes32 mimcCodeHash;
+    Bytes32 shomeiCodeHash;
     UInt256 codeSize;
     if (in.nextIsNull()) {
       storageRoot = ZKTrie.DEFAULT_TRIE_ROOT;
@@ -147,10 +147,10 @@ public class TrieLogAccountValue {
     }
 
     if (in.nextIsNull()) {
-      mimcCodeHash = ZkAccount.EMPTY_CODE_HASH;
+      shomeiCodeHash = ZkAccount.EMPTY_CODE_HASH;
       in.skipNext();
     } else {
-      mimcCodeHash = in.readBytes32();
+      shomeiCodeHash = in.readBytes32();
     }
 
     if (in.nextIsNull()) {
@@ -167,7 +167,7 @@ public class TrieLogAccountValue {
         balance,
         Hash.wrap(storageRoot),
         Hash.wrap(keccakCodeHash),
-        Hash.wrap(mimcCodeHash),
+        Hash.wrap(shomeiCodeHash),
         codeSize);
   }
 }

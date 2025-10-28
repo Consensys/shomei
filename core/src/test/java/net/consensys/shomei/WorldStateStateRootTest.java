@@ -27,8 +27,7 @@ import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 import net.consensys.shomei.trielog.AccountKey;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
-import net.consensys.zkevm.HashProvider;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.datatypes.Hash;
@@ -51,7 +50,7 @@ public class WorldStateStateRootTest {
             EMPTY_KECCAK_CODE_HASH,
             0L);
 
-    assertThat(HashProvider.trieHash(zkAccount.getEncodedBytes()))
+    assertThat(zkAccount.getEncodedBytes().hash())
         .isEqualTo(
             Hash.fromHexString(
                 "0x11314cf80cdd63a376e468ea9e6c672109bcfe516f0349382df82e1a876ca8b2"));
@@ -87,7 +86,7 @@ public class WorldStateStateRootTest {
 
     MutableZkAccount account = getAccountOne();
 
-    assertThat(HashProvider.trieHash(account.getEncodedBytes()))
+    assertThat(account.getEncodedBytes().hash())
         .isEqualTo(
             Hash.fromHexString(
                 "0x11314cf80cdd63a376e468ea9e6c672109bcfe516f0349382df82e1a876ca8b2"));
@@ -160,9 +159,9 @@ public class WorldStateStateRootTest {
         ZKTrie.createTrie(
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
-    final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
-    final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final ShomeiSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final Hash slotKeyHash = slotKey.hash();
+    final ShomeiSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     account2Storage.putWithTrace(
         slotKeyHash,
         slotKey,
@@ -205,9 +204,9 @@ public class WorldStateStateRootTest {
         ZKTrie.createTrie(
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
-    final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
-    final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final ShomeiSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final Hash slotKeyHash = slotKey.hash();
+    final ShomeiSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
     accountStateTrie.putWithTrace(
@@ -231,9 +230,9 @@ public class WorldStateStateRootTest {
                 "0x0f11405ba708b9aeb8de0a341d80682b3a59c628e0694af97e357e86bb9567cf"));
 
     // Write again, somewhere else
-    final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
-    final Hash newSlotKeyHash = HashProvider.trieHash(newSlotKey);
-    final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
+    final ShomeiSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
+    final Hash newSlotKeyHash = newSlotKey.hash();
+    final ShomeiSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
     account2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
     accountStateTrie.putWithTrace(

@@ -14,7 +14,7 @@
 package net.consensys.shomei;
 
 import static net.consensys.shomei.util.TestFixtureGenerator.createDumDigest;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
@@ -22,7 +22,8 @@ import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 import net.consensys.shomei.trie.proof.MerkleProof;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
 import net.consensys.zkevm.HashProvider;
 
 import java.io.IOException;
@@ -53,7 +54,7 @@ public class WorldstateProofTest {
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
-    final MerkleProof proof = accountStateTrie.getProof(hkey, MimcSafeBytes.safeByte32(key));
+    final MerkleProof proof = accountStateTrie.getProof(hkey, ShomeiSafeBytesProvider.safeByte32(key));
 
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(proof))
         .isEqualToIgnoringWhitespace(getResources("testGetProofForMissingKey.json"));
@@ -62,8 +63,8 @@ public class WorldstateProofTest {
   @Test
   public void testGetProofForAvailableKey() throws IOException {
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
+    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
+    final ShomeiSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
     final Hash hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =

@@ -13,8 +13,8 @@
 
 package net.consensys.shomei.trielog;
 
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
-import net.consensys.zkevm.HashProvider;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
 
 import java.util.Objects;
 
@@ -22,19 +22,19 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
 import org.jetbrains.annotations.NotNull;
 
-public record AccountKey(Hash accountHash, MimcSafeBytes<Address> address)
+public record AccountKey(Hash accountHash, ShomeiSafeBytes<Address> address)
     implements Comparable<AccountKey> {
 
   public AccountKey(final Hash accountHash, final Address address) {
-    this(accountHash, MimcSafeBytes.safeAddress(address));
+    this(accountHash, ShomeiSafeBytesProvider.safeAddress(address));
   }
 
   public AccountKey(final Address address) {
-    this(MimcSafeBytes.safeAddress(address));
+    this(ShomeiSafeBytesProvider.safeAddress(address));
   }
 
-  public AccountKey(final MimcSafeBytes<Address> address) {
-    this(HashProvider.trieHash(address), address);
+  public AccountKey(final ShomeiSafeBytes<Address> address) {
+    this(address.hash(), address);
   }
 
   @Override

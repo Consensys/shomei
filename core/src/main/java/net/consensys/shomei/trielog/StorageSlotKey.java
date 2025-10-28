@@ -13,10 +13,9 @@
 
 package net.consensys.shomei.trielog;
 
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeUInt256;
+import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeUInt256;
 
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
-import net.consensys.zkevm.HashProvider;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
 
 import java.util.Objects;
 
@@ -24,7 +23,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Hash;
 import org.jetbrains.annotations.NotNull;
 
-public record StorageSlotKey(Hash slotHash, MimcSafeBytes<UInt256> slotKey)
+public record StorageSlotKey(Hash slotHash, ShomeiSafeBytes<UInt256> slotKey)
     implements Comparable<StorageSlotKey> {
 
   public StorageSlotKey(final Hash slotHash, final UInt256 slotKey) {
@@ -32,7 +31,7 @@ public record StorageSlotKey(Hash slotHash, MimcSafeBytes<UInt256> slotKey)
   }
 
   public StorageSlotKey(final UInt256 slotKey) {
-    this(HashProvider.trieHash(safeUInt256(slotKey)), slotKey);
+    this(safeUInt256(slotKey).hash(), slotKey);
   }
 
   @Override

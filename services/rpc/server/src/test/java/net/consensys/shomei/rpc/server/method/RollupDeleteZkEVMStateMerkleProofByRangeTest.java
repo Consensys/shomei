@@ -27,7 +27,7 @@ import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.trace.Trace;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
 
 import java.util.List;
 
@@ -73,17 +73,17 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
     final List<Trace> traces =
-        List.of(accountStateTrie.readWithTrace(Hash.ZERO, MimcSafeBytes.safeByte32(Hash.ZERO)));
+        List.of(accountStateTrie.readWithTrace(Hash.ZERO, ShomeiSafeBytesProvider.safeByte32(Hash.ZERO)));
 
     final List<Trace> traces2 =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.wrap(Bytes32.random()), MimcSafeBytes.safeByte32(Bytes32.random())));
+                Hash.wrap(Bytes32.random()), ShomeiSafeBytesProvider.safeByte32(Bytes32.random())));
 
     final List<Trace> traces3 =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.wrap(Bytes32.random()), MimcSafeBytes.safeByte32(Bytes32.random())));
+                Hash.wrap(Bytes32.random()), ShomeiSafeBytesProvider.safeByte32(Bytes32.random())));
 
     final TraceManager.TraceManagerUpdater updater = traceManager.updater();
     updater.saveZkStateRootHash(0, Hash.wrap(accountStateTrie.getTopRootHash()));

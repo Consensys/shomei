@@ -14,7 +14,7 @@
 package net.consensys.shomei.trie;
 
 import static net.consensys.shomei.trie.DigestGenerator.createDumDigest;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.trie.json.JsonTraceParser;
@@ -25,8 +25,7 @@ import net.consensys.shomei.trie.trace.ReadTrace;
 import net.consensys.shomei.trie.trace.ReadZeroTrace;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trie.trace.UpdateTrace;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
-import net.consensys.zkevm.HashProvider;
+import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,9 +52,9 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final ShomeiSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
+    final Hash hkey = key.hash();
 
     final InsertionTrace expectedTrace = (InsertionTrace) zkTrie.putWithTrace(hkey, key, value);
 
@@ -73,10 +72,10 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.trieHash(key);
+    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final ShomeiSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final ShomeiSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
+    final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, dumValue);
 
@@ -95,9 +94,9 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final ShomeiSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
+    final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, value);
 
@@ -117,9 +116,9 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final ShomeiSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final Hash hkey = key.hash();
 
     // try read zero trace before inserting the key in the trie
     final ReadZeroTrace expectedReadZeroTrace = (ReadZeroTrace) zkTrie.readWithTrace(hkey, key);
@@ -146,14 +145,13 @@ public class TraceSerializationTest {
 
   @Test
   public void testEncodeAndDecodeListOfTraces() throws JsonProcessingException {
-
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.trieHash(key);
+    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final ShomeiSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final ShomeiSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
+    final Hash hkey = key.hash();
 
     List<Trace> expectedTraces = new ArrayList<>();
     expectedTraces.add(zkTrie.putWithTrace(hkey, key, dumValue));

@@ -13,27 +13,13 @@
 
 package net.consensys.shomei.cli.option;
 
-import net.consensys.zkevm.HashProvider;
+import net.consensys.zkevm.HashFunction;
 
-import java.util.function.Function;
-
-import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
 import picocli.CommandLine;
 
 public class HashFunctionOption {
 
-  public enum HashFunction {
-    KECCAK256(HashProvider::keccak256),
-    MIMC_BN254(HashProvider::mimcBn254),
-    MIMC_BLS12_377(HashProvider::mimcBls12377);
 
-    Function<Bytes, Hash> hashFunction;
-
-    HashFunction(Function<Bytes, Hash> hashFunction) {
-      this.hashFunction = hashFunction;
-    }
-  }
 
   /**
    * Create Haah Function option.
@@ -50,12 +36,12 @@ public class HashFunctionOption {
       names = {"--hash-function"},
       paramLabel = "<CURVE>",
       description =
-          "The hash function to use (MIMC_BLS12_377, MIMC_BN254, KECCAK256) (default: ${DEFAULT-VALUE})",
+          "The hash function to use (MIMC_BLS12_377, MIMC_BN254, POSEIDON_2, KECCAK256) (default: ${DEFAULT-VALUE})",
       arity = "1")
   private HashFunction hashFunction = DEFAULT_HASH_FUNCTION;
 
-  public Function<Bytes, Hash> getHashFunction() {
-    return hashFunction.hashFunction;
+  public HashFunction getHashFunction() {
+    return hashFunction;
   }
 
   public static class Builder {

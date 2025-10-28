@@ -14,7 +14,7 @@
 package net.consensys.shomei.worldview;
 
 import static net.consensys.shomei.trie.ZKTrie.DEFAULT_TRIE_ROOT;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeUInt256;
+import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeUInt256;
 
 import net.consensys.shomei.MutableZkAccount;
 import net.consensys.shomei.ZkAccount;

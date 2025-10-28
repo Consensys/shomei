@@ -13,7 +13,6 @@
 
 package net.consensys.zkevm;
 
-import java.util.function.Function;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,8 +24,7 @@ import org.slf4j.LoggerFactory;
 
 public class HashProvider {
   private static final Logger LOG = LoggerFactory.getLogger(HashProvider.class);
-  // default to bls12-377
-  private static Function<Bytes, Hash> trieHashFunction = HashProvider::mimcBls12377;
+  private static HashFunction hashFunction = HashFunction.MIMC_BLS12_377;
 
   @SuppressWarnings("WeakerAccess")
   public static final boolean ENABLED;
@@ -38,7 +36,7 @@ public class HashProvider {
       enabled = true;
     } catch (final Throwable t) {
       LOG.atError()
-          .setMessage("Unable to load MIMC native library with error : {}")
+          .setMessage("Unable to load Gnark native library with error : {}")
           .addArgument(t.getMessage())
           .log();
       enabled = false;
@@ -46,12 +44,16 @@ public class HashProvider {
     ENABLED = enabled;
   }
 
-  public static Hash trieHash(final Bytes bytes) {
-    return trieHashFunction.apply(bytes);
+    public static HashFunction getHashFunction() {
+        return hashFunction;
+    }
+
+    public static Hash trieHash(final Bytes bytes) {
+    return hashFunction.getHashFunction().apply(bytes);
   }
 
-  public static void setTrieHashFunction(Function<Bytes, Hash> hashFunction) {
-    trieHashFunction = hashFunction;
+  public static void setTrieHashFunction(final HashFunction function) {
+    hashFunction = function;
   }
 
   public static Hash keccak256(final Bytes bytes) {
@@ -69,4 +71,10 @@ public class HashProvider {
     LibGnark.computeMimcBn254(bytes.toArrayUnsafe(), bytes.size(), output);
     return Hash.wrap(Bytes32.wrap(output));
   }
+
+    public static Hash poseidon2(final Bytes bytes) {
+        final byte[] output = new byte[Bytes32.SIZE];
+        LibGnark.computeMimcBn254(bytes.toArrayUnsafe(), bytes.size(), output);
+        return Hash.wrap(Bytes32.wrap(output));
+    }
 }
