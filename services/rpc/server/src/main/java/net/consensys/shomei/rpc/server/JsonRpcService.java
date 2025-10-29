@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,20 +10,23 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server;
 
 import static com.google.common.collect.Streams.stream;
 
-import net.consensys.shomei.fullsync.FullSyncDownloader;
-import net.consensys.shomei.metrics.MetricsService;
-import net.consensys.shomei.rpc.server.method.LineaGetProof;
-import net.consensys.shomei.rpc.server.method.RollupDeleteZkEVMStateMerkleProofByRange;
-import net.consensys.shomei.rpc.server.method.RollupForkChoiceUpdated;
-import net.consensys.shomei.rpc.server.method.RollupGetZkEVMBlockNumber;
-import net.consensys.shomei.rpc.server.method.RollupGetZkEVMStateMerkleProofV0;
-import net.consensys.shomei.rpc.server.method.SendRawTrieLog;
-import net.consensys.shomei.storage.ZkWorldStateArchive;
+import org.hyperledger.besu.ethereum.api.handlers.HandlerFactory;
+import org.hyperledger.besu.ethereum.api.handlers.TimeoutOptions;
+import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcConfiguration;
+import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcServiceException;
+import org.hyperledger.besu.ethereum.api.jsonrpc.authentication.DefaultAuthenticationService;
+import org.hyperledger.besu.ethereum.api.jsonrpc.execution.BaseJsonRpcProcessor;
+import org.hyperledger.besu.ethereum.api.jsonrpc.execution.JsonRpcExecutor;
+import org.hyperledger.besu.ethereum.api.jsonrpc.health.HealthService;
+import org.hyperledger.besu.ethereum.api.jsonrpc.health.LivenessCheck;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.exception.Logging403ErrorHandler;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.AdminChangeLogLevel;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
+import org.hyperledger.besu.util.ExceptionUtils;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -55,19 +58,15 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CorsHandler;
-import org.hyperledger.besu.ethereum.api.handlers.HandlerFactory;
-import org.hyperledger.besu.ethereum.api.handlers.TimeoutOptions;
-import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcConfiguration;
-import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcServiceException;
-import org.hyperledger.besu.ethereum.api.jsonrpc.authentication.DefaultAuthenticationService;
-import org.hyperledger.besu.ethereum.api.jsonrpc.execution.BaseJsonRpcProcessor;
-import org.hyperledger.besu.ethereum.api.jsonrpc.execution.JsonRpcExecutor;
-import org.hyperledger.besu.ethereum.api.jsonrpc.health.HealthService;
-import org.hyperledger.besu.ethereum.api.jsonrpc.health.LivenessCheck;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.exception.Logging403ErrorHandler;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.AdminChangeLogLevel;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
-import org.hyperledger.besu.util.ExceptionUtils;
+import net.consensys.shomei.fullsync.FullSyncDownloader;
+import net.consensys.shomei.metrics.MetricsService;
+import net.consensys.shomei.rpc.server.method.LineaGetProof;
+import net.consensys.shomei.rpc.server.method.RollupDeleteZkEVMStateMerkleProofByRange;
+import net.consensys.shomei.rpc.server.method.RollupForkChoiceUpdated;
+import net.consensys.shomei.rpc.server.method.RollupGetZkEVMBlockNumber;
+import net.consensys.shomei.rpc.server.method.RollupGetZkEVMStateMerkleProofV0;
+import net.consensys.shomei.rpc.server.method.SendRawTrieLog;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

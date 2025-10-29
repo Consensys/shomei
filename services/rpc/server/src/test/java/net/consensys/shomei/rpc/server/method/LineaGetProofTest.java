@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.trie.ZKTrie.EMPTY_TRIE;
@@ -20,17 +19,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 
-import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
-import net.consensys.shomei.storage.ZkWorldStateArchive;
-import net.consensys.shomei.storage.worldstate.WorldStateStorage;
-import net.consensys.shomei.trie.model.FlattenedLeaf;
-import net.consensys.shomei.trie.storage.TrieStorage;
-import net.consensys.shomei.worldview.ZkEvmWorldState;
-
-import java.util.Map;
-import java.util.Optional;
-
-import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
@@ -38,6 +26,17 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
+
+import java.util.Map;
+import java.util.Optional;
+
+import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
+import net.consensys.shomei.storage.worldstate.WorldStateStorage;
+import net.consensys.shomei.trie.model.FlattenedLeaf;
+import net.consensys.shomei.trie.storage.TrieStorage;
+import net.consensys.shomei.worldview.ZkEvmWorldState;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,14 +54,21 @@ public class LineaGetProofTest {
     final ZkEvmWorldState zkEvmWorldState = mock(ZkEvmWorldState.class);
     final WorldStateStorage worldStateStorage = mock(WorldStateStorage.class);
     lenient().when(worldStateArchive.getCurrentBlockHash()).thenReturn(Hash.EMPTY);
-    lenient().when(worldStateArchive.getCachedWorldState(eq(1L))).thenReturn(Optional.of(zkEvmWorldState));
-    lenient().when(worldStateArchive.getCachedWorldState(eq(Hash.EMPTY)))
+    lenient()
+        .when(worldStateArchive.getCachedWorldState(eq(1L)))
+        .thenReturn(Optional.of(zkEvmWorldState));
+    lenient()
+        .when(worldStateArchive.getCachedWorldState(eq(Hash.EMPTY)))
         .thenReturn(Optional.of(zkEvmWorldState));
     lenient().when(zkEvmWorldState.getZkEvmWorldStateStorage()).thenReturn(worldStateStorage);
-    lenient().when(zkEvmWorldState.getStateRootHash()).thenReturn(Hash.wrap(EMPTY_TRIE.getTopRootHash()));
-    lenient().when(worldStateStorage.getTrieNode(any(Bytes.class), any(Bytes.class)))
+    lenient()
+        .when(zkEvmWorldState.getStateRootHash())
+        .thenReturn(Hash.wrap(EMPTY_TRIE.getTopRootHash()));
+    lenient()
+        .when(worldStateStorage.getTrieNode(any(Bytes.class), any(Bytes.class)))
         .thenReturn(Optional.of(EMPTY_TRIE.getTopRootHash()));
-    lenient().when(worldStateStorage.getNearestKeys(any(Bytes.class)))
+    lenient()
+        .when(worldStateStorage.getNearestKeys(any(Bytes.class)))
         .thenReturn(
             new TrieStorage.Range(
                 Map.entry(Bytes.of(0x01), FlattenedLeaf.HEAD),

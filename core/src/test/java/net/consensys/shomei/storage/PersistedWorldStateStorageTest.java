@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,10 +10,17 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.rlp.RLPOutput;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
 
 import net.consensys.shomei.observer.TrieLogObserver;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
@@ -21,15 +28,7 @@ import net.consensys.shomei.storage.worldstate.PersistedWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage.WorldStateUpdater;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 import net.consensys.shomei.trie.trace.Trace;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
-
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.rlp.RLPOutput;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,9 +60,7 @@ public class PersistedWorldStateStorageTest {
 
   private static final Hash HASH_TEST = Hash.hash(BYTES_TEST);
 
-
-  @TempDir
-  Path tempData;
+  @TempDir Path tempData;
   protected PersistedWorldStateStorage storage;
   protected TrieLogManager trieLogManager;
   protected TraceManager traceManager;
@@ -72,8 +69,7 @@ public class PersistedWorldStateStorageTest {
   @BeforeEach
   public void setup() {
     var provider =
-        new RocksDBStorageProvider(
-            new RocksDBConfigurationBuilder().databaseDir(tempData).build());
+        new RocksDBStorageProvider(new RocksDBConfigurationBuilder().databaseDir(tempData).build());
     storage =
         new PersistedWorldStateStorage(
             provider.getFlatLeafStorage(),

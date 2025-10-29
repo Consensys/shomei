@@ -1,45 +1,45 @@
 apply plugin: 'java-library'
 
 tasks.named('jar') {
-    archiveBaseName = 'shomei-trie'
-    manifest {
-        attributes(
-                'Specification-Title': archiveBaseName,
-                'Specification-Version': project.version,
-                'Implementation-Title': archiveBaseName,
-                'Implementation-Version': calculateVersion()
-        )
-    }
+  archiveBaseName = 'shomei-trie'
+  manifest {
+    attributes(
+      'Specification-Title': archiveBaseName,
+      'Specification-Version': project.version,
+      'Implementation-Title': archiveBaseName,
+      'Implementation-Version': calculateVersion()
+      )
+  }
 }
 
 dependencies {
 
-    // Hyperledger Besu dependencies
-    implementation 'org.hyperledger.besu:besu-datatypes'
-    implementation 'org.hyperledger.besu.internal:besu-crypto-algorithms'
-    implementation 'org.hyperledger.besu.internal:besu-ethereum-rlp'
-    implementation 'org.hyperledger.besu.internal:besu-ethereum-trie'
+  // Hyperledger Besu dependencies
+  implementation 'org.hyperledger.besu:besu-datatypes'
+  implementation 'org.hyperledger.besu.internal:besu-crypto-algorithms'
+  implementation 'org.hyperledger.besu.internal:besu-ethereum-rlp'
+  implementation 'org.hyperledger.besu.internal:besu-ethereum-trie'
 
-    // JSON serialization/deserialization library
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
+  // JSON serialization/deserialization library
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-    // Google Guava library
-    implementation 'com.google.guava:guava'
+  // Google Guava library
+  implementation 'com.google.guava:guava'
 
-    // Apache Tuweni library
-    implementation 'io.consensys.tuweni:tuweni-bytes'
-    implementation 'io.consensys.tuweni:tuweni-units'
+  // Apache Tuweni library
+  implementation 'io.consensys.tuweni:tuweni-bytes'
+  implementation 'io.consensys.tuweni:tuweni-units'
 
-    // Project dependencies
-    implementation project(':crypto')
-    implementation project(':util')
+  // Project dependencies
+  implementation project(':crypto')
+  implementation project(':util')
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+  testImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
-    testImplementation 'org.assertj:assertj-core'
+  testImplementation 'org.assertj:assertj-core'
 }
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }

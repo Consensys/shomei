@@ -2,51 +2,50 @@
 apply plugin: 'java-library'
 
 tasks.named('jar') {
-    archiveBaseName = 'shomei'
-    manifest {
-        attributes(
-                'Specification-Title': archiveBaseName,
-                'Specification-Version': project.version,
-                'Implementation-Title': archiveBaseName,
-                'Implementation-Version': calculateVersion()
-        )
-    }
+  archiveBaseName = 'shomei'
+  manifest {
+    attributes(
+      'Specification-Title': archiveBaseName,
+      'Specification-Version': project.version,
+      'Implementation-Title': archiveBaseName,
+      'Implementation-Version': calculateVersion()
+      )
+  }
 }
 
 dependencies {
 
-    implementation project(':util')
-    implementation project(':sync')
-    implementation project(':core')
-    implementation project(':crypto')
-    implementation project(':trie')
-    implementation project(':services:metrics')
-    implementation project(':services:rpc:common')
-    implementation project(':services:rpc:client')
-    implementation project(':services:rpc:server')
-    implementation project(':services:storage:api')
-    implementation project(':services:storage:rocksdb')
+  implementation project(':util')
+  implementation project(':sync')
+  implementation project(':core')
+  implementation project(':crypto')
+  implementation project(':trie')
+  implementation project(':services:metrics')
+  implementation project(':services:rpc:common')
+  implementation project(':services:rpc:client')
+  implementation project(':services:rpc:server')
+  implementation project(':services:storage:api')
+  implementation project(':services:storage:rocksdb')
 
-    implementation 'io.vertx:vertx-core'
-    implementation 'io.vertx:vertx-unit'
-    implementation 'io.vertx:vertx-web'
-    implementation 'io.vertx:vertx-codegen'
-    implementation 'io.micrometer:micrometer-core'
+  implementation 'io.vertx:vertx-core'
+  implementation 'io.vertx:vertx-unit'
+  implementation 'io.vertx:vertx-web'
+  implementation 'io.vertx:vertx-codegen'
+  implementation 'io.micrometer:micrometer-core'
 
-    api 'org.slf4j:slf4j-api'
-    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
-    implementation 'org.apache.logging.log4j:log4j-core'
+  api 'org.slf4j:slf4j-api'
+  implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
+  implementation 'org.apache.logging.log4j:log4j-core'
 
-    implementation 'org.apache.commons:commons-lang3'
+  implementation 'org.apache.commons:commons-lang3'
 
-    implementation 'io.consensys.tuweni:tuweni-bytes'
-    implementation 'org.hyperledger.besu:besu-datatypes'
+  implementation 'io.consensys.tuweni:tuweni-bytes'
+  implementation 'org.hyperledger.besu:besu-datatypes'
 
-    implementation 'info.picocli:picocli'
-
+  implementation 'info.picocli:picocli'
 }
 
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }

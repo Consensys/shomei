@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,17 +10,18 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.trie;
 
 import static java.lang.String.format;
 import static net.consensys.shomei.trie.node.LeafType.fromBytes;
 
-import net.consensys.shomei.trie.node.BranchNode;
-import net.consensys.shomei.trie.node.EmptyLeafNode;
-import net.consensys.shomei.trie.node.LeafNode;
-import net.consensys.shomei.trie.node.LeafType;
-import net.consensys.shomei.trie.node.NextFreeNode;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
+import org.hyperledger.besu.ethereum.trie.Node;
+import org.hyperledger.besu.ethereum.trie.NodeFactory;
+import org.hyperledger.besu.ethereum.trie.NodeLoader;
+import org.hyperledger.besu.ethereum.trie.NullNode;
+import org.hyperledger.besu.ethereum.trie.StoredNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,15 +30,13 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import net.consensys.shomei.trie.node.BranchNode;
+import net.consensys.shomei.trie.node.EmptyLeafNode;
+import net.consensys.shomei.trie.node.LeafNode;
+import net.consensys.shomei.trie.node.LeafType;
+import net.consensys.shomei.trie.node.NextFreeNode;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
-import org.hyperledger.besu.ethereum.trie.Node;
-import org.hyperledger.besu.ethereum.trie.NodeFactory;
-import org.hyperledger.besu.ethereum.trie.NodeLoader;
-import org.hyperledger.besu.ethereum.trie.NullNode;
-import org.hyperledger.besu.ethereum.trie.StoredNode;
 
 /**
  * The StoredNodeFactory class is responsible for creating and managing stored nodes in a stored
@@ -179,8 +178,8 @@ public class StoredNodeFactory implements NodeFactory<Bytes> {
       case 2 -> {
         return decodeLeaf(input);
       }
-      default -> throw new MerkleTrieException(
-          errMessage.get() + format(": invalid node %s", type));
+      default ->
+          throw new MerkleTrieException(errMessage.get() + format(": invalid node %s", type));
     }
   }
 

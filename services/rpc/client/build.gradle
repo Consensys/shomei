@@ -2,41 +2,41 @@
 apply plugin: 'java-library'
 
 tasks.named('jar') {
-    archiveBaseName = 'shomei-rpc-client'
-    manifest {
-        attributes(
-                'Specification-Title': archiveBaseName,
-                'Specification-Version': project.version,
-                'Implementation-Title': archiveBaseName,
-                'Implementation-Version': calculateVersion()
-        )
-    }
+  archiveBaseName = 'shomei-rpc-client'
+  manifest {
+    attributes(
+      'Specification-Title': archiveBaseName,
+      'Specification-Version': project.version,
+      'Implementation-Title': archiveBaseName,
+      'Implementation-Version': calculateVersion()
+      )
+  }
 }
 
 dependencies {
-    implementation project(':core')
-    implementation project(':trie')
-    implementation project(':services:rpc:common')
+  implementation project(':core')
+  implementation project(':trie')
+  implementation project(':services:rpc:common')
 
-    // Hyperledger Besu dependencies
-    implementation 'org.hyperledger.besu.internal:besu-ethereum-api'
+  // Hyperledger Besu dependencies
+  implementation 'org.hyperledger.besu.internal:besu-ethereum-api'
 
-    // Tuweni
-    implementation 'io.consensys.tuweni:tuweni-bytes'
+  // Tuweni
+  implementation 'io.consensys.tuweni:tuweni-bytes'
 
-    // Vert.x dependencies
-    implementation 'io.vertx:vertx-core'
-    implementation 'io.vertx:vertx-web-client'
+  // Vert.x dependencies
+  implementation 'io.vertx:vertx-core'
+  implementation 'io.vertx:vertx-web-client'
 
-    // Jackson dependencies
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
+  // Jackson dependencies
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-    // Logging dependencies
-    api 'org.slf4j:slf4j-api'
-    implementation 'org.apache.logging.log4j:log4j-core'
-    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
+  // Logging dependencies
+  api 'org.slf4j:slf4j-api'
+  implementation 'org.apache.logging.log4j:log4j-core'
+  implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
 }
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,11 +10,23 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
 import static net.consensys.shomei.rpc.server.ShomeiVersion.TEST_VERSION;
+
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
+import org.hyperledger.besu.ethereum.rlp.RLP;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
 import net.consensys.shomei.rpc.server.error.JsonInvalidVersionMessage;
@@ -24,20 +36,7 @@ import net.consensys.shomei.rpc.server.model.RollupGetZkEvmStateV0Parameter;
 import net.consensys.shomei.storage.TraceManager;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.trace.Trace;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
-import org.hyperledger.besu.ethereum.rlp.RLP;
 
 public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
@@ -60,7 +59,8 @@ public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
     } catch (JsonRpcParameter.JsonRpcParameterException e) {
       throw new RuntimeException(e);
     }
-    if (!TEST_VERSION.equals(param.getZkStateManagerVersion()) && !IMPL_VERSION.equals(param.getZkStateManagerVersion())) {
+    if (!TEST_VERSION.equals(param.getZkStateManagerVersion())
+        && !IMPL_VERSION.equals(param.getZkStateManagerVersion())) {
       return new ShomeiJsonRpcErrorResponse(
           requestContext.getRequest().getId(),
           RpcErrorType.INVALID_PARAMS,

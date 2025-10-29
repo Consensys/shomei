@@ -2,32 +2,32 @@
 apply plugin: 'java-library'
 
 jar {
-    archiveBaseName = 'shomei-storage-rocksdb'
-    manifest {
-        attributes(
-                'Specification-Title': archiveBaseName,
-                'Specification-Version': project.version,
-                'Implementation-Title': archiveBaseName,
-                'Implementation-Version': calculateVersion()
-        )
-    }
+  archiveBaseName = 'shomei-storage-rocksdb'
+  manifest {
+    attributes(
+      'Specification-Title': archiveBaseName,
+      'Specification-Version': project.version,
+      'Implementation-Title': archiveBaseName,
+      'Implementation-Version': calculateVersion()
+      )
+  }
 }
 
 dependencies {
 
-    implementation project(':config')
-    implementation project(':services:storage:api')
-    implementation 'org.slf4j:slf4j-api'
-    implementation 'org.rocksdb:rocksdbjni'
-    implementation 'io.consensys.tuweni:tuweni-bytes'
-    implementation 'com.google.guava:guava'
-    implementation 'info.picocli:picocli'
+  implementation project(':config')
+  implementation project(':services:storage:api')
+  implementation 'org.slf4j:slf4j-api'
+  implementation 'org.rocksdb:rocksdbjni'
+  implementation 'io.consensys.tuweni:tuweni-bytes'
+  implementation 'com.google.guava:guava'
+  implementation 'info.picocli:picocli'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    testImplementation 'org.assertj:assertj-core'
+  testImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+  testImplementation 'org.assertj:assertj-core'
 }
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }

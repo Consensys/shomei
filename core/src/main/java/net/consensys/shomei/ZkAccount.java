@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,27 +10,26 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei;
 
 import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeByte32;
 import static net.consensys.zkevm.HashProvider.keccak256;
 import static net.consensys.zkevm.HashProvider.trieHash;
 
+import org.hyperledger.besu.datatypes.Address;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.datatypes.Wei;
+
+import java.util.Objects;
+
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.trielog.TrieLogAccountValue;
 import net.consensys.shomei.util.bytes.BytesBuffer;
 import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
 import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
-
-import java.util.Objects;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
 
 /** A ZkAccount is a representation of an Ethereum account in the ZkEvm world. */
 public class ZkAccount {
@@ -78,7 +77,7 @@ public class ZkAccount {
         UInt256.valueOf(nonce),
         balance,
         storageRoot,
-            shomeiCodeHash,
+        shomeiCodeHash,
         keccakCodeHash,
         UInt256.valueOf(codeSize));
   }
