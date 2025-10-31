@@ -16,7 +16,7 @@ dependencyManagement {
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
     // besu-shomei plugin:
-    dependency 'ConsenSys:besu-shomei-plugin:0.7.0'
+    dependency 'ConsenSys:besu-shomei-plugin:0.7.6'
     dependency 'ConsenSys:besu-shomei-plugin-test-support:0.7.0'
 
     dependency 'org.assertj:assertj-core:3.24.2' // or latest
