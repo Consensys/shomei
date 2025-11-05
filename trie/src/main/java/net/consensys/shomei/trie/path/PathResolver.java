@@ -12,12 +12,15 @@
  */
 package net.consensys.shomei.trie.path;
 
-import java.math.BigInteger;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.convertBackFromPoseidonSafeFieldElementsSize;
 
+import java.util.Optional;
+
+import net.consensys.shomei.trie.StoredNodeFactory;
 import net.consensys.shomei.trie.StoredSparseMerkleTrie;
 import net.consensys.shomei.trie.node.LeafType;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.MutableBytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 
 public class PathResolver {
 
@@ -26,19 +29,25 @@ public class PathResolver {
 
   private final int trieDepth;
   private final StoredSparseMerkleTrie trie;
+  private final StoredNodeFactory storeNodeFactory;
 
   private Long nextFreeNode;
 
   public PathResolver(final int trieDepth, final StoredSparseMerkleTrie trie) {
     this.trieDepth = trieDepth;
     this.trie = trie;
+    this.storeNodeFactory = new StoredNodeFactory((location, hash) -> Optional.empty(), a -> a);
   }
 
   public Long getNextFreeLeafNodeIndex() {
     if (nextFreeNode == null) {
       nextFreeNode =
           trie.get(getNextFreeNodePath())
-              .map(bytes -> new BigInteger(bytes.toArrayUnsafe()).longValue())
+              .map(
+                  bytes -> {
+                    return UInt256.fromBytes(convertBackFromPoseidonSafeFieldElementsSize(bytes))
+                        .toLong();
+                  })
               .orElse(0L);
     }
     return nextFreeNode;
@@ -51,14 +60,16 @@ public class PathResolver {
   public Long incrementNextFreeLeafNodeIndex() {
     final long foundFreeNode = getNextFreeLeafNodeIndex();
     nextFreeNode = foundFreeNode + 1;
-    trie.put(getNextFreeNodePath(), formatNodeIndex(nextFreeNode));
+    trie.put(
+        getNextFreeNodePath(), storeNodeFactory.createNextFreeNode(nextFreeNode).getEncodedBytes());
     return foundFreeNode;
   }
 
   public Long decrementNextFreeLeafNodeIndex() {
     final long foundFreeNode = getNextFreeLeafNodeIndex();
     nextFreeNode = foundFreeNode - 1;
-    trie.put(getNextFreeNodePath(), formatNodeIndex(nextFreeNode));
+    trie.put(
+        getNextFreeNodePath(), storeNodeFactory.createNextFreeNode(nextFreeNode).getEncodedBytes());
     return foundFreeNode;
   }
 
@@ -80,12 +91,5 @@ public class PathResolver {
   private Bytes nodeIndexToBytes(final long nodeIndex) {
     return Bytes.fromHexString(
         String.format("%" + trieDepth + "s", Long.toBinaryString(nodeIndex)).replace(' ', '0'));
-  }
-
-  private Bytes formatNodeIndex(final long nodeIndex) {
-    final MutableBytes32 mutableBytes32 = MutableBytes32.create();
-    Bytes arrayView = Bytes.wrap(BigInteger.valueOf(nodeIndex).toByteArray());
-    mutableBytes32.set(MutableBytes32.SIZE - arrayView.size(), arrayView);
-    return mutableBytes32;
   }
 }

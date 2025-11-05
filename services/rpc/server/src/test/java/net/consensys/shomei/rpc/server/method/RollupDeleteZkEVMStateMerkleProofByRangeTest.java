@@ -37,7 +37,7 @@ import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.trace.Trace;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,17 +74,17 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
     final List<Trace> traces =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.ZERO, ShomeiSafeBytesProvider.safeByte32(Hash.ZERO)));
+                Hash.ZERO, PoseidonSafeBytesUtils.safeByte32(Hash.ZERO)));
 
     final List<Trace> traces2 =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.wrap(Bytes32.random()), ShomeiSafeBytesProvider.safeByte32(Bytes32.random())));
+                Hash.wrap(Bytes32.random()), PoseidonSafeBytesUtils.safeByte32(Bytes32.random())));
 
     final List<Trace> traces3 =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.wrap(Bytes32.random()), ShomeiSafeBytesProvider.safeByte32(Bytes32.random())));
+                Hash.wrap(Bytes32.random()), PoseidonSafeBytesUtils.safeByte32(Bytes32.random())));
 
     final TraceManager.TraceManagerUpdater updater = traceManager.updater();
     updater.saveZkStateRootHash(0, Hash.wrap(accountStateTrie.getTopRootHash()));

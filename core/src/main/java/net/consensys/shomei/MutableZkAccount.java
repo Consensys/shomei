@@ -13,10 +13,9 @@
 package net.consensys.shomei;
 
 import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
 
 import net.consensys.shomei.trielog.AccountKey;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 
@@ -25,27 +24,20 @@ public class MutableZkAccount extends ZkAccount {
 
   public MutableZkAccount(
       final AccountKey accountKey,
-      final ShomeiSafeBytes<Bytes32> keccakCodeHash,
-      final Hash shomeiCodeHash,
-      final long codeSize,
-      final long nonce,
-      final Wei balance,
-      final Hash storageRoot) {
-    super(
-        accountKey,
-        UInt256.valueOf(nonce),
-        balance,
-        storageRoot,
-        shomeiCodeHash,
-        keccakCodeHash,
-        UInt256.valueOf(codeSize));
+      final PoseidonSafeBytes<Bytes32> keccakCodeHash,
+      final Bytes32 shomeiCodeHash,
+      final PoseidonSafeBytes<UInt256> codeSize,
+      final PoseidonSafeBytes<UInt256> nonce,
+      final PoseidonSafeBytes<UInt256> balance,
+      final Bytes32 storageRoot) {
+    super(accountKey, nonce, balance, storageRoot, shomeiCodeHash, keccakCodeHash, codeSize);
   }
 
   public MutableZkAccount(final ZkAccount toCopy) {
     super(toCopy);
   }
 
-  public void setKeccakCodeHash(final ShomeiSafeBytes<Bytes32> keccakCodeHash) {
+  public void setKeccakCodeHash(final PoseidonSafeBytes<Bytes32> keccakCodeHash) {
     this.keccakCodeHash = keccakCodeHash;
   }
 
@@ -53,15 +45,15 @@ public class MutableZkAccount extends ZkAccount {
     this.shomeiCodeHash = shomeiCodeHash;
   }
 
-  public void setCodeSize(final UInt256 codeSize) {
+  public void setCodeSize(final PoseidonSafeBytes<UInt256> codeSize) {
     this.codeSize = codeSize;
   }
 
-  public void setNonce(final UInt256 nonce) {
+  public void setNonce(final PoseidonSafeBytes<UInt256> nonce) {
     this.nonce = nonce;
   }
 
-  public void setBalance(final Wei balance) {
+  public void setBalance(final PoseidonSafeBytes<UInt256> balance) {
     this.balance = balance;
   }
 

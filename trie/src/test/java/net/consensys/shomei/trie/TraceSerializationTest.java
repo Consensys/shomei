@@ -13,7 +13,7 @@
 package net.consensys.shomei.trie;
 
 import static net.consensys.shomei.trie.DigestGenerator.createDumDigest;
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.hyperledger.besu.datatypes.Hash;
@@ -32,7 +32,7 @@ import net.consensys.shomei.trie.trace.ReadTrace;
 import net.consensys.shomei.trie.trace.ReadZeroTrace;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trie.trace.UpdateTrace;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,8 +51,8 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final ShomeiSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
     final Hash hkey = key.hash();
 
     final InsertionTrace expectedTrace = (InsertionTrace) zkTrie.putWithTrace(hkey, key, value);
@@ -71,9 +71,9 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final ShomeiSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final ShomeiSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final PoseidonSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
     final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, dumValue);
@@ -93,8 +93,8 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final ShomeiSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
     final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, value);
@@ -115,8 +115,8 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final ShomeiSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
     final Hash hkey = key.hash();
 
     // try read zero trace before inserting the key in the trie
@@ -147,9 +147,9 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final ShomeiSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final ShomeiSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final PoseidonSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
     final Hash hkey = key.hash();
 
     List<Trace> expectedTraces = new ArrayList<>();

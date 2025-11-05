@@ -31,8 +31,7 @@ public class HashFunctionOption {
   @CommandLine.Option(
       names = {"--hash-function"},
       paramLabel = "<CURVE>",
-      description =
-          "The hash function to use (MIMC_BLS12_377, MIMC_BN254, POSEIDON_2, KECCAK256) (default: ${DEFAULT-VALUE})",
+      description = "The hash function to use (POSEIDON_2, KECCAK256) (default: ${DEFAULT-VALUE})",
       arity = "1")
   private HashFunction hashFunction = DEFAULT_HASH_FUNCTION;
 

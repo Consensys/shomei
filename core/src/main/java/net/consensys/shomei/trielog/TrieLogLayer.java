@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.ZkValue;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import org.apache.tuweni.units.bigints.UInt256;
 
 /**
@@ -88,7 +88,7 @@ public class TrieLogLayer {
   }
 
   public AccountKey addAccountChange(
-      final ShomeiSafeBytes<Address> address,
+      final PoseidonSafeBytes<Address> address,
       final ZkAccount oldValue,
       final ZkAccount newValue,
       final boolean isCleared) {
@@ -98,7 +98,9 @@ public class TrieLogLayer {
   }
 
   public AccountKey addAccountChange(
-      final ShomeiSafeBytes<Address> address, final ZkAccount oldValue, final ZkAccount newValue) {
+      final PoseidonSafeBytes<Address> address,
+      final ZkAccount oldValue,
+      final ZkAccount newValue) {
     return addAccountChange(address, oldValue, newValue, false);
   }
 

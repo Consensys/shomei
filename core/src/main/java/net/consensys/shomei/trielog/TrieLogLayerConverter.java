@@ -13,8 +13,9 @@
 package net.consensys.shomei.trielog;
 
 import static net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper.WRAP_ACCOUNT;
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeByte32;
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeCode;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeCode;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
@@ -29,6 +30,7 @@ import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.zkevm.HashProvider;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -229,9 +231,9 @@ public class TrieLogLayerConverter {
       final RLPInput in) {
     in.enterList();
 
-    final UInt256 nonce = UInt256.valueOf(in.readLongScalar());
-    final Wei balance = Wei.of(in.readUInt256Scalar());
-    Hash storageRoot;
+    final PoseidonSafeBytes<UInt256> nonce = safeUInt256(UInt256.valueOf(in.readLongScalar()));
+    final PoseidonSafeBytes<UInt256> balance = safeUInt256(in.readUInt256Scalar());
+    Bytes32 storageRoot;
     if (in.nextIsNull() || priorAccount.account == null) {
       storageRoot = ZKTrie.DEFAULT_TRIE_ROOT;
       in.skipNext();
@@ -246,15 +248,15 @@ public class TrieLogLayerConverter {
     in.skipNext(); // skip keccak codeHash
     in.leaveList();
 
-    Bytes32 keccakCodeHash;
+    PoseidonSafeBytes<Bytes32> keccakCodeHash;
     Bytes32 shomeiCodeHash;
-    UInt256 codeSize;
+    PoseidonSafeBytes<UInt256> codeSize;
 
     if (newCode.isEmpty()) {
       if (priorAccount.account == null) {
-        keccakCodeHash = ZkAccount.EMPTY_KECCAK_CODE_HASH.getOriginalUnsafeValue();
+        keccakCodeHash = ZkAccount.EMPTY_KECCAK_CODE_HASH;
         shomeiCodeHash = ZkAccount.EMPTY_CODE_HASH;
-        codeSize = UInt256.ZERO;
+        codeSize = safeUInt256(UInt256.ZERO);
       } else {
         keccakCodeHash = priorAccount.account.getCodeHash();
         shomeiCodeHash = priorAccount.account.getShomeiCodeHash();
@@ -262,31 +264,12 @@ public class TrieLogLayerConverter {
       }
     } else {
       final Bytes code = newCode.get();
-      keccakCodeHash = HashProvider.keccak256(code);
-      shomeiCodeHash = computeShomeiCodeHash(code);
-      codeSize = UInt256.valueOf(code.size());
+      keccakCodeHash = safeByte32(HashProvider.keccak256(code));
+      shomeiCodeHash = safeCode(code).hash();
+      codeSize = safeUInt256(UInt256.valueOf(code.size()));
     }
 
     return new ZkAccount(
-        accountKey,
-        nonce,
-        balance,
-        storageRoot,
-        Hash.wrap(shomeiCodeHash),
-        safeByte32(keccakCodeHash),
-        codeSize);
-  }
-
-  /**
-   * The Poseidon hasher operates over field elements and the overall operation should be ZK
-   * friendly. Each opcode making up the code to hash fit on a single byte. Since it would be too
-   * inefficient to use one field element per opcode we group them in “limbs” of 2 bytes (so 2
-   * opcodes per limbs).
-   *
-   * @param code bytecode
-   * @return poseidon code hash
-   */
-  private static Hash computeShomeiCodeHash(final Bytes code) {
-    return safeCode(code).hash();
+        accountKey, nonce, balance, storageRoot, shomeiCodeHash, keccakCodeHash, codeSize);
   }
 }

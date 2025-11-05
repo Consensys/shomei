@@ -13,7 +13,7 @@
 package net.consensys.shomei;
 
 import static net.consensys.shomei.util.TestFixtureGenerator.createDumDigest;
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.hyperledger.besu.datatypes.Hash;
@@ -27,8 +27,8 @@ import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 import net.consensys.shomei.trie.proof.MerkleProof;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 import net.consensys.zkevm.HashProvider;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -54,7 +54,7 @@ public class WorldstateProofTest {
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
     final MerkleProof proof =
-        accountStateTrie.getProof(hkey, ShomeiSafeBytesProvider.safeByte32(key));
+        accountStateTrie.getProof(hkey, PoseidonSafeBytesUtils.safeByte32(key));
 
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(proof))
         .isEqualToIgnoringWhitespace(getResources("testGetProofForMissingKey.json"));
@@ -63,8 +63,8 @@ public class WorldstateProofTest {
   @Test
   public void testGetProofForAvailableKey() throws IOException {
 
-    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
-    final ShomeiSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
+    final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
     final Hash hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =

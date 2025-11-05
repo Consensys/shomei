@@ -12,21 +12,20 @@
  */
 package net.consensys.shomei;
 
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 import static net.consensys.zkevm.HashProvider.keccak256;
 import static net.consensys.zkevm.HashProvider.trieHash;
 
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
 
 import java.util.Objects;
 
 import net.consensys.shomei.trielog.AccountKey;
-import net.consensys.shomei.trielog.TrieLogAccountValue;
 import net.consensys.shomei.util.bytes.BytesBuffer;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -34,27 +33,27 @@ import org.apache.tuweni.units.bigints.UInt256;
 /** A ZkAccount is a representation of an Ethereum account in the ZkEvm world. */
 public class ZkAccount {
 
-  public static final ShomeiSafeBytes<Bytes32> EMPTY_KECCAK_CODE_HASH =
+  public static final PoseidonSafeBytes<Bytes32> EMPTY_KECCAK_CODE_HASH =
       safeByte32(keccak256(Bytes.EMPTY));
   public static final Hash EMPTY_CODE_HASH = trieHash(Bytes32.ZERO);
 
   protected AccountKey accountKey;
-  protected ShomeiSafeBytes<Bytes32> keccakCodeHash;
-  protected Hash shomeiCodeHash;
+  protected PoseidonSafeBytes<Bytes32> keccakCodeHash;
+  protected Bytes32 shomeiCodeHash;
 
-  protected UInt256 codeSize;
-  protected UInt256 nonce;
-  protected Wei balance;
-  protected Hash storageRoot;
+  protected PoseidonSafeBytes<UInt256> codeSize;
+  protected PoseidonSafeBytes<UInt256> nonce;
+  protected PoseidonSafeBytes<UInt256> balance;
+  protected Bytes32 storageRoot;
 
   public ZkAccount(
       final AccountKey accountKey,
-      final UInt256 nonce,
-      final Wei balance,
-      final Hash storageRoot,
-      final Hash shomeiCodeHash,
-      final ShomeiSafeBytes<Bytes32> keccakCodeHash,
-      final UInt256 codeSize) {
+      final PoseidonSafeBytes<UInt256> nonce,
+      final PoseidonSafeBytes<UInt256> balance,
+      final Bytes32 storageRoot,
+      final Bytes32 shomeiCodeHash,
+      final PoseidonSafeBytes<Bytes32> keccakCodeHash,
+      final PoseidonSafeBytes<UInt256> codeSize) {
     this.accountKey = accountKey;
     this.nonce = nonce;
     this.balance = balance;
@@ -62,35 +61,6 @@ public class ZkAccount {
     this.keccakCodeHash = keccakCodeHash;
     this.shomeiCodeHash = shomeiCodeHash;
     this.codeSize = codeSize;
-  }
-
-  public ZkAccount(
-      final AccountKey accountKey,
-      final long nonce,
-      final Wei balance,
-      final Hash storageRoot,
-      final Hash shomeiCodeHash,
-      final ShomeiSafeBytes<Bytes32> keccakCodeHash,
-      final long codeSize) {
-    this(
-        accountKey,
-        UInt256.valueOf(nonce),
-        balance,
-        storageRoot,
-        shomeiCodeHash,
-        keccakCodeHash,
-        UInt256.valueOf(codeSize));
-  }
-
-  public ZkAccount(final AccountKey accountKey, final TrieLogAccountValue accountValue) {
-    this(
-        accountKey,
-        accountValue.getNonce(),
-        accountValue.getBalance(),
-        accountValue.getStorageRoot(),
-        accountValue.getShomeiCodeHash(),
-        safeByte32(accountValue.getCodeHash()),
-        accountValue.getCodeSize());
   }
 
   public ZkAccount(final ZkAccount toCopy) {
@@ -110,12 +80,12 @@ public class ZkAccount {
         bytesInput ->
             new ZkAccount(
                 accountKey,
-                UInt256.fromBytes(bytesInput.readBytes32()),
-                Wei.wrap(UInt256.fromBytes(bytesInput.readBytes32())),
-                Hash.wrap(bytesInput.readBytes32()),
-                Hash.wrap(bytesInput.readBytes32()),
+                safeUInt256(bytesInput.readBytesUINT256()),
+                safeUInt256(bytesInput.readBytesUINT256()),
+                bytesInput.readBytes32(),
+                bytesInput.readBytes32(),
                 safeByte32(bytesInput.readBytes32()),
-                UInt256.fromBytes(bytesInput.readBytes32())));
+                safeUInt256(bytesInput.readBytesUINT256())));
   }
 
   /**
@@ -132,7 +102,7 @@ public class ZkAccount {
    *
    * @return the account address
    */
-  public ShomeiSafeBytes<Address> getAddress() {
+  public PoseidonSafeBytes<Address> getAddress() {
     return accountKey.address();
   }
 
@@ -142,7 +112,7 @@ public class ZkAccount {
    * @return the account key
    */
   public UInt256 getNonce() {
-    return nonce;
+    return nonce.getOriginalUnsafeValue();
   }
 
   /**
@@ -150,8 +120,8 @@ public class ZkAccount {
    *
    * @return the account balance
    */
-  public Wei getBalance() {
-    return balance;
+  public UInt256 getBalance() {
+    return balance.getOriginalUnsafeValue();
   }
 
   /**
@@ -159,8 +129,8 @@ public class ZkAccount {
    *
    * @return the keccak code hash
    */
-  public Hash getCodeHash() {
-    return Hash.wrap(keccakCodeHash.getOriginalUnsafeValue());
+  public PoseidonSafeBytes<Bytes32> getCodeHash() {
+    return keccakCodeHash;
   }
 
   /**
@@ -168,7 +138,7 @@ public class ZkAccount {
    *
    * @return the Shomei code hash
    */
-  public Hash getShomeiCodeHash() {
+  public Bytes32 getShomeiCodeHash() {
     return shomeiCodeHash;
   }
 
@@ -177,7 +147,7 @@ public class ZkAccount {
    *
    * @return the code size
    */
-  public UInt256 getCodeSize() {
+  public PoseidonSafeBytes<UInt256> getCodeSize() {
     return codeSize;
   }
 
@@ -186,7 +156,7 @@ public class ZkAccount {
    *
    * @return the zkevm storage root
    */
-  public Hash getStorageRoot() {
+  public Bytes32 getStorageRoot() {
     return storageRoot;
   }
 
@@ -195,8 +165,8 @@ public class ZkAccount {
    *
    * @return encoded bytes
    */
-  public ShomeiSafeBytes<Bytes> getEncodedBytes() {
-    return ShomeiSafeBytesProvider.concatenateSafeElements(
+  public PoseidonSafeBytes<Bytes> getEncodedBytes() {
+    return PoseidonSafeBytesUtils.concatenateSafeElements(
         nonce, balance, storageRoot, shomeiCodeHash, keccakCodeHash, codeSize);
   }
 
@@ -252,10 +222,10 @@ public class ZkAccount {
       if (!Objects.equals(source.getNonce(), account.getNonce())) {
         throw new IllegalStateException(context + ": nonces differ");
       }
-      if (!Objects.equals(source.balance, account.getBalance())) {
+      if (!Objects.equals(source.getBalance(), account.getBalance())) {
         throw new IllegalStateException(context + ": balances differ");
       }
-      if (!Objects.equals(source.storageRoot, account.getStorageRoot())) {
+      if (!Objects.equals(source.getStorageRoot(), account.getStorageRoot())) {
         throw new IllegalStateException(context + ": Storage Roots differ");
       }
     }

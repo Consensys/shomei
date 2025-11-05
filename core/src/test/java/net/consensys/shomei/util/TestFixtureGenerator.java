@@ -15,10 +15,9 @@ package net.consensys.shomei.util;
 import static net.consensys.shomei.ZkAccount.EMPTY_CODE_HASH;
 import static net.consensys.shomei.ZkAccount.EMPTY_KECCAK_CODE_HASH;
 import static net.consensys.shomei.trie.ZKTrie.DEFAULT_TRIE_ROOT;
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 
 import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Wei;
 
 import net.consensys.shomei.MutableZkAccount;
 import net.consensys.shomei.ZkAccount;
@@ -26,10 +25,10 @@ import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 import net.consensys.shomei.trielog.AccountKey;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.bytes.MutableBytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 
 public class TestFixtureGenerator {
 
@@ -39,22 +38,22 @@ public class TestFixtureGenerator {
   private static final ZkAccount ZK_ACCOUNT =
       new ZkAccount(
           ACCOUNT_KEY_1,
-          65,
-          Wei.of(835),
+          safeUInt256(UInt256.valueOf(65L)),
+          safeUInt256(UInt256.valueOf(835L)),
           DEFAULT_TRIE_ROOT,
           EMPTY_CODE_HASH,
           EMPTY_KECCAK_CODE_HASH,
-          0L);
+          safeUInt256(UInt256.valueOf(0L)));
 
   private static final ZkAccount ZK_ACCOUNT_2 =
       new ZkAccount(
           ACCOUNT_KEY_2,
-          65,
-          Wei.of(835),
+          safeUInt256(UInt256.valueOf(65L)),
+          safeUInt256(UInt256.valueOf(835L)),
           DEFAULT_TRIE_ROOT,
           EMPTY_CODE_HASH,
           EMPTY_KECCAK_CODE_HASH,
-          0L);
+          safeUInt256(UInt256.valueOf(0L)));
 
   public static MutableZkAccount getAccountOne() {
     return new MutableZkAccount(ZK_ACCOUNT);
@@ -82,9 +81,9 @@ public class TestFixtureGenerator {
     return mutableBytes;
   }
 
-  public static ShomeiSafeBytes<Bytes32> createDumFullBytes(int value) {
+  public static Bytes32 createDumFullBytes(int value) {
     MutableBytes32 mutableBytes = MutableBytes32.create();
     mutableBytes.set(0, (byte) value);
-    return safeByte32(mutableBytes);
+    return mutableBytes;
   }
 }

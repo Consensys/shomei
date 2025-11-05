@@ -12,17 +12,17 @@
  */
 package net.consensys.shomei.trielog;
 
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeUInt256;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 
 import org.hyperledger.besu.datatypes.Hash;
 
 import java.util.Objects;
 
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.jetbrains.annotations.NotNull;
 
-public record StorageSlotKey(Hash slotHash, ShomeiSafeBytes<UInt256> slotKey)
+public record StorageSlotKey(Hash slotHash, PoseidonSafeBytes<UInt256> slotKey)
     implements Comparable<StorageSlotKey> {
 
   public StorageSlotKey(final Hash slotHash, final UInt256 slotKey) {

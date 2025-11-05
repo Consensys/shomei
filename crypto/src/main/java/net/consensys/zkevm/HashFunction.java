@@ -20,8 +20,6 @@ import org.apache.tuweni.bytes.Bytes;
 
 public enum HashFunction {
   KECCAK256(HashProvider::keccak256),
-  MIMC_BN254(HashProvider::mimcBn254),
-  MIMC_BLS12_377(HashProvider::mimcBls12377),
   POSEIDON_2(HashProvider::poseidon2);
 
   final Function<Bytes, Hash> hashFunction;

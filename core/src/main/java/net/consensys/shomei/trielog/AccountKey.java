@@ -17,22 +17,22 @@ import org.hyperledger.besu.datatypes.Hash;
 
 import java.util.Objects;
 
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 import org.jetbrains.annotations.NotNull;
 
-public record AccountKey(Hash accountHash, ShomeiSafeBytes<Address> address)
+public record AccountKey(Hash accountHash, PoseidonSafeBytes<Address> address)
     implements Comparable<AccountKey> {
 
   public AccountKey(final Hash accountHash, final Address address) {
-    this(accountHash, ShomeiSafeBytesProvider.safeAddress(address));
+    this(accountHash, PoseidonSafeBytesUtils.safeAddress(address));
   }
 
   public AccountKey(final Address address) {
-    this(ShomeiSafeBytesProvider.safeAddress(address));
+    this(PoseidonSafeBytesUtils.safeAddress(address));
   }
 
-  public AccountKey(final ShomeiSafeBytes<Address> address) {
+  public AccountKey(final PoseidonSafeBytes<Address> address) {
     this(address.hash(), address);
   }
 

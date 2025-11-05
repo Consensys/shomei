@@ -36,17 +36,36 @@ public class BytesBuffer {
     }
   }
 
-  public UInt256 readUInt256() {
+  public Bytes32 readBytes32() {
     try {
-      return UInt256.fromBytes(Bytes.of(inputStream.readNBytes(UInt256.SIZE)));
+      return Bytes32.wrap(inputStream.readNBytes(Bytes32.SIZE));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public Bytes32 readBytes32() {
+  public UInt256 readBytesUINT256() {
     try {
-      return Bytes32.wrap(inputStream.readNBytes(Bytes32.SIZE));
+      return UInt256.fromBytes(Bytes32.wrap(inputStream.readNBytes(Bytes32.SIZE)));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public Bytes32 readByte32FromBytes64() {
+    try {
+      return PoseidonSafeBytesUtils.convertBackFromPoseidonSafeFieldElementsSize(
+          Bytes.wrap(inputStream.readNBytes(64)));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public UInt256 readUint256FromBytes64() {
+    try {
+      return UInt256.fromBytes(
+          PoseidonSafeBytesUtils.convertBackFromPoseidonSafeFieldElementsSize(
+              Bytes.wrap(inputStream.readNBytes(64))));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

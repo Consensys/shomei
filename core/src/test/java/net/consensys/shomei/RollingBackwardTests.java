@@ -16,18 +16,17 @@ import static net.consensys.shomei.trie.ZKTrie.DEFAULT_TRIE_ROOT;
 import static net.consensys.shomei.util.TestFixtureGenerator.getAccountOne;
 import static net.consensys.shomei.util.TestFixtureGenerator.getAccountTwo;
 import static net.consensys.shomei.util.TestFixtureGenerator.getContractStorageTrie;
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeUInt256;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
 
 import net.consensys.shomei.storage.InMemoryStorageProvider;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.trielog.StorageSlotKey;
 import net.consensys.shomei.trielog.TrieLogLayer;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.shomei.worldview.ZkEvmWorldState;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
@@ -98,7 +97,7 @@ public class RollingBackwardTests {
 
     TrieLogLayer trieLogLayer2 = new TrieLogLayer();
     MutableZkAccount accountOneUpdated = new MutableZkAccount(account);
-    accountOneUpdated.setBalance(Wei.of(100));
+    accountOneUpdated.setBalance(safeUInt256(UInt256.valueOf(100L)));
     trieLogLayer2.addAccountChange(account.getAddress(), account, accountOneUpdated);
 
     // roll forward account creation
@@ -166,7 +165,7 @@ public class RollingBackwardTests {
     // create contract with storage
     MutableZkAccount contract = getAccountOne();
     StorageSlotKey storageSlotKey = new StorageSlotKey(UInt256.valueOf(14));
-    ShomeiSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
+    PoseidonSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue);
@@ -223,7 +222,7 @@ public class RollingBackwardTests {
     // create contract with storage
     MutableZkAccount contract = getAccountOne();
     StorageSlotKey storageSlotKey = new StorageSlotKey(UInt256.valueOf(14));
-    ShomeiSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
+    PoseidonSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue);
@@ -240,7 +239,7 @@ public class RollingBackwardTests {
 
     // update slot
     final MutableZkAccount updatedContract = new MutableZkAccount(contract);
-    final ShomeiSafeBytes<UInt256> updatedStorageValue = safeUInt256(UInt256.valueOf(19));
+    final PoseidonSafeBytes<UInt256> updatedStorageValue = safeUInt256(UInt256.valueOf(19));
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), updatedStorageValue);
     updatedContract.setStorageRoot(Hash.wrap(contractStorageTrie.getTopRootHash()));

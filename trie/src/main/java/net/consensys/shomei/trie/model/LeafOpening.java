@@ -12,13 +12,15 @@
  */
 package net.consensys.shomei.trie.model;
 
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.concatenateSafeElements;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
+
 import org.hyperledger.besu.datatypes.Hash;
 
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import net.consensys.shomei.util.bytes.BytesBuffer;
-import net.consensys.zkevm.HashProvider;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -26,11 +28,9 @@ import org.apache.tuweni.units.bigints.UInt256;
 public class LeafOpening {
 
   private static final HashKeyProvider POSEIDON_PROVIDER = new PoseidonHashKeyProvider();
-  private static final HashKeyProvider MIMC_PROVIDER = new MimcHashKeyProvider();
 
   private static HashKeyProvider getHashKeyProvider() {
-    System.out.println(HashProvider.isPoseidonHashFunction());
-    return HashProvider.isPoseidonHashFunction() ? POSEIDON_PROVIDER : MIMC_PROVIDER;
+    return POSEIDON_PROVIDER;
   }
 
   public static final LeafOpening HEAD =
@@ -121,17 +121,17 @@ public class LeafOpening {
         encodedBytes,
         bytesInput ->
             new LeafOpening(
-                bytesInput.readUInt256().toLong(),
-                bytesInput.readUInt256().toLong(),
+                bytesInput.readUint256FromBytes64().toLong(),
+                bytesInput.readUint256FromBytes64().toLong(),
                 Hash.wrap(bytesInput.readBytes32()),
                 bytesInput.readBytes32()));
   }
 
   @JsonIgnore
   public Bytes getEncodesBytes() {
-    return Bytes.concatenate(
-        UInt256.valueOf(prevLeaf), // Prev
-        UInt256.valueOf(nextLeaf), // Next ,
+    return concatenateSafeElements(
+        safeByte32(UInt256.valueOf(prevLeaf)), // Prev
+        safeByte32(UInt256.valueOf(nextLeaf)), // Next ,
         hkey, // HKEY
         hval); // HVALUE
   }
@@ -164,20 +164,7 @@ public class LeafOpening {
 
     @Override
     public Hash getTailHashKey() {
-      return Hash.wrap(Bytes32.ZERO);
-    }
-  }
-
-  private static class MimcHashKeyProvider implements HashKeyProvider {
-    @Override
-    public Hash getHeadHashKey() {
-      return Hash.wrap(Bytes32.ZERO);
-    }
-
-    @Override
-    public Hash getTailHashKey() {
-      return Hash.fromHexString(
-          "0x12ab655e9a2ca55660b44d1e5c37b00159aa76fed00000010a11800000000000");
+      return Hash.fromHexString("7f0000007f0000007f0000007f0000007f0000007f0000007f0000007f000000");
     }
   }
 }

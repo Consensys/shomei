@@ -44,7 +44,7 @@ import net.consensys.shomei.trie.trace.builder.InsertionTraceBuilder;
 import net.consensys.shomei.trie.trace.builder.ReadTraceBuilder;
 import net.consensys.shomei.trie.trace.builder.ReadZeroTraceBuilder;
 import net.consensys.shomei.trie.trace.builder.UpdateTraceBuilder;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -146,7 +146,8 @@ public class ZKTrie {
 
     // create root node
     defaultNode =
-        nodeFactory.createBranch(List.of(EmptyLeafNode.instance(), defaultNode), Optional.empty());
+        nodeFactory.createBranch(
+            List.of(nodeFactory.createNextFreeNode(0L), defaultNode), Optional.empty());
 
     nodeUpdater.store(null, defaultNode.getHash(), defaultNode.getEncodedBytes());
 
@@ -214,7 +215,7 @@ public class ZKTrie {
     return state.getAndProve(path);
   }
 
-  public MerkleProof getProof(final Hash hkey, final ShomeiSafeBytes<? extends Bytes> key) {
+  public MerkleProof getProof(final Hash hkey, final PoseidonSafeBytes<? extends Bytes> key) {
     // GET the openings HKEY-,  hash(k) , HKEY+
     final Range nearestKeys = worldStateStorage.getNearestKeys(hkey);
     // CHECK if hash(k) exist
@@ -293,7 +294,7 @@ public class ZKTrie {
     }
   }
 
-  public Trace readWithTrace(final Hash hkey, final ShomeiSafeBytes<? extends Bytes> key) {
+  public Trace readWithTrace(final Hash hkey, final PoseidonSafeBytes<? extends Bytes> key) {
     // GET the openings HKEY-,  hash(k) , HKEY+
     final Range nearestKeys = worldStateStorage.getNearestKeys(hkey);
     // CHECK if hash(k) exist
@@ -347,8 +348,8 @@ public class ZKTrie {
 
   public Trace putWithTrace(
       final Hash hKey,
-      final ShomeiSafeBytes<? extends Bytes> key,
-      final ShomeiSafeBytes<? extends Bytes> newValue) {
+      final PoseidonSafeBytes<? extends Bytes> key,
+      final PoseidonSafeBytes<? extends Bytes> newValue) {
     checkArgument(hKey.size() == Bytes32.SIZE);
 
     // GET the openings HKEY-,  hash(k) , HKEY+
@@ -452,7 +453,7 @@ public class ZKTrie {
     }
   }
 
-  public Trace removeWithTrace(final Hash hkey, final ShomeiSafeBytes<? extends Bytes> key) {
+  public Trace removeWithTrace(final Hash hkey, final PoseidonSafeBytes<? extends Bytes> key) {
     checkArgument(hkey.size() == Bytes32.SIZE);
 
     // GET the openings HKEY-,  hash(k) , HKEY+

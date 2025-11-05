@@ -16,12 +16,11 @@ import static net.consensys.shomei.trie.ZKTrie.DEFAULT_TRIE_ROOT;
 import static net.consensys.shomei.util.TestFixtureGenerator.getAccountOne;
 import static net.consensys.shomei.util.TestFixtureGenerator.getAccountTwo;
 import static net.consensys.shomei.util.TestFixtureGenerator.getContractStorageTrie;
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeUInt256;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.trielog.StorageSlotKey;
 import net.consensys.shomei.trielog.TrieLogLayer;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.shomei.worldview.ZkEvmWorldState;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,7 +79,7 @@ public class RollingForwardTests {
     assertThat(topRootHash)
         .isEqualTo(
             Hash.fromHexString(
-                "0x04c3c6de7195a187bc89fb4f8b68e93c7d675f1eed585b00d0e1e6241a321f86"));
+                "0x6b5d2e111a55e55826396df03ac3d0055dc4a88671edbcc8274db3f0117e0f97"));
 
     TrieLogLayer trieLogLayer = new TrieLogLayer();
     trieLogLayer.addAccountChange(account.getAddress(), null, account);
@@ -116,7 +115,7 @@ public class RollingForwardTests {
     assertThat(topRootHash)
         .isEqualTo(
             Hash.fromHexString(
-                "0x04c3c6de7195a187bc89fb4f8b68e93c7d675f1eed585b00d0e1e6241a321f86"));
+                "0x6b5d2e111a55e55826396df03ac3d0055dc4a88671edbcc8274db3f0117e0f97"));
 
     TrieLogLayer trieLogLayer = new TrieLogLayer();
     trieLogLayer.addAccountChange(account.getAddress(), null, account);
@@ -147,7 +146,7 @@ public class RollingForwardTests {
 
     // update account
     MutableZkAccount accountUpdated = new MutableZkAccount(account);
-    accountUpdated.setBalance(Wei.of(100));
+    accountUpdated.setBalance(safeUInt256(UInt256.valueOf(100L)));
 
     Trace expectedTrace =
         accountStateTrieOne.putWithTrace(
@@ -159,7 +158,7 @@ public class RollingForwardTests {
     assertThat(topRootHash)
         .isEqualTo(
             Hash.fromHexString(
-                "0x088b874d3adbf9ab55764d3661ffeeee82f93e621dcc47d9bb2f4dc7aee59648"));
+                "0x2272f54e6eaac537629f136b4c6080c635db2b1135c4f94f4c34fff146c58471"));
 
     TrieLogLayer trieLogLayer = new TrieLogLayer();
     trieLogLayer.addAccountChange(account.getAddress(), null, account);
@@ -173,7 +172,7 @@ public class RollingForwardTests {
     assertThat(zkEvmWorldState.getStateRootHash())
         .isEqualTo(
             Hash.fromHexString(
-                "0x04c3c6de7195a187bc89fb4f8b68e93c7d675f1eed585b00d0e1e6241a321f86"));
+                "0x6b5d2e111a55e55826396df03ac3d0055dc4a88671edbcc8274db3f0117e0f97"));
 
     zkEvmWorldState.getAccumulator().rollForward(trieLogLayer2);
     zkEvmWorldState.commit(0L, null, true);
@@ -242,7 +241,7 @@ public class RollingForwardTests {
     zkEvmWorldState.commit(0L, null, true);
 
     MutableZkAccount contractU = getAccountTwo();
-    contractU.setBalance(Wei.ONE);
+    contractU.setBalance(safeUInt256(UInt256.valueOf(1L)));
     TrieLogLayer trieLogLayer2 = new TrieLogLayer();
     final AccountKey contractAccountKey2 =
         trieLogLayer2.addAccountChange(contract.getAddress(), contract, contractU);
@@ -274,7 +273,7 @@ public class RollingForwardTests {
 
     MutableZkAccount contract = getAccountTwo();
     StorageSlotKey storageSlotKey = new StorageSlotKey(UInt256.valueOf(14));
-    ShomeiSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
+    PoseidonSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     expectedTraces.add(
         updateTraceStorageLocation(
@@ -330,7 +329,7 @@ public class RollingForwardTests {
 
     MutableZkAccount contract = getAccountTwo();
     StorageSlotKey storageSlotKey = new StorageSlotKey(UInt256.valueOf(14));
-    ShomeiSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
+    PoseidonSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue);
@@ -393,7 +392,7 @@ public class RollingForwardTests {
     // create contract with storage
     MutableZkAccount contract = getAccountTwo();
     StorageSlotKey storageSlotKey = new StorageSlotKey(UInt256.valueOf(14));
-    ShomeiSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
+    PoseidonSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue);
@@ -472,7 +471,7 @@ public class RollingForwardTests {
     // create contract with storage
     MutableZkAccount contract = getAccountTwo();
     StorageSlotKey storageSlotKey = new StorageSlotKey(UInt256.valueOf(14));
-    ShomeiSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
+    PoseidonSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue);
@@ -495,7 +494,7 @@ public class RollingForwardTests {
     // recreate contract
     MutableZkAccount updatedContract = getAccountTwo();
     ZKTrie newContractStorageTrie = getContractStorageTrie(updatedContract);
-    ShomeiSafeBytes<UInt256> newSlotValue = safeUInt256(UInt256.valueOf(13));
+    PoseidonSafeBytes<UInt256> newSlotValue = safeUInt256(UInt256.valueOf(13));
     expectedTraces.add(
         updateTraceStorageLocation(
             contract.getAddress(),
@@ -556,7 +555,7 @@ public class RollingForwardTests {
     // create contract with storage
     MutableZkAccount contract = getAccountTwo();
     StorageSlotKey storageSlotKey = new StorageSlotKey(UInt256.valueOf(14));
-    ShomeiSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
+    PoseidonSafeBytes<UInt256> slotValue = safeUInt256(UInt256.valueOf(12));
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue);
@@ -580,7 +579,7 @@ public class RollingForwardTests {
     MutableZkAccount updatedContract = getAccountTwo();
     ZKTrie newContractStorageTrie = getContractStorageTrie(updatedContract);
     StorageSlotKey newStorageSlotKey = new StorageSlotKey(UInt256.valueOf(146));
-    ShomeiSafeBytes<UInt256> newSlotValue = safeUInt256(UInt256.valueOf(13));
+    PoseidonSafeBytes<UInt256> newSlotValue = safeUInt256(UInt256.valueOf(13));
     expectedTraces.add(
         updateTraceStorageLocation(
             contract.getAddress(),
@@ -630,7 +629,7 @@ public class RollingForwardTests {
   }
 
   private Trace updateTraceStorageLocation(
-      final ShomeiSafeBytes<Address> address, final Trace trace) {
+      final PoseidonSafeBytes<Address> address, final Trace trace) {
     trace.setLocation(address.getOriginalUnsafeValue());
     return trace;
   }

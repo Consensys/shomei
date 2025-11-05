@@ -19,11 +19,12 @@ import static net.consensys.shomei.util.TestFixtureGenerator.createDumAddress;
 import static net.consensys.shomei.util.TestFixtureGenerator.createDumDigest;
 import static net.consensys.shomei.util.TestFixtureGenerator.createDumFullBytes;
 import static net.consensys.shomei.util.TestFixtureGenerator.getAccountOne;
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -37,11 +38,12 @@ import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.AccountKey;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytes;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 import net.consensys.zkevm.HashProvider;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +65,7 @@ public class WorldstateTraceTest {
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
-    Trace trace = accountStateTrie.readWithTrace(hkey, ShomeiSafeBytesProvider.safeByte32(key));
+    Trace trace = accountStateTrie.readWithTrace(hkey, PoseidonSafeBytesUtils.safeByte32(key));
 
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(trace))
         .isEqualToIgnoringWhitespace(getResources("testTraceReadZero.json"));
@@ -72,8 +74,8 @@ public class WorldstateTraceTest {
   @Test
   public void testTraceReadSimpleValue() throws IOException {
 
-    final ShomeiSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
-    final ShomeiSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
+    final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
     final Hash hkey = key.hash();
 
     ZKTrie accountStateTrie =
@@ -82,7 +84,6 @@ public class WorldstateTraceTest {
     accountStateTrie.putWithTrace(hkey, key, value);
 
     Trace trace = accountStateTrie.readWithTrace(hkey, key);
-
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(trace))
         .isEqualToIgnoringWhitespace(getResources("testTraceReadSimpleValue.json"));
   }
@@ -114,7 +115,7 @@ public class WorldstateTraceTest {
         accountStateTrie.putWithTrace(
             account.getHkey(), account.getAddress(), account.getEncodedBytes());
 
-    assertThat(JSON_OBJECT_MAPPER.writeValueAsString(List.of(trace)))
+    assertThat(JSON_OBJECT_MAPPER.writeValueAsString(trace))
         .isEqualToIgnoringWhitespace(getResources("testTraceStateWithAnAccount.json"));
   }
 
@@ -124,12 +125,12 @@ public class WorldstateTraceTest {
     final ZkAccount zkAccount2 =
         new ZkAccount(
             new AccountKey(createDumAddress(41)),
-            42,
-            Wei.of(354),
+            safeUInt256(UInt256.valueOf(42L)),
+            safeUInt256(UInt256.valueOf(354L)),
             DEFAULT_TRIE_ROOT,
             EMPTY_CODE_HASH,
             EMPTY_KECCAK_CODE_HASH,
-            0L);
+            safeUInt256(UInt256.valueOf(0L)));
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -152,12 +153,12 @@ public class WorldstateTraceTest {
     final ZkAccount zkAccount2 =
         new ZkAccount(
             new AccountKey(createDumAddress(47)),
-            41,
-            Wei.of(15353),
+            safeUInt256(UInt256.valueOf(41L)),
+            safeUInt256(UInt256.valueOf(15353L)),
             DEFAULT_TRIE_ROOT,
             Hash.wrap(createDumDigest(75)),
-            createDumFullBytes(15),
-            7L);
+            safeByte32(createDumFullBytes(15)),
+            safeUInt256(UInt256.valueOf(7L)));
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -179,11 +180,11 @@ public class WorldstateTraceTest {
     final MutableZkAccount zkAccount2 =
         new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
-            createDumFullBytes(15),
+            safeByte32(createDumFullBytes(15)),
             Hash.wrap(createDumDigest(75)),
-            7L,
-            41,
-            Wei.of(15353),
+            safeUInt256(UInt256.valueOf(7L)),
+            safeUInt256(UInt256.valueOf(41L)),
+            safeUInt256(UInt256.valueOf(15353L)),
             DEFAULT_TRIE_ROOT);
 
     final ZKTrie accountStateTrie =
@@ -206,9 +207,9 @@ public class WorldstateTraceTest {
         ZKTrie.createTrie(
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
-    final ShomeiSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
     final Hash slotKeyHash = slotKey.hash();
-    final ShomeiSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
 
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
@@ -226,11 +227,11 @@ public class WorldstateTraceTest {
     final MutableZkAccount zkAccount2 =
         new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
-            createDumFullBytes(15),
+            safeByte32(createDumFullBytes(15)),
             Hash.wrap(createDumDigest(75)),
-            7L,
-            41,
-            Wei.of(15353),
+            safeUInt256(UInt256.valueOf(7L)),
+            safeUInt256(UInt256.valueOf(41L)),
+            safeUInt256(UInt256.valueOf(15353L)),
             DEFAULT_TRIE_ROOT);
 
     final ZKTrie accountStateTrie =
@@ -251,9 +252,9 @@ public class WorldstateTraceTest {
         ZKTrie.createTrie(
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
-    final ShomeiSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
     final Hash slotKeyHash = slotKey.hash();
-    final ShomeiSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
     accountStateTrie.putWithTrace(
@@ -272,9 +273,9 @@ public class WorldstateTraceTest {
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
     // Write again, somewhere else
-    final ShomeiSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
+    final PoseidonSafeBytes<Bytes32> newSlotKey = safeByte32(createDumFullBytes(11));
     final Hash newSlotKeyHash = newSlotKey.hash();
-    final ShomeiSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
+    final PoseidonSafeBytes<Bytes32> newSlotValue = safeByte32(createDumFullBytes(78));
     Trace trace4 = account2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
@@ -295,22 +296,22 @@ public class WorldstateTraceTest {
     final ZkAccount zkAccount2 =
         new ZkAccount(
             new AccountKey(createDumAddress(47)),
-            41,
-            Wei.of(15353),
+            safeUInt256(UInt256.valueOf(41L)),
+            safeUInt256(UInt256.valueOf(15353L)),
             DEFAULT_TRIE_ROOT,
             Hash.wrap(createDumDigest(75)),
-            createDumFullBytes(15),
-            7L);
+            safeByte32(createDumFullBytes(15)),
+            safeUInt256(UInt256.valueOf(7L)));
 
     final ZkAccount zkAccount3 =
         new ZkAccount(
             new AccountKey(createDumAddress(120)),
-            48,
-            Wei.of(9835),
+            safeUInt256(UInt256.valueOf(48L)),
+            safeUInt256(UInt256.valueOf(9835L)),
             DEFAULT_TRIE_ROOT,
             Hash.wrap(createDumDigest(54)),
-            createDumFullBytes(85),
-            19L);
+            safeByte32(createDumFullBytes(85)),
+            safeUInt256(UInt256.valueOf(19L)));
 
     final ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));

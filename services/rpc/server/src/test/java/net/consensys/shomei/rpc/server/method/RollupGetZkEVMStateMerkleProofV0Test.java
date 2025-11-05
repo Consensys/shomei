@@ -37,7 +37,7 @@ import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.trace.Trace;
-import net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,7 +97,7 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
         Trace.serialize(
             List.of(
                 accountStateTrie.readWithTrace(
-                    Hash.ZERO, ShomeiSafeBytesProvider.safeByte32(Hash.ZERO))));
+                    Hash.ZERO, PoseidonSafeBytesUtils.safeByte32(Hash.ZERO))));
 
     when(traceManager.getZkStateRootHash(anyLong()))
         .thenReturn(Optional.of(Hash.wrap(accountStateTrie.getTopRootHash())));

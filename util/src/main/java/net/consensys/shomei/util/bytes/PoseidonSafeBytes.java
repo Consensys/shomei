@@ -23,11 +23,11 @@ import org.apache.tuweni.bytes.DelegatingBytes;
  * keys, we cannot assume that it will always fit on a field element. So we need sometimes to modify
  * the key to be hash friendly.
  */
-public class ShomeiSafeBytes<T extends Bytes> extends DelegatingBytes implements Bytes {
+public class PoseidonSafeBytes<T extends Bytes> extends DelegatingBytes implements Bytes {
 
   private final T originalUnsafeValue;
 
-  protected ShomeiSafeBytes(final Bytes delegate, final T originalUnsafeValue) {
+  protected PoseidonSafeBytes(final Bytes delegate, final T originalUnsafeValue) {
     super(delegate);
     this.originalUnsafeValue = originalUnsafeValue;
   }

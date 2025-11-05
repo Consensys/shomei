@@ -13,7 +13,7 @@
 package net.consensys.shomei.worldview;
 
 import static net.consensys.shomei.trie.ZKTrie.DEFAULT_TRIE_ROOT;
-import static net.consensys.shomei.util.bytes.ShomeiSafeBytesProvider.safeUInt256;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 
 import org.hyperledger.besu.datatypes.Hash;
 
