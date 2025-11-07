@@ -114,7 +114,6 @@ public class WorldstateTraceTest {
     Trace trace =
         accountStateTrie.putWithTrace(
             account.getHkey(), account.getAddress(), account.getEncodedBytes());
-
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(trace))
         .isEqualToIgnoringWhitespace(getResources("testTraceStateWithAnAccount.json"));
   }
@@ -210,7 +209,9 @@ public class WorldstateTraceTest {
     final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
     final Hash slotKeyHash = slotKey.hash();
     final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
+
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
+    trace3.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
     zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
     final Trace trace4 =

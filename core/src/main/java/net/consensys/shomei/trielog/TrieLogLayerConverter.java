@@ -19,7 +19,6 @@ import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256
 
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
 
 import java.util.Objects;
@@ -192,7 +191,7 @@ public class TrieLogLayerConverter {
       in.enterList();
 
       final UInt256 nonce = UInt256.valueOf(in.readLongScalar());
-      final Wei balance = Wei.of(in.readUInt256Scalar());
+      final UInt256 balance = in.readUInt256Scalar();
       final Hash evmStorageRoot;
       if (in.nextIsNull()) {
         evmStorageRoot = Hash.EMPTY_TRIE_HASH;
@@ -204,7 +203,8 @@ public class TrieLogLayerConverter {
       in.leaveList();
 
       LOG.atTrace()
-          .setMessage("prior account entry ({}) : expected old value ({},{},{}) and found ({},{})")
+          .setMessage(
+              "prior account entry ({}) : expected old value ({},{},{}) and found ({},{},{})")
           .addArgument(accountKey)
           .addArgument(flatLeaf)
           .addArgument(nonce)

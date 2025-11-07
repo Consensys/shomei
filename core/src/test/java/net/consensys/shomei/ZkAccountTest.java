@@ -13,14 +13,17 @@
 package net.consensys.shomei;
 
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeCode;
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
 
+import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+import net.consensys.zkevm.HashProvider;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -30,13 +33,14 @@ public class ZkAccountTest {
 
   @Test
   public void testHashZeroAccount() {
+
     final ZkAccount zkAccount =
         new ZkAccount(
             new AccountKey(Hash.ZERO, Address.ZERO),
             safeUInt256(UInt256.valueOf(0L)),
             safeUInt256(UInt256.valueOf(0L)),
             Hash.ZERO,
-            Hash.ZERO,
+            ZKTrie.DEFAULT_TRIE_ROOT,
             safeByte32(Hash.ZERO),
             safeUInt256(UInt256.valueOf(0L)));
 
@@ -110,5 +114,26 @@ public class ZkAccountTest {
         ZkAccount.fromEncodedBytes(accountKey, encodedBytes.getOriginalUnsafeValue());
 
     assertThat(deserializedAccount).isEqualToComparingFieldByField(originalAccount);
+  }
+
+  @Test
+  public void testContractCodeEncoding() {
+    final Bytes code =
+        Bytes.fromHexString("0x495340db00ecc17b5cb435d5731f8d6635e6b3ef42507a8303a068d178a95d22");
+    ;
+    final PoseidonSafeBytes<Bytes> safeCode = safeCode(code);
+    final ZkAccount zkAccount =
+        new ZkAccount(
+            new AccountKey(Hash.ZERO, Address.ZERO),
+            safeUInt256(UInt256.valueOf(65L)),
+            safeUInt256(UInt256.valueOf(835L)),
+            ZKTrie.DEFAULT_TRIE_ROOT,
+            safeCode.hash(),
+            safeByte32(HashProvider.keccak256(code)),
+            safeUInt256(UInt256.valueOf(0L)));
+    assertThat(zkAccount.getEncodedBytes().hash())
+        .isEqualTo(
+            Bytes32.fromHexString(
+                "0x5b4f38da3b5579846022b90a4a9ca1096653055722e75ebc0d4f68ba22d712c9"));
   }
 }

@@ -165,7 +165,7 @@ public class ZkWorldStateArchive implements Closeable {
   }
 
   @VisibleForTesting
-  void applyTrieLog(
+  public void applyTrieLog(
       final long newBlockNumber, final boolean generateTrace, final TrieLogLayer trieLogLayer) {
     headWorldState.getAccumulator().rollForward(trieLogLayer);
     headWorldState.commit(newBlockNumber, trieLogLayer.getBlockHash(), generateTrace);
