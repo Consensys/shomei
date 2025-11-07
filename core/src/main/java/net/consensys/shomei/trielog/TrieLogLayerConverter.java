@@ -249,27 +249,27 @@ public class TrieLogLayerConverter {
     in.leaveList();
 
     PoseidonSafeBytes<Bytes32> keccakCodeHash;
-    Bytes32 shomeiCodeHash;
+    Bytes32 poseidonCodeHash;
     PoseidonSafeBytes<UInt256> codeSize;
 
     if (newCode.isEmpty()) {
       if (priorAccount.account == null) {
         keccakCodeHash = ZkAccount.EMPTY_KECCAK_CODE_HASH;
-        shomeiCodeHash = ZkAccount.EMPTY_CODE_HASH;
+        poseidonCodeHash = ZkAccount.EMPTY_CODE_HASH;
         codeSize = safeUInt256(UInt256.ZERO);
       } else {
         keccakCodeHash = priorAccount.account.getCodeHash();
-        shomeiCodeHash = priorAccount.account.getShomeiCodeHash();
+        poseidonCodeHash = priorAccount.account.getPoseidonCodeHash();
         codeSize = priorAccount.account.getCodeSize();
       }
     } else {
       final Bytes code = newCode.get();
       keccakCodeHash = safeByte32(HashProvider.keccak256(code));
-      shomeiCodeHash = safeCode(code).hash();
+      poseidonCodeHash = safeCode(code).hash();
       codeSize = safeUInt256(UInt256.valueOf(code.size()));
     }
 
     return new ZkAccount(
-        accountKey, nonce, balance, storageRoot, shomeiCodeHash, keccakCodeHash, codeSize);
+        accountKey, nonce, balance, storageRoot, poseidonCodeHash, keccakCodeHash, codeSize);
   }
 }

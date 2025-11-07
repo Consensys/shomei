@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 public class HashProviderTest {
 
   @Test
-  public void testMimc() {
+  public void testPoseidon() {
     MutableBytes input = MutableBytes.of(new byte[Bytes32.SIZE * 16]);
     for (int i = 0; i < 16; i++) {
       input.set(Bytes32.SIZE * (i + 1) - 1, (byte) i);
@@ -30,6 +30,6 @@ public class HashProviderTest {
     assertThat(HashProvider.trieHash(input))
         .isEqualTo(
             Bytes32.fromHexString(
-                "0x12900ae41a010e54e3b1ed95efa39071d357ff642aeedd30a2c4e13250409662"));
+                "0x254c857251520cbd40981dd74c2b3ee345acf16978e701324181926236278aaa"));
   }
 }

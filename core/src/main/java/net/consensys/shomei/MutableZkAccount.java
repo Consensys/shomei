@@ -25,12 +25,12 @@ public class MutableZkAccount extends ZkAccount {
   public MutableZkAccount(
       final AccountKey accountKey,
       final PoseidonSafeBytes<Bytes32> keccakCodeHash,
-      final Bytes32 shomeiCodeHash,
+      final Bytes32 poseidonCodeHash,
       final PoseidonSafeBytes<UInt256> codeSize,
       final PoseidonSafeBytes<UInt256> nonce,
       final PoseidonSafeBytes<UInt256> balance,
       final Bytes32 storageRoot) {
-    super(accountKey, nonce, balance, storageRoot, shomeiCodeHash, keccakCodeHash, codeSize);
+    super(accountKey, nonce, balance, storageRoot, poseidonCodeHash, keccakCodeHash, codeSize);
   }
 
   public MutableZkAccount(final ZkAccount toCopy) {
@@ -41,8 +41,8 @@ public class MutableZkAccount extends ZkAccount {
     this.keccakCodeHash = keccakCodeHash;
   }
 
-  public void setShomeiCodeHash(final Hash shomeiCodeHash) {
-    this.shomeiCodeHash = shomeiCodeHash;
+  public void setPoseidonCodeHash(final Hash poseidonCodeHash) {
+    this.poseidonCodeHash = poseidonCodeHash;
   }
 
   public void setCodeSize(final PoseidonSafeBytes<UInt256> codeSize) {

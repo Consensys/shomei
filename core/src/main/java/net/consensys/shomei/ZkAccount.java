@@ -39,7 +39,7 @@ public class ZkAccount {
 
   protected AccountKey accountKey;
   protected PoseidonSafeBytes<Bytes32> keccakCodeHash;
-  protected Bytes32 shomeiCodeHash;
+  protected Bytes32 poseidonCodeHash;
 
   protected PoseidonSafeBytes<UInt256> codeSize;
   protected PoseidonSafeBytes<UInt256> nonce;
@@ -51,7 +51,7 @@ public class ZkAccount {
       final PoseidonSafeBytes<UInt256> nonce,
       final PoseidonSafeBytes<UInt256> balance,
       final Bytes32 storageRoot,
-      final Bytes32 shomeiCodeHash,
+      final Bytes32 poseidonCodeHash,
       final PoseidonSafeBytes<Bytes32> keccakCodeHash,
       final PoseidonSafeBytes<UInt256> codeSize) {
     this.accountKey = accountKey;
@@ -59,7 +59,7 @@ public class ZkAccount {
     this.balance = balance;
     this.storageRoot = storageRoot;
     this.keccakCodeHash = keccakCodeHash;
-    this.shomeiCodeHash = shomeiCodeHash;
+    this.poseidonCodeHash = poseidonCodeHash;
     this.codeSize = codeSize;
   }
 
@@ -69,7 +69,7 @@ public class ZkAccount {
         toCopy.nonce,
         toCopy.balance,
         toCopy.storageRoot,
-        toCopy.shomeiCodeHash,
+        toCopy.poseidonCodeHash,
         toCopy.keccakCodeHash,
         toCopy.codeSize);
   }
@@ -138,8 +138,8 @@ public class ZkAccount {
    *
    * @return the Shomei code hash
    */
-  public Bytes32 getShomeiCodeHash() {
-    return shomeiCodeHash;
+  public Bytes32 getPoseidonCodeHash() {
+    return poseidonCodeHash;
   }
 
   /**
@@ -167,7 +167,7 @@ public class ZkAccount {
    */
   public PoseidonSafeBytes<Bytes> getEncodedBytes() {
     return PoseidonSafeBytesUtils.concatenateSafeElements(
-        nonce, balance, storageRoot, shomeiCodeHash, keccakCodeHash, codeSize);
+        nonce, balance, storageRoot, poseidonCodeHash, keccakCodeHash, codeSize);
   }
 
   @Override
@@ -181,7 +181,7 @@ public class ZkAccount {
     ZkAccount zkAccount = (ZkAccount) o;
     return Objects.equals(accountKey, zkAccount.accountKey)
         && Objects.equals(keccakCodeHash, zkAccount.keccakCodeHash)
-        && Objects.equals(shomeiCodeHash, zkAccount.shomeiCodeHash)
+        && Objects.equals(poseidonCodeHash, zkAccount.poseidonCodeHash)
         && Objects.equals(codeSize, zkAccount.codeSize)
         && Objects.equals(nonce, zkAccount.nonce)
         && Objects.equals(balance, zkAccount.balance)
@@ -191,7 +191,7 @@ public class ZkAccount {
   @Override
   public int hashCode() {
     return Objects.hash(
-        accountKey, keccakCodeHash, shomeiCodeHash, codeSize, nonce, balance, storageRoot);
+        accountKey, keccakCodeHash, poseidonCodeHash, codeSize, nonce, balance, storageRoot);
   }
 
   @Override
@@ -201,8 +201,8 @@ public class ZkAccount {
         + accountKey
         + ", keccakCodeHash="
         + keccakCodeHash
-        + ", shomeiCodeHash="
-        + shomeiCodeHash
+        + ", poseidonCodeHash="
+        + poseidonCodeHash
         + ", codeSize="
         + codeSize
         + ", nonce="

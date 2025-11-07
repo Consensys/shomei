@@ -66,7 +66,7 @@ public class LineaGetProofTest {
         .thenReturn(Hash.wrap(EMPTY_TRIE.getTopRootHash()));
     lenient()
         .when(worldStateStorage.getTrieNode(any(Bytes.class), any(Bytes.class)))
-        .thenReturn(Optional.of(EMPTY_TRIE.getTopRootHash()));
+        .thenReturn(Optional.of(EMPTY_TRIE.getTopRootNode().getEncodedBytes()));
     lenient()
         .when(worldStateStorage.getNearestKeys(any(Bytes.class)))
         .thenReturn(

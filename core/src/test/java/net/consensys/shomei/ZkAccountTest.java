@@ -40,7 +40,7 @@ public class ZkAccountTest {
             safeUInt256(UInt256.valueOf(0L)),
             safeUInt256(UInt256.valueOf(0L)),
             Hash.ZERO,
-            ZKTrie.DEFAULT_TRIE_ROOT,
+            Hash.ZERO,
             safeByte32(Hash.ZERO),
             safeUInt256(UInt256.valueOf(0L)));
 
@@ -101,13 +101,13 @@ public class ZkAccountTest {
     PoseidonSafeBytes<UInt256> nonce = safeUInt256(UInt256.valueOf(42L));
     PoseidonSafeBytes<UInt256> balance = safeUInt256(UInt256.fromHexString("0x56bc75e2d63100000"));
     Hash storageRoot = Hash.wrap(Bytes32.random());
-    Hash shomeiCodeHash = Hash.wrap(Bytes32.random());
+    Hash poseidonCodeHash = Hash.wrap(Bytes32.random());
     PoseidonSafeBytes<Bytes32> keccakCodeHash = safeByte32(Bytes32.random());
     PoseidonSafeBytes<UInt256> codeSize = safeUInt256(UInt256.valueOf(100L));
 
     ZkAccount originalAccount =
         new ZkAccount(
-            accountKey, nonce, balance, storageRoot, shomeiCodeHash, keccakCodeHash, codeSize);
+            accountKey, nonce, balance, storageRoot, poseidonCodeHash, keccakCodeHash, codeSize);
 
     PoseidonSafeBytes<Bytes> encodedBytes = originalAccount.getEncodedBytes();
     ZkAccount deserializedAccount =
