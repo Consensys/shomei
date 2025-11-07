@@ -124,7 +124,9 @@ allprojects {
       trimTrailingWhitespace()
       endWithNewline()
       // apply appropriate license header files.
-      licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
+      // Using licenseHeader instead of licenseHeaderFile to treat $YEAR as a regex pattern
+      licenseHeader(new File(rootDir, 'gradle/spotless.java.license').text)
+        .updateYearWithLatest(false)
     }
     // spotless check applied to build.gradle (groovy) files
     groovyGradle {
