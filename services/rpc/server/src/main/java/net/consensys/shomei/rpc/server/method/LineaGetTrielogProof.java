@@ -32,16 +32,14 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 
-public class LineaGetTrielogProof implements JsonRpcMethod {
+public class LineaGetTrielogProof extends BlockParameterJsonRpcMethod {
 
   private final ZkWorldStateArchive worldStateArchive;
   private final TrieLogLayerConverter trieLogLayerConverter;
@@ -61,15 +59,17 @@ public class LineaGetTrielogProof implements JsonRpcMethod {
   @Override
   public JsonRpcResponse response(final JsonRpcRequestContext requestContext) {
 
-    final String serializedTrieLogLayer = getSerializedTrieLogLayer(requestContext);
-    final Hash parentBlockHash = getParentBlockHash(requestContext);
 
     try {
+      final String serializedTrieLogLayer = getSerializedTrieLogLayer(requestContext);
+      final var blockParameter = getBlockParameterOrBlockHash(0, requestContext);
+
       final Bytes trieLogBytes = Bytes.fromHexString(serializedTrieLogLayer);
       final TrieLogLayer trieLogLayer = trieLogLayerConverter.decodeTrieLog(RLP.input(trieLogBytes));
 
-      Optional<ZkEvmWorldState> worldState =
-          worldStateArchive.getCachedWorldState(parentBlockHash);
+      Optional<ZkEvmWorldState> worldState = resolveBlockParameterToWorldState(
+          blockParameter, worldStateArchive);
+
 
       if (worldState.isPresent()) {
         final WorldStateProofProvider worldStateProofProvider =
@@ -130,14 +130,6 @@ public class LineaGetTrielogProof implements JsonRpcMethod {
   private String getSerializedTrieLogLayer(final JsonRpcRequestContext request) {
     try {
       return request.getRequiredParameter(0, String.class);
-    } catch (JsonRpcParameter.JsonRpcParameterException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private Hash getParentBlockHash(final JsonRpcRequestContext request) {
-    try {
-      return request.getRequiredParameter(1, Hash.class);
     } catch (JsonRpcParameter.JsonRpcParameterException e) {
       throw new RuntimeException(e);
     }
