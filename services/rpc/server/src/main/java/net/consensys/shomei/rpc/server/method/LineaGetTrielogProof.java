@@ -62,7 +62,7 @@ public class LineaGetTrielogProof extends BlockParameterJsonRpcMethod {
 
     try {
       final String serializedTrieLogLayer = getSerializedTrieLogLayer(requestContext);
-      final var blockParameter = getBlockParameterOrBlockHash(0, requestContext);
+      final var blockParameter = getBlockParameterOrBlockHash(1, requestContext);
 
       final Bytes trieLogBytes = Bytes.fromHexString(serializedTrieLogLayer);
       final TrieLogLayer trieLogLayer = trieLogLayerConverter.decodeTrieLog(RLP.input(trieLogBytes));
