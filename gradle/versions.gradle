@@ -27,7 +27,7 @@ dependencyManagement {
     }
 
 
-      dependency 'org.hyperledger.besu:gnark:1.4.1-P2-SNAPSHOT'
+      dependency 'org.hyperledger.besu:gnark:1.4.1-SNAPSHOT'
 
   }
 }
