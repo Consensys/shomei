@@ -18,6 +18,7 @@ import static com.google.common.collect.Streams.stream;
 import net.consensys.shomei.fullsync.FullSyncDownloader;
 import net.consensys.shomei.metrics.MetricsService;
 import net.consensys.shomei.rpc.server.method.LineaGetProof;
+import net.consensys.shomei.rpc.server.method.LineaGetTrielogProof;
 import net.consensys.shomei.rpc.server.method.RollupDeleteZkEVMStateMerkleProofByRange;
 import net.consensys.shomei.rpc.server.method.RollupForkChoiceUpdated;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMBlockNumber;
@@ -106,6 +107,7 @@ public class JsonRpcService extends AbstractVerticle {
             new AdminChangeLogLevel(),
             new SendRawTrieLog(fullSyncDownloader, worldStateArchive.getTrieLogManager()),
             new LineaGetProof(worldStateArchive),
+            new LineaGetTrielogProof(worldStateArchive, worldStateArchive.getTrieLogLayerConverter()),
             new RollupGetZkEVMBlockNumber(worldStateArchive),
             new RollupDeleteZkEVMStateMerkleProofByRange(worldStateArchive.getTraceManager()),
             new RollupForkChoiceUpdated(worldStateArchive, fullSyncDownloader),

@@ -58,7 +58,7 @@ public class ShomeiJsonRpcErrorResponse extends JsonRpcErrorResponse {
   }
 
   @SuppressWarnings("unused")
-  private record JsonError(
+  public record JsonError(
       @JsonIgnore RpcErrorType jsonRpcErrorCode,
       @JsonGetter("message") String message,
       @JsonGetter("data") @JsonInclude(JsonInclude.Include.NON_NULL) Object data) {
