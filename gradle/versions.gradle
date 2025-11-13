@@ -1,7 +1,6 @@
 dependencyManagement {
   imports {
     mavenBom "org.hyperledger.besu:bom:${besuVersion}"
-    mavenBom "org.apache.logging.log4j:log4j-bom:2.24.3"
   }
 
   dependencies {
@@ -26,13 +25,5 @@ dependencyManagement {
       entry 'micrometer-core'
       entry 'micrometer-registry-prometheus'
     }
-
-    // TODO: remove these once they are included in upstream besu bom:
-    dependencySet(group: 'org.hyperledger.besu.internal', version: "${besuVersion}") {
-      entry 'pipeline'
-      entry 'tasks'
-    }
-
-
   }
 }
