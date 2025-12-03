@@ -13,7 +13,8 @@
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.trie.ZKTrie.EMPTY_TRIE;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -22,7 +23,6 @@ import static org.mockito.Mockito.when;
 
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
@@ -45,6 +45,7 @@ import net.consensys.shomei.trielog.StorageSlotKey;
 import net.consensys.shomei.trielog.TrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
 import net.consensys.shomei.worldview.ZkEvmWorldState;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,22 +79,22 @@ public class LineaGetTrielogProofTest {
     testPriorAccount =
         new ZkAccount(
             testAccountKey,
-            UInt256.valueOf(1), // Prior nonce
-            Wei.of(1000), // Prior balance
+            safeUInt256(UInt256.valueOf(1)), // Prior nonce
+            safeUInt256(UInt256.valueOf(1000)), // Prior balance
             ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
             Hash.ZERO,
             safeByte32(Hash.ZERO),
-            UInt256.ZERO);
+            safeUInt256(UInt256.ZERO));
 
     testAccount =
         new ZkAccount(
             testAccountKey,
-            UInt256.valueOf(2), // Updated nonce
-            Wei.of(2000), // Updated balance
+            safeUInt256(UInt256.valueOf(2)), // Updated nonce
+            safeUInt256(UInt256.valueOf(2000)), // Updated balance
             ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
             Hash.ZERO,
-            safeByte32(Hash.ZERO),
-            UInt256.ZERO);
+            safeByte32(Bytes32.ZERO),
+            safeUInt256(UInt256.ZERO));
 
     // Setup basic mocks used by all tests
     lenient().when(worldStateArchive.getTrieLogLayerConverter()).thenReturn(trieLogLayerConverter);
@@ -210,12 +211,12 @@ public class LineaGetTrielogProofTest {
     ZkAccount priorAccountNoStorage =
         new ZkAccount(
             testAccountKey,
-            UInt256.valueOf(1),
-            Wei.of(1000),
+            safeUInt256(UInt256.valueOf(1)),
+            safeUInt256(UInt256.valueOf(1000)),
             Hash.wrap(EMPTY_TRIE.getTopRootHash()),
             Hash.ZERO,
             safeByte32(Hash.ZERO),
-            UInt256.ZERO);
+            safeUInt256(UInt256.ZERO));
 
     // Create real world state with account but no storage
     final ZkEvmWorldState worldStateForAccountOnly =
@@ -304,22 +305,22 @@ public class LineaGetTrielogProofTest {
     ZkAccount priorAccount2 =
         new ZkAccount(
             accountKey2,
-            UInt256.valueOf(1),
-            Wei.of(1500),
+            safeUInt256(UInt256.valueOf(1)),
+            safeUInt256(UInt256.valueOf(1500)),
             ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
             Hash.ZERO,
             safeByte32(Hash.ZERO),
-            UInt256.ZERO);
+            safeUInt256(UInt256.ZERO));
 
     ZkAccount account2 =
         new ZkAccount(
             accountKey2,
-            UInt256.valueOf(3),
-            Wei.of(3000),
+            safeUInt256(UInt256.valueOf(3)),
+            safeUInt256(UInt256.valueOf(3000)),
             ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
             Hash.ZERO,
             safeByte32(Hash.ZERO),
-            UInt256.ZERO);
+            safeUInt256(UInt256.ZERO));
 
     // Create real world state with both accounts and their storage
     final ZkEvmWorldState multiAccountWorldState =
