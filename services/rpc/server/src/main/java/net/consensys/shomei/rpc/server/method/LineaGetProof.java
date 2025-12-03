@@ -14,7 +14,6 @@ package net.consensys.shomei.rpc.server.method;
 
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.BlockParameterOrBlockHash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
@@ -35,7 +34,7 @@ import net.consensys.shomei.trielog.StorageSlotKey;
 import net.consensys.shomei.worldview.ZkEvmWorldState;
 import org.apache.tuweni.units.bigints.UInt256;
 
-public class LineaGetProof implements JsonRpcMethod {
+public class LineaGetProof extends BlockParameterJsonRpcMethod {
 
   final ZkWorldStateArchive worldStateArchive;
 
@@ -54,18 +53,11 @@ public class LineaGetProof implements JsonRpcMethod {
     final AccountKey accountAddress = getAccountAddress(requestContext);
     final List<StorageSlotKey> slotKeys = getSlotKeys(requestContext);
     final BlockParameterOrBlockHash blockParameterOrBlockHash =
-        getBlockParameterOrBlockHash(requestContext);
+        getBlockParameterOrBlockHash(2, requestContext);
 
-    Optional<ZkEvmWorldState> worldState = Optional.empty();
-    if (blockParameterOrBlockHash.isNumeric()) {
-      worldState =
-          worldStateArchive.getCachedWorldState(blockParameterOrBlockHash.getNumber().getAsLong());
-    } else if (blockParameterOrBlockHash.getBlockHash()) {
-      worldState =
-          worldStateArchive.getCachedWorldState(blockParameterOrBlockHash.getHash().orElseThrow());
-    } else if (blockParameterOrBlockHash.isLatest()) {
-      worldState = worldStateArchive.getCachedWorldState(worldStateArchive.getCurrentBlockHash());
-    }
+    Optional<ZkEvmWorldState> worldState =
+        resolveBlockParameterToWorldState(blockParameterOrBlockHash, worldStateArchive);
+
     if (worldState.isPresent()) {
       final WorldStateProofProvider worldStateProofProvider =
           new WorldStateProofProvider(worldState.get());
@@ -94,15 +86,6 @@ public class LineaGetProof implements JsonRpcMethod {
           .map(UInt256::fromHexString)
           .map(StorageSlotKey::new)
           .collect(Collectors.toList());
-    } catch (JsonRpcParameter.JsonRpcParameterException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private BlockParameterOrBlockHash getBlockParameterOrBlockHash(
-      final JsonRpcRequestContext request) {
-    try {
-      return request.getRequiredParameter(2, BlockParameterOrBlockHash.class);
     } catch (JsonRpcParameter.JsonRpcParameterException e) {
       throw new RuntimeException(e);
     }

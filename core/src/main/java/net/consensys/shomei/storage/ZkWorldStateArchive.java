@@ -191,6 +191,10 @@ public class ZkWorldStateArchive implements Closeable {
     return traceManager;
   }
 
+  public TrieLogLayerConverter getTrieLogLayerConverter() {
+    return trieLogLayerConverter;
+  }
+
   @Override
   public void close() throws IOException {
     // close all storages
