@@ -45,6 +45,6 @@ public class TrieLogLayerConverterTest {
     assertThat(mockAccount).isPresent();
     assertThat(mockAccount.get().getNonce()).isEqualTo(UInt256.ZERO);
     assertThat(mockAccount.get().getBalance()).isEqualTo(Wei.fromEth(1));
-    assertThat(mockAccount.get().getCodeHash()).isEqualTo(Hash.EMPTY);
+    assertThat(mockAccount.get().getCodeHash().getOriginalUnsafeValue()).isEqualTo(Hash.EMPTY);
   }
 }
