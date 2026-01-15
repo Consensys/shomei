@@ -63,6 +63,14 @@ allprojects {
         // set a runtime shomei version for tests not executing from a jar
         systemProperty "shomei.version", project.version
         useJUnitPlatform()
+
+        // Configure Mockito agent to avoid self-attachment warnings
+        doFirst {
+            def mockitoAgent = configurations.testRuntimeClasspath.find { it.name.contains('mockito-core') }
+            if (mockitoAgent) {
+                jvmArgs "-javaagent:${mockitoAgent}"
+            }
+        }
     }
 
     sourceCompatibility = '21'

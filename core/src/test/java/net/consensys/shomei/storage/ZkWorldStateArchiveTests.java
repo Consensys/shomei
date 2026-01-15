@@ -75,7 +75,8 @@ public class ZkWorldStateArchiveTests {
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
-            false);
+            false,
+            Optional.empty());
     TrieLogIdentifier genesis = new TrieLogIdentifier(0L, pluginLayer.getBlockHash());
     TrieLogManager trieLogManager = archive.getTrieLogManager();
     TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction = trieLogManager.updater();
@@ -98,7 +99,8 @@ public class ZkWorldStateArchiveTests {
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
-            false);
+            false,
+            Optional.empty());
     TrieLogIdentifier genesis = new TrieLogIdentifier(0L, pluginLayer.getBlockHash());
     TrieLogManager trieLogManager = archive.getTrieLogManager();
     TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction = trieLogManager.updater();
