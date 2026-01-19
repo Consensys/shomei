@@ -14,6 +14,7 @@ package net.consensys.shomei.util.bytes;
 
 import org.hyperledger.besu.datatypes.Address;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.apache.tuweni.bytes.Bytes;
@@ -54,34 +55,43 @@ public class PoseidonSafeBytesUtils {
     int paddedSize = isOdd ? value.size() + 1 : value.size();
     int limbCount = paddedSize / 2;
     byte[] output = new byte[limbCount * 4];
+    int offset = 0;
 
     for (int i = 0; i < limbCount; i++) {
-      int src = i * 2;
+      int src = i * 2 - offset;
       int dst = i * 4;
       output[dst] = 0x00;
       output[dst + 1] = 0x00;
-      output[dst + 2] = src < 0 ? 0x00 : value.get(src);
-      output[dst + 3] = src + 1 < value.size() ? value.get(src + 1) : 0x00;
+
+      if (isOdd && i % 8 == 0 && limbCount - i < 8) {
+        offset = 1;
+        output[dst + 2] = 0x00;
+        output[dst + 3] = value.get(src);
+      } else {
+        output[4 * i + 2] = value.get(src);
+        output[4 * i + 3] = value.get(src + 1);
+      }
     }
+
     return Bytes.wrap(output);
   }
 
   public static Bytes32 convertBackFromPoseidonSafeFieldElementsSize(final Bytes value) {
-    // Determine the number of limbs (each represented by 4 bytes in the padded structure)
-    int limbCount = value.size() / 4;
-    // Prepare an array to hold the original Bytes data
-    byte[] originalBytes = new byte[limbCount * 2];
-    for (int i = 0; i < limbCount; i++) {
-      int src = i * 4;
-      int dst = i * 2;
-      // The actual data is in the 2nd and 3rd bytes of the 4-byte chunks
-      originalBytes[dst] = value.get(src + 2);
-      originalBytes[dst + 1] = value.get(src + 3);
+    ByteBuffer cleanedBytesBuf = ByteBuffer.allocate(value.size() / 2 + 1);
+    int numLimbs = value.size() / 4;
+
+    for (int i = 0; i < numLimbs; i++) {
+      if (i % 8 == 0 && numLimbs - i < 8 && value.get(4 * i + 2) == 0x00) {
+        cleanedBytesBuf.put(value.get(4 * i + 3));
+      } else {
+        cleanedBytesBuf.put(value.get(4 * i + 2));
+        cleanedBytesBuf.put(value.get(4 * i + 3));
+      }
     }
-    // Wrap the original bytes in a Bytes object
-    Bytes originalBytesWrapped = Bytes.wrap(originalBytes);
+
+    Bytes cleanedBytes = Bytes.wrap(cleanedBytesBuf.array());
     // Convert back to Bytes32 (ensuring a fixed size of 32 bytes)
-    return Bytes32.leftPad(originalBytesWrapped);
+    return Bytes32.leftPad(cleanedBytes);
   }
 
   private static final ConversionStrategy POSEIDON_STRATEGY = new PoseidonStrategy();

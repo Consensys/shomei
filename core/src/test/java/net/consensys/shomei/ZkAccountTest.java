@@ -137,7 +137,6 @@ public class ZkAccountTest {
                 "0x5b4f38da3b5579846022b90a4a9ca1096653055722e75ebc0d4f68ba22d712c9"));
   }
 
-
   @Test
   public void testContractCodeEncodingOddLenCode() {
     final Bytes code =
