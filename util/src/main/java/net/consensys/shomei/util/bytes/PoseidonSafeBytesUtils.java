@@ -80,10 +80,8 @@ public class PoseidonSafeBytesUtils {
     }
     // Wrap the original bytes in a Bytes object
     Bytes originalBytesWrapped = Bytes.wrap(originalBytes);
-    // Remove any padding that was added (odd size logic from original function)
-    Bytes cleanedBytes = originalBytesWrapped.trimLeadingZeros();
     // Convert back to Bytes32 (ensuring a fixed size of 32 bytes)
-    return Bytes32.leftPad(cleanedBytes);
+    return Bytes32.leftPad(originalBytesWrapped);
   }
 
   private static final ConversionStrategy POSEIDON_STRATEGY = new PoseidonStrategy();
