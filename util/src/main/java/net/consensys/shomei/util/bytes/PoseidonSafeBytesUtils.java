@@ -54,10 +54,9 @@ public class PoseidonSafeBytesUtils {
     int paddedSize = isOdd ? value.size() + 1 : value.size();
     int limbCount = paddedSize / 2;
     byte[] output = new byte[limbCount * 4];
-    int offset = isOdd ? 1 : 0;
 
     for (int i = 0; i < limbCount; i++) {
-      int src = i * 2 - offset;
+      int src = i * 2;
       int dst = i * 4;
       output[dst] = 0x00;
       output[dst + 1] = 0x00;
