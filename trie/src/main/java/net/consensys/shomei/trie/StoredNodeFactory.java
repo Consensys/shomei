@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,17 +10,19 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.trie;
 
 import static java.lang.String.format;
 import static net.consensys.shomei.trie.node.LeafType.fromBytes;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 
-import net.consensys.shomei.trie.node.BranchNode;
-import net.consensys.shomei.trie.node.EmptyLeafNode;
-import net.consensys.shomei.trie.node.LeafNode;
-import net.consensys.shomei.trie.node.LeafType;
-import net.consensys.shomei.trie.node.NextFreeNode;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
+import org.hyperledger.besu.ethereum.trie.Node;
+import org.hyperledger.besu.ethereum.trie.NodeFactory;
+import org.hyperledger.besu.ethereum.trie.NodeLoader;
+import org.hyperledger.besu.ethereum.trie.NullNode;
+import org.hyperledger.besu.ethereum.trie.StoredNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,15 +31,14 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import net.consensys.shomei.trie.node.BranchNode;
+import net.consensys.shomei.trie.node.EmptyLeafNode;
+import net.consensys.shomei.trie.node.LeafNode;
+import net.consensys.shomei.trie.node.LeafType;
+import net.consensys.shomei.trie.node.NextFreeNode;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
-import org.hyperledger.besu.ethereum.trie.Node;
-import org.hyperledger.besu.ethereum.trie.NodeFactory;
-import org.hyperledger.besu.ethereum.trie.NodeLoader;
-import org.hyperledger.besu.ethereum.trie.NullNode;
-import org.hyperledger.besu.ethereum.trie.StoredNode;
+import org.apache.tuweni.units.bigints.UInt256;
 
 /**
  * The StoredNodeFactory class is responsible for creating and managing stored nodes in a stored
@@ -112,6 +113,15 @@ public class StoredNodeFactory implements NodeFactory<Bytes> {
     return handleNewNode(new BranchNode<>(children, value, this, valueSerializer));
   }
 
+  public Node<Bytes> createNextFreeNode(final long value) {
+    return handleNewNode(
+        new NextFreeNode<>(
+            Bytes.of(LeafType.NEXT_FREE_NODE.getTerminatorPath()),
+            safeUInt256(UInt256.valueOf(value)),
+            this,
+            valueSerializer));
+  }
+
   @Override
   public Node<Bytes> createLeaf(final Bytes path, final Bytes value) {
     if (fromBytes(path).equals(LeafType.NEXT_FREE_NODE)) {
@@ -164,6 +174,10 @@ public class StoredNodeFactory implements NodeFactory<Bytes> {
   private Node<Bytes> decode(
       final Bytes location, final Bytes input, final Supplier<String> errMessage) {
 
+    if (location.isEmpty()) { // toproot
+      return decodeRoot(input);
+    }
+
     int type =
         input.size() == Hash.SIZE * 2
             ? 1
@@ -171,29 +185,27 @@ public class StoredNodeFactory implements NodeFactory<Bytes> {
 
     switch (type) {
       case 1 -> {
-        if (location.isEmpty()) {
-          return decodeRoot(input);
-        }
         return decodeBranch(location, input);
       }
       case 2 -> {
         return decodeLeaf(input);
       }
-      default -> throw new MerkleTrieException(
-          errMessage.get() + format(": invalid node %s", type));
+      default ->
+          throw new MerkleTrieException(errMessage.get() + format(": invalid node %s", type));
     }
   }
 
   protected BranchNode<Bytes> decodeRoot(final Bytes input) {
     final ArrayList<Node<Bytes>> children = new ArrayList<>(NB_CHILD);
-    final Bytes32 nextFreeNode = Bytes32.wrap(input.slice(0, Bytes32.SIZE));
+    final int subTreeIndex = 64;
+    final Bytes nextFreeNode = Bytes.wrap(input.slice(0, subTreeIndex));
     children.add(
         new NextFreeNode<>(
             Bytes.of(LeafType.NEXT_FREE_NODE.getTerminatorPath()),
             nextFreeNode,
             this,
             valueSerializer));
-    final Bytes32 childHash = Bytes32.wrap(input.slice(Bytes32.SIZE, Hash.SIZE));
+    final Bytes32 childHash = Bytes32.wrap(input.slice(subTreeIndex, Hash.SIZE));
     children.add(new StoredNode<>(this, Bytes.concatenate(Bytes.of((byte) 1)), childHash));
     return new BranchNode<>(Bytes.EMPTY, children, Optional.empty(), this, valueSerializer);
   }

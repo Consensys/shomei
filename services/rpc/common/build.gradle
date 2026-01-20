@@ -2,24 +2,25 @@
 apply plugin: 'java-library'
 
 tasks.named('jar') {
-    archiveBaseName = 'shomei-rpc-common'
-    manifest {
-        attributes(
-                'Specification-Title': archiveBaseName,
-                'Specification-Version': project.version,
-                'Implementation-Title': archiveBaseName,
-                'Implementation-Version': calculateVersion()
-        )
-    }
+  archiveBaseName = 'shomei-rpc-common'
+  manifest {
+    attributes(
+      'Specification-Title': archiveBaseName,
+      'Specification-Version': project.version,
+      'Implementation-Title': archiveBaseName,
+      'Implementation-Version': calculateVersion()
+      )
+  }
 }
 
 dependencies {
 
-    implementation project(':core')
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
-    implementation 'org.hyperledger.besu:besu-datatypes'
+  implementation project(':core')
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
+  implementation 'org.hyperledger.besu:besu-datatypes'
+  implementation 'io.consensys.tuweni:tuweni-bytes'
 }
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,15 +10,13 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.trielog;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import net.consensys.shomei.ZkAccount;
-import net.consensys.shomei.ZkValue;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
-import net.consensys.zkevm.HashProvider;
+import org.hyperledger.besu.datatypes.Address;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.rlp.RLPInput;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,10 +26,10 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import net.consensys.shomei.ZkAccount;
+import net.consensys.shomei.ZkValue;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.rlp.RLPInput;
 
 /**
  * This class encapsulates the changes that are done to transition one block to the next. This
@@ -90,17 +88,19 @@ public class TrieLogLayer {
   }
 
   public AccountKey addAccountChange(
-      final MimcSafeBytes<Address> address,
+      final PoseidonSafeBytes<Address> address,
       final ZkAccount oldValue,
       final ZkAccount newValue,
       final boolean isCleared) {
-    final AccountKey accountKey = new AccountKey(HashProvider.trieHash(address), address);
+    final AccountKey accountKey = new AccountKey(address.hash(), address);
     addAccountChange(accountKey, oldValue, newValue, isCleared);
     return accountKey;
   }
 
   public AccountKey addAccountChange(
-      final MimcSafeBytes<Address> address, final ZkAccount oldValue, final ZkAccount newValue) {
+      final PoseidonSafeBytes<Address> address,
+      final ZkAccount oldValue,
+      final ZkAccount newValue) {
     return addAccountChange(address, oldValue, newValue, false);
   }
 

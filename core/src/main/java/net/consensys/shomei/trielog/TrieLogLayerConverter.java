@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,30 +10,30 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.trielog;
 
 import static net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper.WRAP_ACCOUNT;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeCode;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
+
+import org.hyperledger.besu.datatypes.Address;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.rlp.RLPInput;
+
+import java.util.Objects;
+import java.util.Optional;
 
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.zkevm.HashProvider;
-
-import java.util.Objects;
-import java.util.Optional;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
-import org.hyperledger.besu.ethereum.rlp.RLPInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -191,7 +191,7 @@ public class TrieLogLayerConverter {
       in.enterList();
 
       final UInt256 nonce = UInt256.valueOf(in.readLongScalar());
-      final Wei balance = Wei.of(in.readUInt256Scalar());
+      final UInt256 balance = in.readUInt256Scalar();
       final Hash evmStorageRoot;
       if (in.nextIsNull()) {
         evmStorageRoot = Hash.EMPTY_TRIE_HASH;
@@ -203,7 +203,8 @@ public class TrieLogLayerConverter {
       in.leaveList();
 
       LOG.atTrace()
-          .setMessage("prior account entry ({}) : expected old value ({},{},{}) and found ({},{})")
+          .setMessage(
+              "prior account entry ({}) : expected old value ({},{},{}) and found ({},{},{})")
           .addArgument(accountKey)
           .addArgument(flatLeaf)
           .addArgument(nonce)
@@ -230,9 +231,9 @@ public class TrieLogLayerConverter {
       final RLPInput in) {
     in.enterList();
 
-    final UInt256 nonce = UInt256.valueOf(in.readLongScalar());
-    final Wei balance = Wei.of(in.readUInt256Scalar());
-    Hash storageRoot;
+    final PoseidonSafeBytes<UInt256> nonce = safeUInt256(UInt256.valueOf(in.readLongScalar()));
+    final PoseidonSafeBytes<UInt256> balance = safeUInt256(in.readUInt256Scalar());
+    Bytes32 storageRoot;
     if (in.nextIsNull() || priorAccount.account == null) {
       storageRoot = ZKTrie.DEFAULT_TRIE_ROOT;
       in.skipNext();
@@ -247,56 +248,28 @@ public class TrieLogLayerConverter {
     in.skipNext(); // skip keccak codeHash
     in.leaveList();
 
-    Bytes32 keccakCodeHash;
-    Bytes32 mimcCodeHash;
-    UInt256 codeSize;
+    PoseidonSafeBytes<Bytes32> keccakCodeHash;
+    Bytes32 poseidonCodeHash;
+    PoseidonSafeBytes<UInt256> codeSize;
 
     if (newCode.isEmpty()) {
       if (priorAccount.account == null) {
-        keccakCodeHash = ZkAccount.EMPTY_KECCAK_CODE_HASH.getOriginalUnsafeValue();
-        mimcCodeHash = ZkAccount.EMPTY_CODE_HASH;
-        codeSize = UInt256.ZERO;
+        keccakCodeHash = ZkAccount.EMPTY_KECCAK_CODE_HASH;
+        poseidonCodeHash = ZkAccount.EMPTY_CODE_HASH;
+        codeSize = safeUInt256(UInt256.ZERO);
       } else {
         keccakCodeHash = priorAccount.account.getCodeHash();
-        mimcCodeHash = priorAccount.account.getMimcCodeHash();
+        poseidonCodeHash = priorAccount.account.getPoseidonCodeHash();
         codeSize = priorAccount.account.getCodeSize();
       }
     } else {
       final Bytes code = newCode.get();
-      keccakCodeHash = HashProvider.keccak256(code);
-      mimcCodeHash = prepareMimcCodeHash(code);
-      codeSize = UInt256.valueOf(code.size());
+      keccakCodeHash = safeByte32(HashProvider.keccak256(code));
+      poseidonCodeHash = safeCode(code).hash();
+      codeSize = safeUInt256(UInt256.valueOf(code.size()));
     }
 
     return new ZkAccount(
-        accountKey,
-        nonce,
-        balance,
-        storageRoot,
-        Hash.wrap(mimcCodeHash),
-        safeByte32(keccakCodeHash),
-        codeSize);
-  }
-
-  /**
-   * The MiMC hasher operates over field elements and the overall operation should be ZK friendly.
-   * Each opcode making up the code to hash fit on a single byte. Since it would be too inefficient
-   * to use one field element per opcode we group them in “limbs” of 16 bytes (so 16 opcodes per
-   * limbs).
-   *
-   * @param code bytecode
-   * @return mimc code hash
-   */
-  private static Hash prepareMimcCodeHash(final Bytes code) {
-    final int sizeChunk = Bytes32.SIZE / 2;
-    final int numChunks = (int) Math.ceil((double) code.size() / sizeChunk);
-    final MutableBytes mutableBytes = MutableBytes.create(numChunks * Bytes32.SIZE);
-    int offset = 0;
-    for (int i = 0; i < numChunks; i++) {
-      int length = Math.min(sizeChunk, code.size() - offset);
-      mutableBytes.set(i * Bytes32.SIZE + (Bytes32.SIZE - length), code.slice(offset, length));
-      offset += length;
-    }
-    return HashProvider.trieHash(mutableBytes);
+        accountKey, nonce, balance, storageRoot, poseidonCodeHash, keccakCodeHash, codeSize);
   }
 }

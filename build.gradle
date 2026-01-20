@@ -1,201 +1,186 @@
 import groovy.transform.Memoized
+import net.ltgt.gradle.errorprone.CheckSeverity
 
 import java.text.SimpleDateFormat
 
 buildscript {
-    repositories {
-        mavenCentral()
-        maven {
-            url "https://artifacts.consensys.net/public/maven/maven/"
-            content { includeGroupByRegex('tech\\.pegasys\\..*')}
-        }
+  repositories {
+    mavenCentral()
+    maven {
+      url "https://artifacts.consensys.net/public/maven/maven/"
+      content { includeGroupByRegex('tech\\.pegasys\\..*')}
     }
-    dependencies {
-        classpath 'tech.pegasys.internal.license.reporter:license-reporter:1.1.1'
-    }
+  }
+  dependencies {
+    classpath 'tech.pegasys.internal.license.reporter:license-reporter:1.1.1'
+  }
 }
 
 plugins {
-    id 'com.diffplug.spotless' version '6.25.0'
-    id 'com.github.ben-manes.versions' version '0.46.0'
-    id 'com.github.jk1.dependency-license-report' version '2.1'
-    id 'io.spring.dependency-management' version '1.1.0'
-    id 'net.ltgt.errorprone' version '3.0.1' apply false
-    id 'org.jreleaser' version '1.16.0'
-    id 'java'
-    id 'application'
+  id 'com.diffplug.spotless' version '7.0.3'
+  id 'com.github.jk1.dependency-license-report' version '2.9'
+  id 'io.spring.dependency-management' version '1.1.7'
+  id 'net.ltgt.errorprone' version '4.2.0'
+  id 'org.jreleaser' version '1.16.0'
+  id 'java'
+  id 'application'
 }
 
 apply plugin: 'application'
 
 application {
-    applicationName = "shomei"
-    getMainClass().set("net.consensys.shomei.Shomei")
-    applicationDefaultJvmArgs = [
-            "-Dvertx.disableFileCPResolving=true",
-            "-Dshomei.home=SHOMEI_HOME",
-            // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
-            // happens during shutdown is not logged.
-            "-Dlog4j.shutdownHookEnabled=false",
-            "-Dlog4j2.formatMsgNoLookups=true",
-            // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
-            "-XX:NativeMemoryTracking=summary",
-            // 32Mb for Netty Direct ByteBuf
-            "-Dio.netty.maxDirectMemory=33554432"
-    ]
+  applicationName = "shomei"
+  getMainClass().set("net.consensys.shomei.Shomei")
+  applicationDefaultJvmArgs = [
+    "-Dvertx.disableFileCPResolving=true",
+    "-Dshomei.home=SHOMEI_HOME",
+    // We shutdown log4j ourselves, as otherwise his shutdown hook runs before our own and whatever
+    // happens during shutdown is not logged.
+    "-Dlog4j.shutdownHookEnabled=false",
+    "-Dlog4j2.formatMsgNoLookups=true",
+    // run `jcmd <PID> VM.native_memory` to check JVM native memory consumption
+    "-XX:NativeMemoryTracking=summary",
+    // 32Mb for Netty Direct ByteBuf
+    "-Dio.netty.maxDirectMemory=33554432"
+  ]
 }
 
 allprojects {
-    group = project.group
-    version = calculateVersion()
+  group = project.group
+  version = calculateVersion()
 
-    apply plugin: 'java-library'
-    apply plugin: 'io.spring.dependency-management'
-    apply plugin: 'net.ltgt.errorprone'
-    apply from: "${rootDir}/gradle/versions.gradle"
+  apply plugin: 'java-library'
+  apply plugin: 'io.spring.dependency-management'
+  apply plugin: 'net.ltgt.errorprone'
+  apply from: "${rootDir}/gradle/versions.gradle"
 
+  java {
+    withSourcesJar()
+    withJavadocJar()
+  }
+
+  test {
+    // set a runtime shomei version for tests not executing from a jar
+    systemProperty "shomei.version", project.version
+    useJUnitPlatform()
+  }
+
+  sourceCompatibility = '21'
+  targetCompatibility = '21'
+
+  repositories {
+    maven {
+      url "https://artifacts.consensys.net/public/linea-besu/maven/"
+      content { includeGroupByRegex('io\\.consensys\\..*') }
+      content { includeGroupByRegex('org\\.hyperledger\\..*') }
+    }
+    mavenLocal()
+    mavenCentral()
+    maven {
+      url "https://artifacts.consensys.net/public/maven/maven/"
+      content { includeGroupByRegex('tech\\.pegasys($|\\..*)') }
+    }
+    maven {
+      url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/"
+      content { includeGroupByRegex('io\\.libp2p($|\\..*)') }
+    }
+    maven {
+      url "https://hyperledger.jfrog.io/artifactory/besu-maven/"
+      content { includeGroupByRegex('org\\.hyperledger\\.besu($|\\..*)') }
+    }
+    ivy {
+      name = "besuShomeiGithubReleases"
+      url = "https://github.com"
+
+      patternLayout {
+        artifact "/Consensys/besu-shomei-plugin/releases/download/v[revision]/[module]-v[revision].[ext]"
+      }
+
+      metadataSources {
+        artifact()
+      }
+
+      content {
+        includeGroup "ConsenSys"
+        includeModule "ConsenSys", "besu-shomei-plugin"
+        includeModule "ConsenSys", "besu-shomei-plugin-test-support"
+      }
+    }
+  }
+
+  dependencies {
+    errorprone("com.google.errorprone:error_prone_core")
+  }
+
+  apply plugin: 'com.diffplug.spotless'
+  spotless {
     java {
-        withSourcesJar()
-        withJavadocJar()
+      // This path needs to be relative to each project
+      target 'src/**/*.java'
+      targetExclude '**/src/reference-test/**', '**/src/main/generated/**', '**/src/test/generated/**', '**/src/jmh/generated/**'
+      removeUnusedImports()
+      googleJavaFormat('1.25.2')
+      importOrder 'org.hyperledger', 'java', ''
+      trimTrailingWhitespace()
+      endWithNewline()
+      // apply appropriate license header files.
+      // Using licenseHeader instead of licenseHeaderFile to treat $YEAR as a regex pattern
+      licenseHeader(new File(rootDir, 'gradle/spotless.java.license').text)
+        .updateYearWithLatest(false)
+    }
+    // spotless check applied to build.gradle (groovy) files
+    groovyGradle {
+      target '*.gradle'
+      greclipse('4.30.0').configFile(rootProject.file('gradle/formatter.properties'))
+      endWithNewline()
+    }
+    // Below this line are currently only license header tasks
+    // Below this line are currently only license header tasks
+    format 'groovy', { target '**/src/*/grovy/**/*.groovy' }
+    format 'bash', { target '**/*.sh' }
+    format 'sol', { target '**/*.sol' }
+  }
+
+  tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += [
+      '-Xlint:unchecked',
+      '-Xlint:cast',
+      '-Xlint:rawtypes',
+      '-Xlint:overloads',
+      '-Xlint:divzero',
+      '-Xlint:finally',
+      '-Xlint:static',
+    ]
+
+    options.errorprone {
+      enabled = !'true'.equalsIgnoreCase(System.getProperty('avt.disableErrorProne'))
+      excludedPaths = '.*/generated/*.*'
+      disableWarningsInGeneratedCode = true
+      allErrorsAsWarnings = true
+      // Our equals need to be symmetric, this checker doesn't respect that.
+      check('EqualsGetClass', CheckSeverity.OFF)
+      // We like to use futures with no return values.
+      check('FutureReturnValueIgnored', CheckSeverity.OFF)
+      // We use the JSR-305 annotations instead of the Google annotations.
+      check('ImmutableEnumChecker', CheckSeverity.OFF)
+      // This is a style check instead of an error-prone pattern.
+      check('UnnecessaryParentheses', CheckSeverity.OFF)
+
+      // This check is broken in Java 12.  See https://github.com/google/error-prone/issues/1257
+      if (JavaVersion.current() == JavaVersion.VERSION_12) {
+        check('Finally', CheckSeverity.OFF)
+      }
+      // This check is broken after Java 12.  See https://github.com/google/error-prone/issues/1352
+      if (JavaVersion.current() > JavaVersion.VERSION_12) {
+        check('TypeParameterUnusedInFormals', CheckSeverity.OFF)
+      }
+
+      check('InsecureCryptoUsage', CheckSeverity.WARN)
+      check('WildcardImport', CheckSeverity.WARN)
     }
 
-    test {
-        // set a runtime shomei version for tests not executing from a jar
-        systemProperty "shomei.version", project.version
-        useJUnitPlatform()
-    }
-
-    sourceCompatibility = '21'
-    targetCompatibility = '21'
-
-    repositories {
-        maven {
-            url "https://artifacts.consensys.net/public/linea-besu/maven/"
-            content { includeGroupByRegex('io\\.consensys\\..*') }
-            content { includeGroupByRegex('org\\.hyperledger\\..*') }
-        }
-        mavenLocal()
-        mavenCentral()
-        maven {
-            url "https://artifacts.consensys.net/public/maven/maven/"
-            content { includeGroupByRegex('tech\\.pegasys($|\\..*)') }
-        }
-        maven {
-            url "https://dl.cloudsmith.io/public/libp2p/jvm-libp2p/maven/"
-            content { includeGroupByRegex('io\\.libp2p($|\\..*)') }
-        }
-        maven {
-            url "https://hyperledger.jfrog.io/artifactory/besu-maven/"
-            content { includeGroupByRegex('org\\.hyperledger\\.besu($|\\..*)') }
-        }
-        ivy {
-            name = "besuShomeiGithubReleases"
-            url = "https://github.com"
-
-            patternLayout {
-                artifact "/Consensys/besu-shomei-plugin/releases/download/v[revision]/[module]-v[revision].[ext]"
-            }
-
-            metadataSources {
-                artifact()
-            }
-
-            content {
-                includeGroup "ConsenSys"
-                includeModule "ConsenSys", "besu-shomei-plugin"
-                includeModule "ConsenSys", "besu-shomei-plugin-test-support"
-            }
-        }
-    }
-
-    dependencies {
-        errorprone("com.google.errorprone:error_prone_core")
-        errorprone("tech.pegasys.tools.epchecks:errorprone-checks")
-    }
-
-    apply plugin: 'com.diffplug.spotless'
-    spotless {
-        java {
-            // This path needs to be relative to each project
-            target fileTree('.') {
-                include '**/*.java'
-                exclude '**/.gradle/**'
-                exclude '**/resources'
-                exclude '**/src/*/generated'
-                exclude '**/src/*/generated_tests'
-                exclude '**/build/**'
-            }
-            removeUnusedImports()
-            importOrder 'net.consensys', 'java', ''
-            trimTrailingWhitespace()
-            endWithNewline()
-            licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
-        }
-    }
-
-    tasks.withType(JavaCompile) {
-        options.compilerArgs += [
-                '-Xlint:unchecked',
-                '-Xlint:cast',
-                '-Xlint:rawtypes',
-                '-Xlint:overloads',
-                '-Xlint:divzero',
-                '-Xlint:finally',
-                '-Xlint:static',
-                '-Werror',
-        ]
-        options.forkOptions.jvmArgs += [
-                '--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
-                '--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED',
-                '--add-opens=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED'
-        ]
-
-        options.errorprone {
-            enabled = !'true'.equalsIgnoreCase(System.getProperty('avt.disableErrorProne'))
-            disableWarningsInGeneratedCode
-
-            // Our equals need to be symmetric, this checker doesn't respect that
-            check('EqualsGetClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-            // We use the JSR-305 annotations instead of the Google annotations
-            check('ImmutableEnumChecker', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-            // Storing a lambda to avoid code duplication is not a bad thing
-            check('UnnecessaryLambda', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-            // Generates a ton of false alarms for no real value
-            check('LongDoubleConversion', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-            check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-            check('CanIgnoreReturnValueSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-            check('DirectInvocationOnMock', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-
-            // We don't apply strict javadoc requirements yet
-            check('EmptyBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-            check('MissingSummary', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-
-            // Force strict compliance with Java naming conventions
-            check('JavaCase', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-
-            // Check for uses of == that should probably be .equals
-            check('ReferenceComparison', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-
-            // These checks are imported from errorprone-checks dependency but not required in Teku
-            check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-            check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-            check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-
-            // These are experimental checks that we want enabled
-            check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-            check('InsecureCryptoUsage', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-            check('WildcardImport', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-            check('DeduplicateConstants', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-            check('RedundantOverride', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-            check('RedundantThrows', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-            check('UnnecessarilyFullyQualified', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-            check('InitializeInline', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-            check('ClassName', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-            check('InterfaceWithOnlyStatics', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-            check('PackageLocation', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
-        }
-        options.encoding = 'UTF-8'
-    }
+    options.encoding = 'UTF-8'
+  }
 }
 
 // config the deferred groupId
@@ -203,108 +188,107 @@ def groupVal = project.findProperty("groupVal") ?: 'io.consensys.protocols.shome
 
 subprojects {
 
-    apply plugin: 'maven-publish'
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                versionMapping {
-                    allVariants {
-                        fromResolutionResult()
-                    }
-                }
-
-                from components.java
-                artifactId = project.name == 'shomei' ? 'shomei' : "shomei-${project.name}"
-                groupId = groupVal
-                version = project.version.toString()
-                suppressPomMetadataWarningsFor("testFixturesApiElements")
-                suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
-
-                pom {
-                    name.set("Shomei module: ${project.path}")
-                    description.set("Module ${project.name} of shomei")
-                    url.set("https://github.com/consensys/shomei")
-                    licenses {
-                        license {
-                            name.set("Apache-2.0")
-                            url.set("https://www.apache.org/licenses/LICENSE-2.0")
-                        }
-                    }
-                    scm {
-                        connection.set("scm:git:https://github.com/consensys/shomei.git")
-                        developerConnection.set("scm:git:ssh://git@github.com:consensys/shomei.git")
-                        url.set("https://github.com/consensys/shomei")
-                    }
-                    developers {
-                        developer {
-                            id.set("consensys")
-                            name.set("Protocols Team")
-                            email.set("devops@consensys.net")
-                        }
-                    }
-                }
-            }
+  apply plugin: 'maven-publish'
+  publishing {
+    publications {
+      mavenJava(MavenPublication) {
+        versionMapping {
+          allVariants {
+            fromResolutionResult()
+          }
         }
 
-        repositories {
-            // publish to a staging directory for jreleaser to release from:
-            // ./gradlew publish
-            maven {
-                url = rootProject.layout.buildDirectory.dir("staging-deploy")
+        from components.java
+        artifactId = project.name == 'shomei' ? 'shomei' : "shomei-${project.name}"
+        groupId = groupVal
+        version = project.version.toString()
+        suppressPomMetadataWarningsFor("testFixturesApiElements")
+        suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
+
+        pom {
+          name.set("Shomei module: ${project.path}")
+          description.set("Module ${project.name} of shomei")
+          url.set("https://github.com/consensys/shomei")
+          licenses {
+            license {
+              name.set("Apache-2.0")
+              url.set("https://www.apache.org/licenses/LICENSE-2.0")
             }
+          }
+          scm {
+            connection.set("scm:git:https://github.com/consensys/shomei.git")
+            developerConnection.set("scm:git:ssh://git@github.com:consensys/shomei.git")
+            url.set("https://github.com/consensys/shomei")
+          }
+          developers {
+            developer {
+              id.set("consensys")
+              name.set("Protocols Team")
+              email.set("devops@consensys.net")
+            }
+          }
         }
+      }
     }
+
+    repositories {
+      // publish to a staging directory for jreleaser to release from:
+      // ./gradlew publish
+      maven {
+        url = rootProject.layout.buildDirectory.dir("staging-deploy")
+      }
+    }
+  }
 }
 
 jreleaser {
-    project {
-        description = 'Shomei - a zero-knowledge proof orchestrator'
-        copyright = 'Copyright 2025 ConsenSys'
-        java {
-            groupId = groupVal
+  project {
+    description = 'Shomei - a zero-knowledge proof orchestrator'
+    copyright = 'Copyright 2025 ConsenSys'
+    java {
+      groupId = groupVal
+    }
+  }
+  release {
+    github {
+      // Creating and tagging a release is done manually
+      skipRelease = true
+      skipTag = true
+      // injecting a fake value to make JReleaser happy
+      token = "foobar"
+    }
+  }
+  signing {
+    active = 'ALWAYS'
+    armored = true
+    verify = true
+  }
+  deploy {
+    maven {
+      mavenCentral {
+        sonatype {
+          active = 'RELEASE'
+          url = 'https://central.sonatype.com/api/v1/publisher'
+          stagingRepository('build/staging-deploy')
+          retryDelay = 60
+          maxRetries = 100
         }
-    }
-    release {
-        github {
-            // Creating and tagging a release is done manually
-            skipRelease = true
-            skipTag = true
-            // injecting a fake value to make JReleaser happy
-            token = "foobar"
-        }
-    }
-    signing {
-        active = 'ALWAYS'
-        armored = true
-        verify = true
-    }
-    deploy {
-        maven {
-            mavenCentral {
-                sonatype {
-                    active = 'RELEASE'
-                    url = 'https://central.sonatype.com/api/v1/publisher'
-                    stagingRepository('build/staging-deploy')
-                    retryDelay = 60
-                    maxRetries = 100
-                }
-            }
-        
-            nexus2 {
-                'snapshot' {
-                    active = 'SNAPSHOT'
-                    url = 'https://central.sonatype.com/repository/maven-snapshots'
-                    snapshotUrl = 'https://central.sonatype.com/repository/maven-snapshots'
-                    stagingRepository('build/staging-deploy')
-                    applyMavenCentralRules = true
-                    snapshotSupported = true
-                    closeRepository = true
-                    releaseRepository = true
+      }
 
-                }
-            }
+      nexus2 {
+        'snapshot' {
+          active = 'SNAPSHOT'
+          url = 'https://central.sonatype.com/repository/maven-snapshots'
+          snapshotUrl = 'https://central.sonatype.com/repository/maven-snapshots'
+          stagingRepository('build/staging-deploy')
+          applyMavenCentralRules = true
+          snapshotSupported = true
+          closeRepository = true
+          releaseRepository = true
         }
+      }
     }
+  }
 }
 
 // Create a task to prepare the jreleaser directory.
@@ -324,52 +308,52 @@ tasks.all { t ->
 jar { enabled = false }
 
 dependencies {
-    implementation project(':shomei')
-    errorprone 'com.google.errorprone:error_prone_core'
+  implementation project(':shomei')
+  errorprone 'com.google.errorprone:error_prone_core'
 }
 
 @Memoized
 def calculateVersion() {
-    String version = System.getenv("TAG_VERSION") ?: rootProject.version
-    // Regex pattern for basic calendar versioning, with provision to omit patch rev
-    def versionPattern = ~/\d+\.\d+(\.\d+)?(-.*)?/
-    if (! (version =~ versionPattern)) {
-        println("Supplied project version is malformed: ${project.version}, aborting")
-        throw new GradleException("Supplied project version is malformed: ${version}")
-    }
+  String version = System.getenv("TAG_VERSION") ?: rootProject.version
+  // Regex pattern for basic calendar versioning, with provision to omit patch rev
+  def versionPattern = ~/\d+\.\d+(\.\d+)?(-.*)?/
+  if (! (version =~ versionPattern)) {
+    println("Supplied project version is malformed: ${project.version}, aborting")
+    throw new GradleException("Supplied project version is malformed: ${version}")
+  }
 
-    if (version.endsWith("-SNAPSHOT")) {
-        version = version.replace("-SNAPSHOT", "-dev-" + getCheckedOutGitCommitHash())
-    }
-    return version
+  if (version.endsWith("-SNAPSHOT")) {
+    version = version.replace("-SNAPSHOT", "-dev-" + getCheckedOutGitCommitHash())
+  }
+  return version
 }
 
 def getCheckedOutGitCommitHash(length = 8) {
-    try {
-        def gitFolder = "$projectDir/.git/"
-        if (!file(gitFolder).isDirectory()) {
-            // We are in a submodule.  The file's contents are `gitdir: <gitFolder>\n`.
-            // Read the file, cut off the front, and trim the whitespace.
-            gitFolder = file(gitFolder).text.substring(length).trim() + "/"
-        }
-        def takeFromHash = length
-        /*
-         * '.git/HEAD' contains either
-         *      in case of detached head: the currently checked out commit hash
-         *      otherwise: a reference to a file containing the current commit hash
-         */
-        def head = new File(gitFolder + "HEAD").text.split(":") // .git/HEAD
-        def isCommit = head.length == 1 // e5a7c79edabbf7dd39888442df081b1c9d8e88fd
-
-        if (isCommit) return head[0].trim().take(takeFromHash) // e5a7c79edabb
-
-        def refHead = new File(gitFolder + head[1].trim()) // .git/refs/heads/master
-        refHead.text.trim().take takeFromHash
-    } catch (Exception e) {
-        logger.warn('Could not calculate git commit, using "xxxxxxxx" (run with --info for stacktrace)')
-        logger.info('Error retrieving git commit', e)
-        return "xxxxxxxx"
+  try {
+    def gitFolder = "$projectDir/.git/"
+    if (!file(gitFolder).isDirectory()) {
+      // We are in a submodule.  The file's contents are `gitdir: <gitFolder>\n`.
+      // Read the file, cut off the front, and trim the whitespace.
+      gitFolder = file(gitFolder).text.substring(length).trim() + "/"
     }
+    def takeFromHash = length
+    /*
+     * '.git/HEAD' contains either
+     *      in case of detached head: the currently checked out commit hash
+     *      otherwise: a reference to a file containing the current commit hash
+     */
+    def head = new File(gitFolder + "HEAD").text.split(":") // .git/HEAD
+    def isCommit = head.length == 1 // e5a7c79edabbf7dd39888442df081b1c9d8e88fd
+
+    if (isCommit) return head[0].trim().take(takeFromHash) // e5a7c79edabb
+
+    def refHead = new File(gitFolder + head[1].trim()) // .git/refs/heads/master
+    refHead.text.trim().take takeFromHash
+  } catch (Exception e) {
+    logger.warn('Could not calculate git commit, using "xxxxxxxx" (run with --info for stacktrace)')
+    logger.info('Error retrieving git commit', e)
+    return "xxxxxxxx"
+  }
 }
 
 task printVersion() {
@@ -380,15 +364,15 @@ task printVersion() {
 }
 
 distTar {
-    doFirst {
-        delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
-    }
-    compression = Compression.GZIP
-    archiveExtension = 'tar.gz'
+  doFirst {
+    delete fileTree(dir: 'build/distributions', include: '*.tar.gz')
+  }
+  compression = Compression.GZIP
+  archiveExtension = 'tar.gz'
 }
 
 distZip {
-    doFirst {
-        delete fileTree(dir: 'build/distributions', include: '*.zip')
-    }
+  doFirst {
+    delete fileTree(dir: 'build/distributions', include: '*.zip')
+  }
 }

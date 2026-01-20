@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,30 +10,34 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.trie.model;
 
-import net.consensys.shomei.util.bytes.BytesBuffer;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.concatenateSafeElements;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
+
+import org.hyperledger.besu.datatypes.Hash;
 
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import net.consensys.shomei.util.bytes.BytesBuffer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Hash;
 
 public class LeafOpening {
 
+  private static final HashKeyProvider POSEIDON_PROVIDER = new PoseidonHashKeyProvider();
+
+  private static HashKeyProvider getHashKeyProvider() {
+    return POSEIDON_PROVIDER;
+  }
+
   public static final LeafOpening HEAD =
-      new LeafOpening(0, 1, Hash.wrap(Bytes32.ZERO), Bytes32.ZERO);
+      new LeafOpening(0, 1, getHashKeyProvider().getHeadHashKey(), Bytes32.ZERO);
 
   public static final LeafOpening TAIL =
-      new LeafOpening(
-          0,
-          1,
-          Hash.fromHexString("12ab655e9a2ca55660b44d1e5c37b00159aa76fed00000010a11800000000000"),
-          Bytes32.ZERO);
+      new LeafOpening(0, 1, getHashKeyProvider().getTailHashKey(), Bytes32.ZERO);
 
   private final Hash hkey;
 
@@ -117,17 +121,17 @@ public class LeafOpening {
         encodedBytes,
         bytesInput ->
             new LeafOpening(
-                bytesInput.readUInt256().toLong(),
-                bytesInput.readUInt256().toLong(),
+                bytesInput.readUint256FromBytes64().toLong(),
+                bytesInput.readUint256FromBytes64().toLong(),
                 Hash.wrap(bytesInput.readBytes32()),
                 bytesInput.readBytes32()));
   }
 
   @JsonIgnore
   public Bytes getEncodesBytes() {
-    return Bytes.concatenate(
-        UInt256.valueOf(prevLeaf), // Prev
-        UInt256.valueOf(nextLeaf), // Next ,
+    return concatenateSafeElements(
+        safeByte32(UInt256.valueOf(prevLeaf)), // Prev
+        safeByte32(UInt256.valueOf(nextLeaf)), // Next ,
         hkey, // HKEY
         hval); // HVALUE
   }
@@ -144,5 +148,23 @@ public class LeafOpening {
         + ", nextLeaf="
         + nextLeaf
         + '}';
+  }
+
+  private interface HashKeyProvider {
+    Hash getHeadHashKey();
+
+    Hash getTailHashKey();
+  }
+
+  private static class PoseidonHashKeyProvider implements HashKeyProvider {
+    @Override
+    public Hash getHeadHashKey() {
+      return Hash.wrap(Bytes32.ZERO);
+    }
+
+    @Override
+    public Hash getTailHashKey() {
+      return Hash.fromHexString("7f0000007f0000007f0000007f0000007f0000007f0000007f0000007f000000");
+    }
   }
 }

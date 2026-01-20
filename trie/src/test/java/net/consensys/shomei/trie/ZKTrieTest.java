@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,20 +10,20 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.trie;
 
 import static net.consensys.shomei.trie.DigestGenerator.createDumDigest;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
+
+import org.hyperledger.besu.datatypes.Hash;
 
 import net.consensys.shomei.trie.model.LeafOpening;
 import net.consensys.shomei.trie.storage.InMemoryStorage;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.zkevm.HashProvider;
-
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 
 public class ZKTrieTest {
@@ -33,7 +33,7 @@ public class ZKTrieTest {
     assertThat(HashProvider.trieHash(LeafOpening.HEAD.getEncodesBytes()))
         .isEqualTo(
             Bytes.fromHexString(
-                "0x0891fa77c3d0c9b745840d71d41dcb58b638d4734bb4f0bba4a3d1a2d847b672"));
+                "0x2f5de7ad279a134761de0d89702e52743b2f04f41b86cc5400dfae1d4b981340"));
   }
 
   @Test
@@ -41,7 +41,7 @@ public class ZKTrieTest {
     assertThat(HashProvider.trieHash(LeafOpening.TAIL.getEncodesBytes()))
         .isEqualTo(
             Bytes.fromHexString(
-                "0x10ba2286f648a549b50ea5f1b6e1155d22c31eb4727c241e76c420200cd5dbe0"));
+                "0x5c73480b5e85fc2c3ab61fc155cf475b74590d005d8916b85fdd5c32773b1255"));
   }
 
   @Test
@@ -55,11 +55,11 @@ public class ZKTrieTest {
     assertThat(zkTrie.getSubRootHash())
         .isEqualTo(
             Bytes.fromHexString(
-                "0x0951bfcd4ac808d195af8247140b906a4379b3f2d37ec66e34d2f4a5d35fa166"));
+                "0x3a00a8e34a16f8a1225fee734816edb326f783bd6678d793345a28f046586ba6"));
     assertThat(zkTrie.getTopRootHash())
         .isEqualTo(
             Bytes.fromHexString(
-                "0x07977874126658098c066972282d4c85f230520af3847e297fe7524f976873e5"));
+                "0x2fa0344a2fab2b310d2af3155c330261263f887379aef18b4941e3ea1cc59df7"));
   }
 
   @Test
@@ -68,22 +68,27 @@ public class ZKTrieTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> key =
+        unsafeFromBytes(
+            Bytes32.fromHexString(
+                "0x000000000000000000000000000000000000000000000000000000000000003a"));
 
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.trieHash(key);
-
+    final PoseidonSafeBytes<Bytes> value =
+        unsafeFromBytes(
+            Bytes32.fromHexString(
+                "0x000000000000000000000000000000000000000000000000000000000000002a"));
+    final Hash hkey = key.hash();
     zkTrie.putWithTrace(hkey, key, value);
     zkTrie.commit();
     assertThat(storage.getTrieNodeStorage()).isNotEmpty();
     assertThat(zkTrie.getSubRootHash())
         .isEqualTo(
             Bytes.fromHexString(
-                "0x0882afe875656680dceb7b17fcba7c136cec0c32becbe9039546c79f71c56d36"));
+                "0x50b4bb9d2b4c917f48ca9465613d7efe092934a95bcdc7a004ef3a6b7900fd5b"));
     assertThat(zkTrie.getTopRootHash())
         .isEqualTo(
             Bytes.fromHexString(
-                "0x0cfdc3990045390093be4e1cc9907b220324cccd1c8ea9ede980c7afa898ef8d"));
+                "0x7a5cf31710a49b59489deb53505a3d5458625ef01b33914d0d784380464177ad"));
   }
 
   @Test
@@ -92,10 +97,10 @@ public class ZKTrieTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.trieHash(key);
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final PoseidonSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
+    final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, dumValue);
 
@@ -115,11 +120,11 @@ public class ZKTrieTest {
     assertThat(zkTrie.getSubRootHash())
         .isEqualTo(
             Bytes.fromHexString(
-                "0x0882afe875656680dceb7b17fcba7c136cec0c32becbe9039546c79f71c56d36"));
+                "0x50b4bb9d2b4c917f48ca9465613d7efe092934a95bcdc7a004ef3a6b7900fd5b"));
     assertThat(zkTrie.getTopRootHash())
         .isEqualTo(
             Bytes.fromHexString(
-                "0x0cfdc3990045390093be4e1cc9907b220324cccd1c8ea9ede980c7afa898ef8d"));
+                "0x7a5cf31710a49b59489deb53505a3d5458625ef01b33914d0d784380464177ad"));
   }
 
   @Test
@@ -127,16 +132,16 @@ public class ZKTrieTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
+    final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, value);
 
     assertThat(zkTrie.getSubRootHash())
         .isNotEqualTo(
             Bytes.fromHexString(
-                "0x0951bfcd4ac808d195af8247140b906a4379b3f2d37ec66e34d2f4a5d35fa166"));
+                "0x3a00a8e34a16f8a1225fee734816edb326f783bd6678d793345a28f046586ba6"));
     assertThat(zkTrie.getTopRootHash())
         .isNotEqualTo(
             Bytes.fromHexString(
@@ -147,10 +152,10 @@ public class ZKTrieTest {
     assertThat(zkTrie.getSubRootHash())
         .isEqualTo(
             Bytes.fromHexString(
-                "0x0951bfcd4ac808d195af8247140b906a4379b3f2d37ec66e34d2f4a5d35fa166"));
+                "0x3a00a8e34a16f8a1225fee734816edb326f783bd6678d793345a28f046586ba6"));
     assertThat(zkTrie.getTopRootHash())
         .isEqualTo(
             Bytes.fromHexString(
-                "0x0bcb88342825fa7a079a5cf5f77d07b1590a140c311a35acd765080eea120329"));
+                "0x391010e55fad441a1e3a33b11fb8271f68e86b6c1812ebd402d678d343fded62"));
   }
 }

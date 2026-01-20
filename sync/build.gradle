@@ -2,44 +2,42 @@
 apply plugin: 'java-library'
 
 tasks.named('jar') {
-    archiveBaseName = 'shomei-sync'
-    manifest {
-        attributes(
-                'Specification-Title': archiveBaseName,
-                'Specification-Version': project.version,
-                'Implementation-Title': archiveBaseName,
-                'Implementation-Version': calculateVersion()
-        )
-    }
+  archiveBaseName = 'shomei-sync'
+  manifest {
+    attributes(
+      'Specification-Title': archiveBaseName,
+      'Specification-Version': project.version,
+      'Implementation-Title': archiveBaseName,
+      'Implementation-Version': calculateVersion()
+      )
+  }
 }
 
 dependencies {
 
 
-    implementation project(':core')
-    implementation project(':services:rpc:client')
+  implementation project(':core')
+  implementation project(':services:rpc:client')
 
-    implementation 'io.vertx:vertx-core'
+  implementation 'io.vertx:vertx-core'
 
-    implementation 'org.hyperledger.besu.internal:besu-metrics-core'
-    implementation 'org.hyperledger.besu.internal:besu-services-pipeline'
-    implementation 'org.hyperledger.besu.internal:besu-services-tasks'
+  implementation 'org.hyperledger.besu.internal:besu-metrics-core'
+  implementation 'org.hyperledger.besu.internal:besu-services-pipeline'
+  implementation 'org.hyperledger.besu.internal:besu-services-tasks'
 
-    implementation 'com.google.guava:guava'
+  implementation 'com.google.guava:guava'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    testImplementation 'org.assertj:assertj-core'
-    testImplementation 'org.mockito:mockito-core'
-    testImplementation 'org.mockito:mockito-junit-jupiter'
-    // Force desired log4j backend for test, vertx is
-    testRuntimeOnly 'org.apache.logging.log4j:log4j-api:2.24.3'
-    testRuntimeOnly 'org.apache.logging.log4j:log4j-core:2.24.3'
-
-
+  testImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+  testImplementation 'org.assertj:assertj-core'
+  testImplementation 'org.mockito:mockito-core'
+  testImplementation 'org.mockito:mockito-junit-jupiter'
+  // Force desired log4j backend for test, vertx is
+  testRuntimeOnly 'org.apache.logging.log4j:log4j-api:2.24.3'
+  testRuntimeOnly 'org.apache.logging.log4j:log4j-core:2.24.3'
 }
 
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.storage;
 
 import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames.ZK_LEAF_INDEX;
@@ -18,6 +17,10 @@ import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdenti
 import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames.ZK_TRIE_LOG;
 import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames.ZK_TRIE_NODE;
 
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+
+import com.google.common.annotations.VisibleForTesting;
 import net.consensys.shomei.services.storage.api.KeyValueStorage;
 import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
 import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentedStorage;
@@ -25,11 +28,6 @@ import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfig
 import net.consensys.shomei.storage.TrieLogManager.TrieLogManagerImpl;
 import net.consensys.shomei.storage.worldstate.PersistedWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
-
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
-
-import com.google.common.annotations.VisibleForTesting;
 
 public class RocksDBStorageProvider implements StorageProvider {
   private final RocksDBSegmentedStorage segmentedStorage;

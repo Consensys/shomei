@@ -2,73 +2,74 @@
 apply plugin: 'java-library'
 
 tasks.named('jar') {
-    archiveBaseName = 'shomei-rpc-server'
-    manifest {
-        attributes(
-                'Specification-Title': archiveBaseName,
-                'Specification-Version': project.version,
-                'Implementation-Title': archiveBaseName,
-                'Implementation-Version': calculateVersion()
-        )
-    }
+  archiveBaseName = 'shomei-rpc-server'
+  manifest {
+    attributes(
+      'Specification-Title': archiveBaseName,
+      'Specification-Version': project.version,
+      'Implementation-Title': archiveBaseName,
+      'Implementation-Version': calculateVersion()
+      )
+  }
 }
 
 dependencies {
 
-    implementation project(':util')
-    implementation project(':core')
-    implementation project(':crypto')
-    implementation project(':services:rpc:common')
-    implementation project(':services:metrics')
-    implementation project(':sync')
-    implementation project(':trie')
+  implementation project(':util')
+  implementation project(':core')
+  implementation project(':crypto')
+  implementation project(':services:rpc:common')
+  implementation project(':services:metrics')
+  implementation project(':sync')
+  implementation project(':trie')
 
-    // Google Guava
-    implementation 'com.google.guava:guava'
+  // Google Guava
+  implementation 'com.google.guava:guava'
 
-    // Hyperledger Besu dependencies
-    implementation 'org.hyperledger.besu:besu-datatypes'
-    implementation 'org.hyperledger.besu:besu-plugin-api'
-    implementation 'org.hyperledger.besu.internal:besu-ethereum-api'
-    implementation 'org.hyperledger.besu.internal:besu-ethereum-core'
-    implementation 'org.hyperledger.besu.internal:besu-ethereum-rlp'
-    implementation 'org.hyperledger.besu.internal:besu-util'
-    implementation 'io.micrometer:micrometer-core'
+  // Hyperledger Besu dependencies
+  implementation 'org.hyperledger.besu:besu-datatypes'
+  implementation 'org.hyperledger.besu:besu-plugin-api'
+  implementation 'org.hyperledger.besu.internal:besu-ethereum-api'
+  implementation 'org.hyperledger.besu.internal:besu-ethereum-core'
+  implementation 'org.hyperledger.besu.internal:besu-ethereum-rlp'
+  implementation 'org.hyperledger.besu.internal:besu-ethereum-trie'
+  implementation 'org.hyperledger.besu.internal:besu-util'
+  implementation 'io.micrometer:micrometer-core'
 
-    // Jackson dependencies
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
+  // Jackson dependencies
+  implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-    // Logging dependencies
-    api 'org.slf4j:slf4j-api'
-    implementation 'org.apache.logging.log4j:log4j-core'
-    implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
+  // Logging dependencies
+  api 'org.slf4j:slf4j-api'
+  implementation 'org.apache.logging.log4j:log4j-core'
+  implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
 
-    // OpenTelemetry
-    implementation 'io.opentelemetry:opentelemetry-api'
+  // OpenTelemetry
+  implementation 'io.opentelemetry:opentelemetry-api'
 
-    // Tuweni
-    implementation 'io.consensys.tuweni:tuweni-bytes'
-    implementation 'io.consensys.tuweni:tuweni-units'
+  // Tuweni
+  implementation 'io.consensys.tuweni:tuweni-bytes'
+  implementation 'io.consensys.tuweni:tuweni-units'
 
-    // Vert.x dependencies
-    implementation 'io.vertx:vertx-auth-jwt'
-    implementation 'io.vertx:vertx-codegen'
-    implementation 'io.vertx:vertx-core'
-    implementation 'io.vertx:vertx-unit'
-    implementation 'io.vertx:vertx-web'
+  // Vert.x dependencies
+  implementation 'io.vertx:vertx-auth-jwt'
+  implementation 'io.vertx:vertx-codegen'
+  implementation 'io.vertx:vertx-core'
+  implementation 'io.vertx:vertx-unit'
+  implementation 'io.vertx:vertx-web'
 
-    // Jackson
-    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8'
+  // Jackson
+  implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8'
 
-    // Test dependencies
-    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+  // Test dependencies
+  testImplementation 'org.junit.jupiter:junit-jupiter-api'
 
-    testImplementation 'org.assertj:assertj-core'
-    testImplementation 'org.mockito:mockito-core'
-    testImplementation 'org.mockito:mockito-junit-jupiter'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+  testImplementation 'org.assertj:assertj-core'
+  testImplementation 'org.mockito:mockito-core'
+  testImplementation 'org.mockito:mockito-junit-jupiter'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }

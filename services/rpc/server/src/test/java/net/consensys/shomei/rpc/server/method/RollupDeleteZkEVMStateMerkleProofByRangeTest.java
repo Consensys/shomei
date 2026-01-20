@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,12 +10,22 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
+
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupDeleteZkEvmStateByRangeParameter;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEVMStateMerkleProofV0Response;
@@ -27,19 +37,8 @@ import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.trace.Trace;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
-
-import java.util.List;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -73,17 +72,19 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
     final List<Trace> traces =
-        List.of(accountStateTrie.readWithTrace(Hash.ZERO, MimcSafeBytes.safeByte32(Hash.ZERO)));
+        List.of(
+            accountStateTrie.readWithTrace(
+                Hash.ZERO, PoseidonSafeBytesUtils.safeByte32(Hash.ZERO)));
 
     final List<Trace> traces2 =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.wrap(Bytes32.random()), MimcSafeBytes.safeByte32(Bytes32.random())));
+                Hash.wrap(Bytes32.random()), PoseidonSafeBytesUtils.safeByte32(Bytes32.random())));
 
     final List<Trace> traces3 =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.wrap(Bytes32.random()), MimcSafeBytes.safeByte32(Bytes32.random())));
+                Hash.wrap(Bytes32.random()), PoseidonSafeBytesUtils.safeByte32(Bytes32.random())));
 
     final TraceManager.TraceManagerUpdater updater = traceManager.updater();
     updater.saveZkStateRootHash(0, Hash.wrap(accountStateTrie.getTopRootHash()));

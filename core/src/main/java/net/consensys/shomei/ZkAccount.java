@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,87 +10,57 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei;
 
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 import static net.consensys.zkevm.HashProvider.keccak256;
 import static net.consensys.zkevm.HashProvider.trieHash;
 
-import net.consensys.shomei.trielog.AccountKey;
-import net.consensys.shomei.trielog.TrieLogAccountValue;
-import net.consensys.shomei.util.bytes.BytesBuffer;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import org.hyperledger.besu.datatypes.Address;
+import org.hyperledger.besu.datatypes.Hash;
 
 import java.util.Objects;
 
+import net.consensys.shomei.trielog.AccountKey;
+import net.consensys.shomei.util.bytes.BytesBuffer;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.Wei;
 
 /** A ZkAccount is a representation of an Ethereum account in the ZkEvm world. */
 public class ZkAccount {
 
-  public static final MimcSafeBytes<Bytes32> EMPTY_KECCAK_CODE_HASH =
+  public static final PoseidonSafeBytes<Bytes32> EMPTY_KECCAK_CODE_HASH =
       safeByte32(keccak256(Bytes.EMPTY));
   public static final Hash EMPTY_CODE_HASH = trieHash(Bytes32.ZERO);
 
   protected AccountKey accountKey;
-  protected MimcSafeBytes<Bytes32> keccakCodeHash;
-  protected Hash mimcCodeHash;
+  protected PoseidonSafeBytes<Bytes32> keccakCodeHash;
+  protected Bytes32 poseidonCodeHash;
 
-  protected UInt256 codeSize;
-  protected UInt256 nonce;
-  protected Wei balance;
-  protected Hash storageRoot;
+  protected PoseidonSafeBytes<UInt256> codeSize;
+  protected PoseidonSafeBytes<UInt256> nonce;
+  protected PoseidonSafeBytes<UInt256> balance;
+  protected Bytes32 storageRoot;
 
   public ZkAccount(
       final AccountKey accountKey,
-      final UInt256 nonce,
-      final Wei balance,
-      final Hash storageRoot,
-      final Hash mimcCodeHash,
-      final MimcSafeBytes<Bytes32> keccakCodeHash,
-      final UInt256 codeSize) {
+      final PoseidonSafeBytes<UInt256> nonce,
+      final PoseidonSafeBytes<UInt256> balance,
+      final Bytes32 storageRoot,
+      final Bytes32 poseidonCodeHash,
+      final PoseidonSafeBytes<Bytes32> keccakCodeHash,
+      final PoseidonSafeBytes<UInt256> codeSize) {
     this.accountKey = accountKey;
     this.nonce = nonce;
     this.balance = balance;
     this.storageRoot = storageRoot;
     this.keccakCodeHash = keccakCodeHash;
-    this.mimcCodeHash = mimcCodeHash;
+    this.poseidonCodeHash = poseidonCodeHash;
     this.codeSize = codeSize;
-  }
-
-  public ZkAccount(
-      final AccountKey accountKey,
-      final long nonce,
-      final Wei balance,
-      final Hash storageRoot,
-      final Hash mimcCodeHash,
-      final MimcSafeBytes<Bytes32> keccakCodeHash,
-      final long codeSize) {
-    this(
-        accountKey,
-        UInt256.valueOf(nonce),
-        balance,
-        storageRoot,
-        mimcCodeHash,
-        keccakCodeHash,
-        UInt256.valueOf(codeSize));
-  }
-
-  public ZkAccount(final AccountKey accountKey, final TrieLogAccountValue accountValue) {
-    this(
-        accountKey,
-        accountValue.getNonce(),
-        accountValue.getBalance(),
-        accountValue.getStorageRoot(),
-        accountValue.getMimcCodeHash(),
-        safeByte32(accountValue.getCodeHash()),
-        accountValue.getCodeSize());
   }
 
   public ZkAccount(final ZkAccount toCopy) {
@@ -99,7 +69,7 @@ public class ZkAccount {
         toCopy.nonce,
         toCopy.balance,
         toCopy.storageRoot,
-        toCopy.mimcCodeHash,
+        toCopy.poseidonCodeHash,
         toCopy.keccakCodeHash,
         toCopy.codeSize);
   }
@@ -110,12 +80,12 @@ public class ZkAccount {
         bytesInput ->
             new ZkAccount(
                 accountKey,
-                UInt256.fromBytes(bytesInput.readBytes32()),
-                Wei.wrap(UInt256.fromBytes(bytesInput.readBytes32())),
-                Hash.wrap(bytesInput.readBytes32()),
-                Hash.wrap(bytesInput.readBytes32()),
+                safeUInt256(bytesInput.readBytesUINT256()),
+                safeUInt256(bytesInput.readBytesUINT256()),
+                bytesInput.readBytes32(),
+                bytesInput.readBytes32(),
                 safeByte32(bytesInput.readBytes32()),
-                UInt256.fromBytes(bytesInput.readBytes32())));
+                safeUInt256(bytesInput.readBytesUINT256())));
   }
 
   /**
@@ -132,7 +102,7 @@ public class ZkAccount {
    *
    * @return the account address
    */
-  public MimcSafeBytes<Address> getAddress() {
+  public PoseidonSafeBytes<Address> getAddress() {
     return accountKey.address();
   }
 
@@ -142,7 +112,7 @@ public class ZkAccount {
    * @return the account key
    */
   public UInt256 getNonce() {
-    return nonce;
+    return nonce.getOriginalUnsafeValue();
   }
 
   /**
@@ -150,8 +120,8 @@ public class ZkAccount {
    *
    * @return the account balance
    */
-  public Wei getBalance() {
-    return balance;
+  public UInt256 getBalance() {
+    return balance.getOriginalUnsafeValue();
   }
 
   /**
@@ -159,17 +129,17 @@ public class ZkAccount {
    *
    * @return the keccak code hash
    */
-  public Hash getCodeHash() {
-    return Hash.wrap(keccakCodeHash.getOriginalUnsafeValue());
+  public PoseidonSafeBytes<Bytes32> getCodeHash() {
+    return keccakCodeHash;
   }
 
   /**
-   * Returns the mimc code hash
+   * Returns the Shomei code hash
    *
-   * @return the mimc code hash
+   * @return the Shomei code hash
    */
-  public Hash getMimcCodeHash() {
-    return mimcCodeHash;
+  public Bytes32 getPoseidonCodeHash() {
+    return poseidonCodeHash;
   }
 
   /**
@@ -177,7 +147,7 @@ public class ZkAccount {
    *
    * @return the code size
    */
-  public UInt256 getCodeSize() {
+  public PoseidonSafeBytes<UInt256> getCodeSize() {
     return codeSize;
   }
 
@@ -186,18 +156,18 @@ public class ZkAccount {
    *
    * @return the zkevm storage root
    */
-  public Hash getStorageRoot() {
+  public Bytes32 getStorageRoot() {
     return storageRoot;
   }
 
   /**
-   * Returns the encoded bytes of the account as a safe representation for the mimc algorithm
+   * Returns the encoded bytes of the account as a safe representation for the hash algorithm
    *
-   * @return
+   * @return encoded bytes
    */
-  public MimcSafeBytes<Bytes> getEncodedBytes() {
-    return MimcSafeBytes.concatenateSafeElements(
-        nonce, balance, storageRoot, mimcCodeHash, keccakCodeHash, codeSize);
+  public PoseidonSafeBytes<Bytes> getEncodedBytes() {
+    return PoseidonSafeBytesUtils.concatenateSafeElements(
+        nonce, balance, storageRoot, poseidonCodeHash, keccakCodeHash, codeSize);
   }
 
   @Override
@@ -211,7 +181,7 @@ public class ZkAccount {
     ZkAccount zkAccount = (ZkAccount) o;
     return Objects.equals(accountKey, zkAccount.accountKey)
         && Objects.equals(keccakCodeHash, zkAccount.keccakCodeHash)
-        && Objects.equals(mimcCodeHash, zkAccount.mimcCodeHash)
+        && Objects.equals(poseidonCodeHash, zkAccount.poseidonCodeHash)
         && Objects.equals(codeSize, zkAccount.codeSize)
         && Objects.equals(nonce, zkAccount.nonce)
         && Objects.equals(balance, zkAccount.balance)
@@ -221,7 +191,7 @@ public class ZkAccount {
   @Override
   public int hashCode() {
     return Objects.hash(
-        accountKey, keccakCodeHash, mimcCodeHash, codeSize, nonce, balance, storageRoot);
+        accountKey, keccakCodeHash, poseidonCodeHash, codeSize, nonce, balance, storageRoot);
   }
 
   @Override
@@ -231,8 +201,8 @@ public class ZkAccount {
         + accountKey
         + ", keccakCodeHash="
         + keccakCodeHash
-        + ", mimcCodeHash="
-        + mimcCodeHash
+        + ", poseidonCodeHash="
+        + poseidonCodeHash
         + ", codeSize="
         + codeSize
         + ", nonce="
@@ -252,10 +222,10 @@ public class ZkAccount {
       if (!Objects.equals(source.getNonce(), account.getNonce())) {
         throw new IllegalStateException(context + ": nonces differ");
       }
-      if (!Objects.equals(source.balance, account.getBalance())) {
+      if (!Objects.equals(source.getBalance(), account.getBalance())) {
         throw new IllegalStateException(context + ": balances differ");
       }
-      if (!Objects.equals(source.storageRoot, account.getStorageRoot())) {
+      if (!Objects.equals(source.getStorageRoot(), account.getStorageRoot())) {
         throw new IllegalStateException(context + ": Storage Roots differ");
       }
     }

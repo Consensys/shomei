@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,10 +10,20 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.trie;
 
 import static com.google.common.base.Preconditions.checkArgument;
+
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.trie.Node;
+import org.hyperledger.besu.ethereum.trie.NodeUpdater;
+import org.hyperledger.besu.ethereum.trie.Proof;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import net.consensys.shomei.trie.StoredSparseMerkleTrie.GetAndProve;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
@@ -34,21 +44,9 @@ import net.consensys.shomei.trie.trace.builder.InsertionTraceBuilder;
 import net.consensys.shomei.trie.trace.builder.ReadTraceBuilder;
 import net.consensys.shomei.trie.trace.builder.ReadZeroTraceBuilder;
 import net.consensys.shomei.trie.trace.builder.UpdateTraceBuilder;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
-import net.consensys.zkevm.HashProvider;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.trie.Node;
-import org.hyperledger.besu.ethereum.trie.NodeUpdater;
-import org.hyperledger.besu.ethereum.trie.Proof;
 
 /**
  * The ZKTrie class represents a zero-knowledge Merkle trie. It provides methods for storing,
@@ -148,7 +146,8 @@ public class ZKTrie {
 
     // create root node
     defaultNode =
-        nodeFactory.createBranch(List.of(EmptyLeafNode.instance(), defaultNode), Optional.empty());
+        nodeFactory.createBranch(
+            List.of(nodeFactory.createNextFreeNode(0L), defaultNode), Optional.empty());
 
     nodeUpdater.store(null, defaultNode.getHash(), defaultNode.getEncodedBytes());
 
@@ -216,7 +215,7 @@ public class ZKTrie {
     return state.getAndProve(path);
   }
 
-  public MerkleProof getProof(final Hash hkey, final MimcSafeBytes<? extends Bytes> key) {
+  public MerkleProof getProof(final Hash hkey, final PoseidonSafeBytes<? extends Bytes> key) {
     // GET the openings HKEY-,  hash(k) , HKEY+
     final Range nearestKeys = worldStateStorage.getNearestKeys(hkey);
     // CHECK if hash(k) exist
@@ -295,7 +294,7 @@ public class ZKTrie {
     }
   }
 
-  public Trace readWithTrace(final Hash hkey, final MimcSafeBytes<? extends Bytes> key) {
+  public Trace readWithTrace(final Hash hkey, final PoseidonSafeBytes<? extends Bytes> key) {
     // GET the openings HKEY-,  hash(k) , HKEY+
     final Range nearestKeys = worldStateStorage.getNearestKeys(hkey);
     // CHECK if hash(k) exist
@@ -349,8 +348,8 @@ public class ZKTrie {
 
   public Trace putWithTrace(
       final Hash hKey,
-      final MimcSafeBytes<? extends Bytes> key,
-      final MimcSafeBytes<? extends Bytes> newValue) {
+      final PoseidonSafeBytes<? extends Bytes> key,
+      final PoseidonSafeBytes<? extends Bytes> newValue) {
     checkArgument(hKey.size() == Bytes32.SIZE);
 
     // GET the openings HKEY-,  hash(k) , HKEY+
@@ -390,7 +389,7 @@ public class ZKTrie {
               nearestKeys.getLeftNodeValue().leafIndex(),
               nearestKeys.getRightNodeValue().leafIndex(),
               hKey,
-              HashProvider.trieHash(newValue));
+              newValue.hash());
 
       final List<Node<Bytes>> centerSiblings =
           state.putAndProve(leafPathToAdd, newLeafValue.getEncodesBytes());
@@ -437,7 +436,7 @@ public class ZKTrie {
       final LeafOpening priorUpdatedLeaf =
           get(leafPathToUpdate).map(LeafOpening::readFrom).orElseThrow();
       final LeafOpening newUpdatedLeaf = new LeafOpening(priorUpdatedLeaf);
-      newUpdatedLeaf.setHval(HashProvider.trieHash(newValue));
+      newUpdatedLeaf.setHval(newValue.hash());
 
       final List<Node<Bytes>> siblings =
           state.putAndProve(leafPathToUpdate, newUpdatedLeaf.getEncodesBytes());
@@ -454,7 +453,7 @@ public class ZKTrie {
     }
   }
 
-  public Trace removeWithTrace(final Hash hkey, final MimcSafeBytes<? extends Bytes> key) {
+  public Trace removeWithTrace(final Hash hkey, final PoseidonSafeBytes<? extends Bytes> key) {
     checkArgument(hkey.size() == Bytes32.SIZE);
 
     // GET the openings HKEY-,  hash(k) , HKEY+

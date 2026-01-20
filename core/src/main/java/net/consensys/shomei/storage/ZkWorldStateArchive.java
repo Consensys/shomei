@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,16 +10,10 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.storage;
 
-import net.consensys.shomei.exception.MissingTrieLogException;
-import net.consensys.shomei.metrics.MetricsService;
-import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
-import net.consensys.shomei.storage.worldstate.WorldStateStorage;
-import net.consensys.shomei.trielog.TrieLogLayer;
-import net.consensys.shomei.trielog.TrieLogLayerConverter;
-import net.consensys.shomei.worldview.ZkEvmWorldState;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.rlp.RLP;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -30,8 +24,13 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.rlp.RLP;
+import net.consensys.shomei.exception.MissingTrieLogException;
+import net.consensys.shomei.metrics.MetricsService;
+import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
+import net.consensys.shomei.storage.worldstate.WorldStateStorage;
+import net.consensys.shomei.trielog.TrieLogLayer;
+import net.consensys.shomei.trielog.TrieLogLayerConverter;
+import net.consensys.shomei.worldview.ZkEvmWorldState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -166,7 +165,7 @@ public class ZkWorldStateArchive implements Closeable {
   }
 
   @VisibleForTesting
-  void applyTrieLog(
+  public void applyTrieLog(
       final long newBlockNumber, final boolean generateTrace, final TrieLogLayer trieLogLayer) {
     headWorldState.getAccumulator().rollForward(trieLogLayer);
     headWorldState.commit(newBlockNumber, trieLogLayer.getBlockHash(), generateTrace);

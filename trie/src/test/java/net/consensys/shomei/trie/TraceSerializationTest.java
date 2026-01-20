@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,13 +10,20 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.trie;
 
 import static net.consensys.shomei.trie.DigestGenerator.createDumDigest;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.rlp.RLP;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 import net.consensys.shomei.trie.storage.InMemoryStorage;
 import net.consensys.shomei.trie.trace.DeletionTrace;
@@ -25,17 +32,8 @@ import net.consensys.shomei.trie.trace.ReadTrace;
 import net.consensys.shomei.trie.trace.ReadZeroTrace;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trie.trace.UpdateTrace;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
-import net.consensys.zkevm.HashProvider;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -53,9 +51,9 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
+    final Hash hkey = key.hash();
 
     final InsertionTrace expectedTrace = (InsertionTrace) zkTrie.putWithTrace(hkey, key, value);
 
@@ -73,10 +71,10 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.trieHash(key);
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final PoseidonSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
+    final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, dumValue);
 
@@ -95,9 +93,9 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
+    final Hash hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, value);
 
@@ -117,9 +115,9 @@ public class TraceSerializationTest {
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final Hash hkey = key.hash();
 
     // try read zero trace before inserting the key in the trie
     final ReadZeroTrace expectedReadZeroTrace = (ReadZeroTrace) zkTrie.readWithTrace(hkey, key);
@@ -146,14 +144,13 @@ public class TraceSerializationTest {
 
   @Test
   public void testEncodeAndDecodeListOfTraces() throws JsonProcessingException {
-
     final InMemoryStorage storage = new InMemoryStorage();
     ZKTrie zkTrie = ZKTrie.createTrie(storage);
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
-    final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.trieHash(key);
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
+    final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
+    final PoseidonSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
+    final Hash hkey = key.hash();
 
     List<Trace> expectedTraces = new ArrayList<>();
     expectedTraces.add(zkTrie.putWithTrace(hkey, key, dumValue));
