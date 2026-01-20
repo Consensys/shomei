@@ -89,9 +89,8 @@ public class PoseidonSafeBytesUtils {
       }
     }
 
-    Bytes cleanedBytes = Bytes.wrap(Arrays.copyOf(
-      cleanedBytesBuf.array(), 
-      cleanedBytesBuf.position()));
+    Bytes cleanedBytes =
+        Bytes.wrap(Arrays.copyOf(cleanedBytesBuf.array(), cleanedBytesBuf.position()));
 
     // Convert back to Bytes32 (ensuring a fixed size of 32 bytes)
     return Bytes32.leftPad(cleanedBytes);
