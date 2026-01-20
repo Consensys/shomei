@@ -12,7 +12,7 @@
  */
 package net.consensys.shomei.trie.path;
 
-import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.convertBackFromPoseidonSafeFieldElementsSize;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.convertBackFromPoseidonSafeFieldElementsForEvenSize;
 
 import java.util.Optional;
 
@@ -45,7 +45,7 @@ public class PathResolver {
           trie.get(getNextFreeNodePath())
               .map(
                   bytes -> {
-                    return UInt256.fromBytes(convertBackFromPoseidonSafeFieldElementsSize(bytes))
+                    return UInt256.fromBytes(convertBackFromPoseidonSafeFieldElementsForEvenSize(bytes))
                         .toLong();
                   })
               .orElse(0L);

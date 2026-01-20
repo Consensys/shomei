@@ -76,7 +76,7 @@ public class PoseidonSafeBytesUtils {
     return Bytes.wrap(output);
   }
 
-  public static Bytes32 convertBackFromPoseidonSafeFieldElementsSize(final Bytes value) {
+  public static Bytes32 convertBackFromPoseidonSafeFieldElementsForEvenSize(final Bytes value) {
     ByteBuffer cleanedBytesBuf = ByteBuffer.allocate(value.size() / 2 + 1);
     int numLimbs = value.size() / 4;
 
