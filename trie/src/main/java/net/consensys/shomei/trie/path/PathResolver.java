@@ -45,7 +45,8 @@ public class PathResolver {
           trie.get(getNextFreeNodePath())
               .map(
                   bytes -> {
-                    return UInt256.fromBytes(convertBackFromPoseidonSafeFieldElementsForEvenSize(bytes))
+                    return UInt256.fromBytes(
+                            convertBackFromPoseidonSafeFieldElementsForEvenSize(bytes))
                         .toLong();
                   })
               .orElse(0L);
