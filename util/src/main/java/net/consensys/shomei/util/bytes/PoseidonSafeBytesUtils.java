@@ -63,7 +63,7 @@ public class PoseidonSafeBytesUtils {
       output[dst] = 0x00;
       output[dst + 1] = 0x00;
 
-      if (isOdd && i % 8 == 0 && limbCount - i < 8) {
+      if (isOdd && i % 8 == 0 && limbCount - i <= 8) {
         offset = 1;
         output[dst + 2] = 0x00;
         output[dst + 3] = value.get(src);
@@ -81,7 +81,7 @@ public class PoseidonSafeBytesUtils {
     int numLimbs = value.size() / 4;
 
     for (int i = 0; i < numLimbs; i++) {
-      if (i % 8 == 0 && numLimbs - i < 8 && value.get(4 * i + 2) == 0x00) {
+      if (i % 8 == 0 && numLimbs - i <= 8 && value.get(4 * i + 2) == 0x00) {
         cleanedBytesBuf.put(value.get(4 * i + 3));
       } else {
         cleanedBytesBuf.put(value.get(4 * i + 2));
@@ -89,7 +89,10 @@ public class PoseidonSafeBytesUtils {
       }
     }
 
-    Bytes cleanedBytes = Bytes.wrap(cleanedBytesBuf.array());
+    Bytes cleanedBytes = Bytes.wrap(Arrays.copyOf(
+      cleanedBytesBuf.array(), 
+      cleanedBytesBuf.position()));
+
     // Convert back to Bytes32 (ensuring a fixed size of 32 bytes)
     return Bytes32.leftPad(cleanedBytes);
   }

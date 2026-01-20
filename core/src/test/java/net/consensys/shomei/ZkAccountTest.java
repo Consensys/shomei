@@ -155,6 +155,6 @@ public class ZkAccountTest {
     assertThat(zkAccount.getEncodedBytes().hash())
         .isEqualTo(
             Bytes32.fromHexString(
-                "0x17d8c4095b987f5a58bfbfb11adbfbc07c2f78a612725acb73b25c6516317380"));
+                "0x7b25c63e1919b7fb320df01441f1aeea316736903fcabab73138d2c3116e2ffc"));
   }
 }
