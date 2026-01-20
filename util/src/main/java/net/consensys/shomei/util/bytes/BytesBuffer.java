@@ -54,7 +54,7 @@ public class BytesBuffer {
 
   public Bytes32 readByte32FromBytes64() {
     try {
-      return PoseidonSafeBytesUtils.convertBackFromPoseidonSafeFieldElementsSize(
+      return PoseidonSafeBytesUtils.convertBackFromPoseidonSafeFieldElementsForEvenSize(
           Bytes.wrap(inputStream.readNBytes(64)));
     } catch (IOException e) {
       throw new RuntimeException(e);
@@ -64,7 +64,7 @@ public class BytesBuffer {
   public UInt256 readUint256FromBytes64() {
     try {
       return UInt256.fromBytes(
-          PoseidonSafeBytesUtils.convertBackFromPoseidonSafeFieldElementsSize(
+          PoseidonSafeBytesUtils.convertBackFromPoseidonSafeFieldElementsForEvenSize(
               Bytes.wrap(inputStream.readNBytes(64))));
     } catch (IOException e) {
       throw new RuntimeException(e);

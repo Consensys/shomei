@@ -136,4 +136,25 @@ public class ZkAccountTest {
             Bytes32.fromHexString(
                 "0x5b4f38da3b5579846022b90a4a9ca1096653055722e75ebc0d4f68ba22d712c9"));
   }
+
+  @Test
+  public void testContractCodeEncodingOddLenCode() {
+    final Bytes code =
+        Bytes.fromHexString("0x495340db00ecc17b5cb435d5731f8d6635e6b3ef42507a8303a068d178a95d2237");
+    ;
+    final PoseidonSafeBytes<Bytes> safeCode = safeCode(code);
+    final ZkAccount zkAccount =
+        new ZkAccount(
+            new AccountKey(Hash.ZERO, Address.ZERO),
+            safeUInt256(UInt256.valueOf(65L)),
+            safeUInt256(UInt256.valueOf(835L)),
+            ZKTrie.DEFAULT_TRIE_ROOT,
+            safeCode.hash(),
+            safeByte32(HashProvider.keccak256(code)),
+            safeUInt256(UInt256.valueOf(0L)));
+    assertThat(zkAccount.getEncodedBytes().hash())
+        .isEqualTo(
+            Bytes32.fromHexString(
+                "0x7b25c63e1919b7fb320df01441f1aeea316736903fcabab73138d2c3116e2ffc"));
+  }
 }
