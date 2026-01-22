@@ -94,55 +94,18 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
       final TrieLogLayer trieLogLayer =
           worldStateArchive.getTrieLogLayerConverter().decodeTrieLog(RLP.input(trieLogBytes));
 
-      // Get the parent world state to build on top of
-      final Optional<ZkEvmWorldState> parentWorldState =
-          worldStateArchive.getCachedWorldState(parentBlockNumber);
+      // Apply the virtual trielog and generate the trace
+      // This generates a trace without persisting the state
+      final List<List<Trace>> traces =
+          worldStateArchive.generateVirtualTrace(blockNumber, trieLogLayer);
 
-      if (parentWorldState.isEmpty()) {
-        return new ShomeiJsonRpcErrorResponse(
-            requestContext.getRequest().getId(),
-            RpcErrorType.INVALID_PARAMS,
-            "BLOCK_MISSING_IN_CHAIN - parent world state for block %d not found"
-                .formatted(parentBlockNumber));
-      }
-
-      // Create a snapshot of the parent world state to apply the trielog
-      final WorldStateStorage virtualWorldStateStorage =
-          worldStateArchive.getHeadWorldStateStorage().snapshot();
-      final ZkEvmWorldState virtualWorldState =
-          new ZkEvmWorldState(virtualWorldStateStorage, worldStateArchive.getTraceManager());
-
-      // Apply the trielog to the virtual world state and generate traces
-      virtualWorldState.getAccumulator().rollForward(trieLogLayer);
-      virtualWorldState.commit(blockNumber, trieLogLayer.getBlockHash(), true);
-
-      // Get the generated traces
-      final Optional<Bytes> traceBytes =
-          worldStateArchive.getTraceManager().getTrace(blockNumber);
-
-      if (traceBytes.isEmpty()) {
-        return new ShomeiJsonRpcErrorResponse(
-            requestContext.getRequest().getId(),
-            RpcErrorType.INTERNAL_ERROR,
-            "Failed to generate trace for virtual block %d".formatted(blockNumber));
-      }
-
-      final List<List<Trace>> traces = List.of(Trace.deserialize(RLP.input(traceBytes.get())));
-
-      // Get the parent and end state root hashes
+      // Get the parent state root hash
       final String zkParentStateRootHash =
           worldStateArchive
               .getTraceManager()
               .getZkStateRootHash(parentBlockNumber)
               .orElse(ZKTrie.DEFAULT_TRIE_ROOT)
               .toHexString();
-
-      final String zkEndStateRootHash =
-          worldStateArchive
-              .getTraceManager()
-              .getZkStateRootHash(blockNumber)
-              .map(Hash::toHexString)
-              .orElse(ZKTrie.DEFAULT_TRIE_ROOT.toHexString());
 
       return new JsonRpcSuccessResponse(
           requestContext.getRequest().getId(),

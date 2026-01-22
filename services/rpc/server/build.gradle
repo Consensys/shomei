@@ -63,6 +63,7 @@ dependencies {
 
     // Test dependencies
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation project(':services:rpc:client')
 
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core'

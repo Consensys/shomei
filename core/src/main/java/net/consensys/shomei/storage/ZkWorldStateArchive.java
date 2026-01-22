@@ -19,17 +19,20 @@ import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trielog.TrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
+import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.worldview.ZkEvmWorldState;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.slf4j.Logger;
@@ -170,6 +173,39 @@ public class ZkWorldStateArchive implements Closeable {
       final long newBlockNumber, final boolean generateTrace, final TrieLogLayer trieLogLayer) {
     headWorldState.getAccumulator().rollForward(trieLogLayer);
     headWorldState.commit(newBlockNumber, trieLogLayer.getBlockHash(), generateTrace);
+  }
+
+  /**
+   * Generate a virtual trace from a trielog without persisting state changes.
+   * This is used for simulating transactions on a virtual block.
+   *
+   * @param blockNumber the virtual block number
+   * @param trieLogLayer the trielog to apply
+   * @return the generated trace
+   */
+  public List<List<Trace>> generateVirtualTrace(
+      final long blockNumber, final TrieLogLayer trieLogLayer) {
+    // Create a temporary snapshot of the head world state
+    final WorldStateStorage virtualStorage = headWorldStateStorage.snapshot();
+    final ZkEvmWorldState virtualWorldState = new ZkEvmWorldState(virtualStorage, traceManager);
+
+    // Apply the trielog and generate trace
+    virtualWorldState.getAccumulator().rollForward(trieLogLayer);
+    virtualWorldState.commit(blockNumber, trieLogLayer.getBlockHash(), true);
+
+    // Retrieve the trace (it was persisted temporarily to trace manager)
+    final Optional<Bytes> traceBytes = traceManager.getTrace(blockNumber);
+    if (traceBytes.isEmpty()) {
+      throw new IllegalStateException(
+          "Failed to generate trace for virtual block " + blockNumber);
+    }
+
+    // Clean up the temporarily persisted trace and state root
+    final TraceManager.TraceManagerUpdater traceUpdater = traceManager.updater();
+    traceUpdater.removeTrace(blockNumber);
+    traceUpdater.commit();
+
+    return List.of(Trace.deserialize(RLP.input(traceBytes.get())));
   }
 
   public ZkEvmWorldState getHeadWorldState() {
