@@ -13,13 +13,17 @@
 
 package net.consensys.shomei.rpc.server.model;
 
+import net.consensys.shomei.trie.trace.Trace;
+
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 @SuppressWarnings("unused")
 public class RollupGetVirtualZkEVMStateMerkleProofV0Response {
 
   @JsonProperty("zkStateMerkleProof")
-  private final String zkStateMerkleProof;
+  private final List<List<Trace>> zkStateMerkleProof;
 
   @JsonProperty("zkParentStateRootHash")
   private final String zkParentStateRootHash;
@@ -28,7 +32,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Response {
   private final String zkStateManagerVersion;
 
   public RollupGetVirtualZkEVMStateMerkleProofV0Response(
-      final String zkStateMerkleProof,
+      final List<List<Trace>> zkStateMerkleProof,
       final String zkParentStateRootHash,
       final String zkStateManagerVersion) {
     this.zkStateMerkleProof = zkStateMerkleProof;

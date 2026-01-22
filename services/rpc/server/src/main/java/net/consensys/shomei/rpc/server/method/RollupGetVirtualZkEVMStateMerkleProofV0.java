@@ -15,25 +15,43 @@ package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
 
+import net.consensys.shomei.rpc.client.BesuSimulateClient;
 import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEVMStateMerkleProofV0Response;
 import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEvmStateMerkleProofV0Parameter;
 import net.consensys.shomei.storage.TraceManager;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
+import net.consensys.shomei.storage.worldstate.WorldStateStorage;
+import net.consensys.shomei.trielog.TrieLogLayer;
+import net.consensys.shomei.trie.ZKTrie;
+import net.consensys.shomei.trie.trace.Trace;
+import net.consensys.shomei.worldview.ZkEvmWorldState;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
+import org.hyperledger.besu.ethereum.rlp.RLP;
 
 public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
-  final TraceManager traceManager;
+  final ZkWorldStateArchive worldStateArchive;
+  final BesuSimulateClient besuSimulateClient;
 
-  public RollupGetVirtualZkEVMStateMerkleProofV0(final TraceManager traceManager) {
-    this.traceManager = traceManager;
+  public RollupGetVirtualZkEVMStateMerkleProofV0(
+      final ZkWorldStateArchive worldStateArchive, final BesuSimulateClient besuSimulateClient) {
+    this.worldStateArchive = worldStateArchive;
+    this.besuSimulateClient = besuSimulateClient;
   }
 
   @Override
@@ -54,28 +72,93 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
     final long blockNumber = param.getBlockNumber();
     final long parentBlockNumber = blockNumber - 1;
+    final String transactionRlp = param.getTransaction();
 
     // Check if the parent block (blockNumber - 1) exists in the canonical chain
-    if (!traceManager.getTrace(parentBlockNumber).isPresent()) {
+    if (!worldStateArchive.getTraceManager().getTrace(parentBlockNumber).isPresent()) {
       return new ShomeiJsonRpcErrorResponse(
           requestContext.getRequest().getId(),
           RpcErrorType.INVALID_PARAMS,
           "BLOCK_MISSING_IN_CHAIN - block %d is missing".formatted(parentBlockNumber));
     }
 
-    // TODO: Implement actual virtual block creation and state proof generation
-    // For now, return stubbed response with placeholder data
-    final String zkParentStateRootHash =
-        traceManager
-            .getZkStateRootHash(parentBlockNumber)
-            .map(hash -> hash.toHexString())
-            .orElse("0x0000000000000000000000000000000000000000000000000000000000000000");
+    try {
+      // Call eth_simulateV1 to get the trielog for the virtual block
+      final CompletableFuture<String> trieLogFuture =
+          besuSimulateClient.simulateTransaction(parentBlockNumber, transactionRlp);
 
-    return new JsonRpcSuccessResponse(
-        requestContext.getRequest().getId(),
-        new RollupGetVirtualZkEVMStateMerkleProofV0Response(
-            "TODO: Implement virtual state merkle proof generation",
-            zkParentStateRootHash,
-            IMPL_VERSION));
+      final String trieLogHex = trieLogFuture.get();
+      final Bytes trieLogBytes = Bytes.fromHexString(trieLogHex);
+
+      // Decode the trielog
+      final TrieLogLayer trieLogLayer =
+          worldStateArchive.getTrieLogLayerConverter().decodeTrieLog(RLP.input(trieLogBytes));
+
+      // Get the parent world state to build on top of
+      final Optional<ZkEvmWorldState> parentWorldState =
+          worldStateArchive.getCachedWorldState(parentBlockNumber);
+
+      if (parentWorldState.isEmpty()) {
+        return new ShomeiJsonRpcErrorResponse(
+            requestContext.getRequest().getId(),
+            RpcErrorType.INVALID_PARAMS,
+            "BLOCK_MISSING_IN_CHAIN - parent world state for block %d not found"
+                .formatted(parentBlockNumber));
+      }
+
+      // Create a snapshot of the parent world state to apply the trielog
+      final WorldStateStorage virtualWorldStateStorage =
+          worldStateArchive.getHeadWorldStateStorage().snapshot();
+      final ZkEvmWorldState virtualWorldState =
+          new ZkEvmWorldState(virtualWorldStateStorage, worldStateArchive.getTraceManager());
+
+      // Apply the trielog to the virtual world state and generate traces
+      virtualWorldState.getAccumulator().rollForward(trieLogLayer);
+      virtualWorldState.commit(blockNumber, trieLogLayer.getBlockHash(), true);
+
+      // Get the generated traces
+      final Optional<Bytes> traceBytes =
+          worldStateArchive.getTraceManager().getTrace(blockNumber);
+
+      if (traceBytes.isEmpty()) {
+        return new ShomeiJsonRpcErrorResponse(
+            requestContext.getRequest().getId(),
+            RpcErrorType.INTERNAL_ERROR,
+            "Failed to generate trace for virtual block %d".formatted(blockNumber));
+      }
+
+      final List<List<Trace>> traces = List.of(Trace.deserialize(RLP.input(traceBytes.get())));
+
+      // Get the parent and end state root hashes
+      final String zkParentStateRootHash =
+          worldStateArchive
+              .getTraceManager()
+              .getZkStateRootHash(parentBlockNumber)
+              .orElse(ZKTrie.DEFAULT_TRIE_ROOT)
+              .toHexString();
+
+      final String zkEndStateRootHash =
+          worldStateArchive
+              .getTraceManager()
+              .getZkStateRootHash(blockNumber)
+              .map(Hash::toHexString)
+              .orElse(ZKTrie.DEFAULT_TRIE_ROOT.toHexString());
+
+      return new JsonRpcSuccessResponse(
+          requestContext.getRequest().getId(),
+          new RollupGetVirtualZkEVMStateMerkleProofV0Response(
+              traces, zkParentStateRootHash, IMPL_VERSION));
+
+    } catch (InterruptedException | ExecutionException e) {
+      return new ShomeiJsonRpcErrorResponse(
+          requestContext.getRequest().getId(),
+          RpcErrorType.INTERNAL_ERROR,
+          "Failed to simulate transaction: " + e.getMessage());
+    } catch (Exception e) {
+      return new ShomeiJsonRpcErrorResponse(
+          requestContext.getRequest().getId(),
+          RpcErrorType.INTERNAL_ERROR,
+          "Error processing virtual block: " + e.getMessage());
+    }
   }
 }

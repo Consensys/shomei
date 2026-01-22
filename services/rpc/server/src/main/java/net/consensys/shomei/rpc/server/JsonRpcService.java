@@ -115,7 +115,7 @@ public class JsonRpcService extends AbstractVerticle {
             new RollupDeleteZkEVMStateMerkleProofByRange(worldStateArchive.getTraceManager()),
             new RollupForkChoiceUpdated(worldStateArchive, fullSyncDownloader),
             new RollupGetZkEVMStateMerkleProofV0(worldStateArchive.getTraceManager()),
-            new RollupGetVirtualZkEVMStateMerkleProofV0(worldStateArchive.getTraceManager())));
+            new RollupGetVirtualZkEVMStateMerkleProofV0(worldStateArchive, besuSimulateClient)));
     this.maxActiveConnections = config.getMaxActiveConnections();
     this.livenessService = new HealthService(new LivenessCheck());
   }
