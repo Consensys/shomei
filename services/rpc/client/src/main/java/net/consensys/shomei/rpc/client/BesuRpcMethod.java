@@ -14,7 +14,8 @@
 package net.consensys.shomei.rpc.client;
 
 public enum BesuRpcMethod {
-  BESU_GET_TRIE_LOGS_BY_RANGE("shomei_getTrieLogsByRange");
+  BESU_GET_TRIE_LOGS_BY_RANGE("shomei_getTrieLogsByRange"),
+  BESU_ETH_SIMULATE_V1("eth_simulateV1");
   private final String methodName;
 
   public String getMethodName() {

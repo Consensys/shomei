@@ -22,6 +22,7 @@ import net.consensys.shomei.fullsync.FullSyncDownloader;
 import net.consensys.shomei.fullsync.rules.FullSyncRules;
 import net.consensys.shomei.metrics.MetricsService;
 import net.consensys.shomei.metrics.PrometheusMetricsService;
+import net.consensys.shomei.rpc.client.BesuSimulateClient;
 import net.consensys.shomei.rpc.client.GetRawTrieLogClient;
 import net.consensys.shomei.rpc.server.JsonRpcService;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
@@ -79,6 +80,10 @@ public class Runner {
             jsonRpcOption.getBesuRpcHttpHost(),
             jsonRpcOption.getBesuRHttpPort());
 
+    final BesuSimulateClient besuSimulateClient =
+        new BesuSimulateClient(
+            jsonRpcOption.getBesuRpcHttpHost(), jsonRpcOption.getBesuRHttpPort());
+
     final FullSyncRules fullSyncRules =
         new FullSyncRules(
             syncOption.isTraceGenerationEnabled(),
@@ -96,7 +101,8 @@ public class Runner {
             jsonRpcOption.getRpcHttpPort(),
             Optional.of(jsonRpcOption.getRpcHttpHostAllowList()),
             fullSyncDownloader,
-            worldStateArchive);
+            worldStateArchive,
+            besuSimulateClient);
   }
 
   private void setupHashFunction(HashFunctionOption hashFunctionOption) {

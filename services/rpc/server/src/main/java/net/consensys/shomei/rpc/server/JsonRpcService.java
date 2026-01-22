@@ -17,6 +17,7 @@ import static com.google.common.collect.Streams.stream;
 
 import net.consensys.shomei.fullsync.FullSyncDownloader;
 import net.consensys.shomei.metrics.MetricsService;
+import net.consensys.shomei.rpc.client.BesuSimulateClient;
 import net.consensys.shomei.rpc.server.method.LineaGetProof;
 import net.consensys.shomei.rpc.server.method.LineaGetTrielogProof;
 import net.consensys.shomei.rpc.server.method.RollupDeleteZkEVMStateMerkleProofByRange;
@@ -97,7 +98,8 @@ public class JsonRpcService extends AbstractVerticle {
       final Integer rpcHttpPort,
       final Optional<List<String>> hostAllowList,
       final FullSyncDownloader fullSyncDownloader,
-      final ZkWorldStateArchive worldStateArchive) {
+      final ZkWorldStateArchive worldStateArchive,
+      final BesuSimulateClient besuSimulateClient) {
     this.config = JsonRpcConfiguration.createDefault();
     config.setHost(rpcHttpHost);
     config.setPort(rpcHttpPort);
