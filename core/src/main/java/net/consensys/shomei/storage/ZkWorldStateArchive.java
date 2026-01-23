@@ -179,33 +179,48 @@ public class ZkWorldStateArchive implements Closeable {
    * Generate a virtual trace from a trielog without persisting state changes.
    * This is used for simulating transactions on a virtual block.
    *
-   * @param blockNumber the virtual block number
+   * @param parentBlockNumber the parent block number on which to base the virtual state
    * @param trieLogLayer the trielog to apply
    * @return the generated trace
+   * @throws IllegalStateException if the worldstate for the parent block is not cached
    */
   public List<List<Trace>> generateVirtualTrace(
-      final long blockNumber, final TrieLogLayer trieLogLayer) {
-    // Create a temporary snapshot of the head world state
-    final WorldStateStorage virtualStorage = headWorldStateStorage.snapshot();
-    final ZkEvmWorldState virtualWorldState = new ZkEvmWorldState(virtualStorage, traceManager);
+      final long parentBlockNumber, final TrieLogLayer trieLogLayer) {
+    // Get the cached worldstate for the parent block
+    final WorldStateStorage parentStorage = cachedWorldStates.entrySet().stream()
+        .filter(entry -> entry.getKey().blockNumber().equals(parentBlockNumber))
+        .map(Map.Entry::getValue)
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException(
+            "Worldstate for parent block " + parentBlockNumber + " is not cached"));
 
-    // Apply the trielog and generate trace
-    virtualWorldState.getAccumulator().rollForward(trieLogLayer);
-    virtualWorldState.commit(blockNumber, trieLogLayer.getBlockHash(), true);
+    // Create a temporary snapshot from the parent worldstate and ensure it's cleaned up
+    try (final WorldStateStorage virtualStorage = parentStorage.snapshot()) {
+      // Use an in-memory trace manager that won't persist to disk
+      final TraceManager ephemeralTraceManager = new InMemoryStorageProvider().getTraceManager();
+      final ZkEvmWorldState virtualWorldState = new ZkEvmWorldState(virtualStorage, ephemeralTraceManager);
 
-    // Retrieve the trace (it was persisted temporarily to trace manager)
-    final Optional<Bytes> traceBytes = traceManager.getTrace(blockNumber);
-    if (traceBytes.isEmpty()) {
+      // Apply the trielog and generate trace ephemerally
+      // Use a temporary block number that won't conflict with real blocks
+      final long ephemeralBlockNumber = Long.MIN_VALUE;
+      virtualWorldState.getAccumulator().rollForward(trieLogLayer);
+      virtualWorldState.commit(ephemeralBlockNumber, trieLogLayer.getBlockHash(), true);
+
+      // Retrieve the ephemeral trace
+      final Optional<Bytes> traceBytes = ephemeralTraceManager.getTrace(ephemeralBlockNumber);
+      if (traceBytes.isEmpty()) {
+        throw new IllegalStateException(
+            "Failed to generate trace for virtual block on parent " + parentBlockNumber);
+      }
+
+      return List.of(Trace.deserialize(RLP.input(traceBytes.get())));
+    } catch (Exception e) {
+      if (e instanceof IllegalStateException) {
+        throw (IllegalStateException) e;
+      }
       throw new IllegalStateException(
-          "Failed to generate trace for virtual block " + blockNumber);
+          "Failed to generate virtual trace for parent block " + parentBlockNumber, e);
     }
-
-    // Clean up the temporarily persisted trace and state root
-    final TraceManager.TraceManagerUpdater traceUpdater = traceManager.updater();
-    traceUpdater.removeTrace(blockNumber);
-    traceUpdater.commit();
-
-    return List.of(Trace.deserialize(RLP.input(traceBytes.get())));
   }
 
   public ZkEvmWorldState getHeadWorldState() {

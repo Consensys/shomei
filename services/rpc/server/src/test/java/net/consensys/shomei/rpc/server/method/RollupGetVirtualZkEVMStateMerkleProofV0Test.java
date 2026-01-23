@@ -107,7 +107,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
 
     // Mock virtual trace generation
     final List<List<Trace>> mockTraces = List.of(List.of());
-    when(worldStateArchive.generateVirtualTrace(eq(8L), any(TrieLogLayer.class)))
+    when(worldStateArchive.generateVirtualTrace(eq(7L), any(TrieLogLayer.class)))
         .thenReturn(mockTraces);
 
     final JsonRpcRequestContext request = request(8L, TEST_TRANSACTION_RLP);

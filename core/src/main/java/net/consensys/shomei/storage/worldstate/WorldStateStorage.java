@@ -25,7 +25,7 @@ import org.hyperledger.besu.datatypes.Hash;
  * provides methods for accessing and modifying the state of accounts and storage in the world
  * state.
  */
-public interface WorldStateStorage extends TrieStorage {
+public interface WorldStateStorage extends TrieStorage, AutoCloseable {
 
   /** key identifier of the block hash of the current world state. */
   byte[] WORLD_BLOCK_HASH_KEY = "blockHash".getBytes(StandardCharsets.UTF_8);
@@ -64,6 +64,7 @@ public interface WorldStateStorage extends TrieStorage {
    */
   WorldStateStorage snapshot();
 
+  @Override
   default void close() throws Exception {
     // no-op
   }

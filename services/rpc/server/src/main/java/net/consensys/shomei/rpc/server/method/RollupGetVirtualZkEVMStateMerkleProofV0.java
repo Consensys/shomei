@@ -92,7 +92,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
       // Apply the virtual trielog and generate the trace
       // This generates a trace without persisting the state
       final List<List<Trace>> traces =
-          worldStateArchive.generateVirtualTrace(blockNumber, trieLogLayer);
+          worldStateArchive.generateVirtualTrace(parentBlockNumber, trieLogLayer);
 
       // Get the parent state root hash
       final String zkParentStateRootHash =
