@@ -138,6 +138,27 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
     assertThat(errorResponse.getJsonError().message()).contains("Failed to simulate transaction");
   }
 
+  @Test
+  public void shouldReturnErrorWithDetailsWhenSimulationReturnsError() {
+    when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
+    when(traceManager.getTrace(7L))
+        .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
+
+    // Mock simulation returning a detailed error from eth_simulateV1
+    final String detailedErrorMessage = "eth_simulateV1 error [code=-32000]: insufficient funds";
+    when(besuSimulateClient.simulateTransaction(anyLong(), anyString()))
+        .thenReturn(CompletableFuture.failedFuture(new RuntimeException(detailedErrorMessage)));
+
+    final JsonRpcRequestContext request = request(8L, TEST_TRANSACTION_RLP);
+    final JsonRpcResponse response = method.response(request);
+
+    assertThat(response).isInstanceOf(ShomeiJsonRpcErrorResponse.class);
+    final ShomeiJsonRpcErrorResponse errorResponse = (ShomeiJsonRpcErrorResponse) response;
+    assertThat(errorResponse.getError().getCode()).isEqualTo(RpcErrorType.INTERNAL_ERROR.getCode());
+    assertThat(errorResponse.getJsonError().message()).contains("eth_simulateV1 error");
+    assertThat(errorResponse.getJsonError().message()).contains("insufficient funds");
+  }
+
   private JsonRpcRequestContext request(final long blockNumber, final String transactionRlp) {
     return new JsonRpcRequestContext(
         new JsonRpcRequest(

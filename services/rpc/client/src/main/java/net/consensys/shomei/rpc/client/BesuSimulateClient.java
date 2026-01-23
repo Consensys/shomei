@@ -98,6 +98,21 @@ public class BesuSimulateClient {
                       .addArgument(responseBody)
                       .log();
 
+                  // Check if the response contains an error
+                  if (responseBody.getError() != null) {
+                    final String errorMessage =
+                        String.format(
+                            "eth_simulateV1 error [code=%d]: %s",
+                            responseBody.getError().getCode(),
+                            responseBody.getError().getMessage());
+                    LOG.atDebug()
+                        .setMessage("eth_simulateV1 returned error: {}")
+                        .addArgument(errorMessage)
+                        .log();
+                    completableFuture.completeExceptionally(new RuntimeException(errorMessage));
+                    return;
+                  }
+
                   if (responseBody.getResult() != null
                       && !responseBody.getResult().isEmpty()) {
                     final SimulateV1Response.BlockResult blockResult =

@@ -27,6 +27,9 @@ public class SimulateV1Response {
   @JsonProperty("result")
   private List<BlockResult> result;
 
+  @JsonProperty("error")
+  private JsonRpcError error;
+
   public String getJsonrpc() {
     return jsonrpc;
   }
@@ -49,6 +52,14 @@ public class SimulateV1Response {
 
   public void setResult(List<BlockResult> result) {
     this.result = result;
+  }
+
+  public JsonRpcError getError() {
+    return error;
+  }
+
+  public void setError(JsonRpcError error) {
+    this.error = error;
   }
 
   public static class BlockResult {
@@ -186,6 +197,8 @@ public class SimulateV1Response {
         + id
         + ", result="
         + result
+        + ", error="
+        + error
         + '}';
   }
 }
