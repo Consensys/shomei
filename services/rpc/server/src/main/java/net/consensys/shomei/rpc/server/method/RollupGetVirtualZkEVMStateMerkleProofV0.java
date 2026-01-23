@@ -20,21 +20,16 @@ import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEVMStateMerkleProofV0Response;
 import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEvmStateMerkleProofV0Parameter;
-import net.consensys.shomei.storage.TraceManager;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
-import net.consensys.shomei.storage.worldstate.WorldStateStorage;
-import net.consensys.shomei.trielog.TrieLogLayer;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.trace.Trace;
-import net.consensys.shomei.worldview.ZkEvmWorldState;
+import net.consensys.shomei.trielog.TrieLogLayer;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;

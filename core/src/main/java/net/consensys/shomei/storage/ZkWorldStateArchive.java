@@ -17,9 +17,9 @@ import net.consensys.shomei.exception.MissingTrieLogException;
 import net.consensys.shomei.metrics.MetricsService;
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
+import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.TrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
-import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.worldview.ZkEvmWorldState;
 
 import java.io.Closeable;

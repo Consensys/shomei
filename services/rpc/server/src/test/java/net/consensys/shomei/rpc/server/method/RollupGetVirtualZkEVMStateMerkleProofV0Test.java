@@ -25,9 +25,9 @@ import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEvmStateMerkleProofV0Parameter;
 import net.consensys.shomei.storage.TraceManager;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
+import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.TrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
-import net.consensys.shomei.trie.trace.Trace;
 
 import java.util.List;
 import java.util.Optional;
