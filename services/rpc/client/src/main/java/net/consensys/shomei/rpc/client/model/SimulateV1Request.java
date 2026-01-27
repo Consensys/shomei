@@ -24,8 +24,12 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestId;
 
 public class SimulateV1Request extends JsonRpcRequest {
 
-  public SimulateV1Request(final long requestId, final SimulateV1Params params) {
-    super("2.0", BesuRpcMethod.BESU_ETH_SIMULATE_V1.getMethodName(), new Object[] {params});
+  public SimulateV1Request(
+      final long requestId, final SimulateV1Params params, final String blockParameter) {
+    super(
+        "2.0",
+        BesuRpcMethod.BESU_ETH_SIMULATE_V1.getMethodName(),
+        new Object[] {params, blockParameter});
     setId(new JsonRpcRequestId(requestId));
   }
 
@@ -84,15 +88,124 @@ public class SimulateV1Request extends JsonRpcRequest {
   }
 
   public static class TransactionCall {
+    @JsonProperty("chainId")
+    private final String chainId;
+
+    @JsonProperty("from")
+    private final String from;
+
+    @JsonProperty("to")
+    private final String to;
+
+    @JsonProperty("gas")
+    private final String gas;
+
+    @JsonProperty("gasPrice")
+    private final String gasPrice;
+
+    @JsonProperty("maxPriorityFeePerGas")
+    private final String maxPriorityFeePerGas;
+
+    @JsonProperty("maxFeePerGas")
+    private final String maxFeePerGas;
+
+    @JsonProperty("maxFeePerBlobGas")
+    private final String maxFeePerBlobGas;
+
+    @JsonProperty("value")
+    private final String value;
+
+    @JsonProperty("nonce")
+    private final String nonce;
+
     @JsonProperty("input")
     private final String input;
 
-    public TransactionCall(final String input) {
+    @JsonProperty("accessList")
+    private final List<Map<String, Object>> accessList;
+
+    @JsonProperty("blobVersionedHashes")
+    private final List<String> blobVersionedHashes;
+
+    public TransactionCall(
+        final String chainId,
+        final String from,
+        final String to,
+        final String gas,
+        final String gasPrice,
+        final String maxPriorityFeePerGas,
+        final String maxFeePerGas,
+        final String maxFeePerBlobGas,
+        final String value,
+        final String nonce,
+        final String input,
+        final List<Map<String, Object>> accessList,
+        final List<String> blobVersionedHashes) {
+      this.chainId = chainId;
+      this.from = from;
+      this.to = to;
+      this.gas = gas;
+      this.gasPrice = gasPrice;
+      this.maxPriorityFeePerGas = maxPriorityFeePerGas;
+      this.maxFeePerGas = maxFeePerGas;
+      this.maxFeePerBlobGas = maxFeePerBlobGas;
+      this.value = value;
+      this.nonce = nonce;
       this.input = input;
+      this.accessList = accessList;
+      this.blobVersionedHashes = blobVersionedHashes;
+    }
+
+    public String getChainId() {
+      return chainId;
+    }
+
+    public String getFrom() {
+      return from;
+    }
+
+    public String getTo() {
+      return to;
+    }
+
+    public String getGas() {
+      return gas;
+    }
+
+    public String getGasPrice() {
+      return gasPrice;
+    }
+
+    public String getMaxPriorityFeePerGas() {
+      return maxPriorityFeePerGas;
+    }
+
+    public String getMaxFeePerGas() {
+      return maxFeePerGas;
+    }
+
+    public String getMaxFeePerBlobGas() {
+      return maxFeePerBlobGas;
+    }
+
+    public String getValue() {
+      return value;
+    }
+
+    public String getNonce() {
+      return nonce;
     }
 
     public String getInput() {
       return input;
+    }
+
+    public List<Map<String, Object>> getAccessList() {
+      return accessList;
+    }
+
+    public List<String> getBlobVersionedHashes() {
+      return blobVersionedHashes;
     }
   }
 }

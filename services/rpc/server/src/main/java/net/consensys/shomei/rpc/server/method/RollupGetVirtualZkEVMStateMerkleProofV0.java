@@ -85,6 +85,11 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
       final String trieLogHex = trieLogFuture.get();
       final Bytes trieLogBytes = Bytes.fromHexString(trieLogHex);
 
+      // Log trielog for debugging
+      System.out.println("Received trielog hex length: " + trieLogHex.length());
+      System.out.println("Trielog hex prefix: " + (trieLogHex.length() > 200 ? trieLogHex.substring(0, 200) : trieLogHex));
+      System.out.println("Trielog bytes: " + trieLogBytes);
+
       // Decode the trielog
       final TrieLogLayer trieLogLayer =
           worldStateArchive.getTrieLogLayerConverter().decodeTrieLog(RLP.input(trieLogBytes));

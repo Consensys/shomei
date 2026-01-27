@@ -19,15 +19,20 @@ import net.consensys.shomei.rpc.client.model.SimulateV1Response;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
+import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.ethereum.core.Transaction;
+import org.hyperledger.besu.ethereum.rlp.BytesValueRLPInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,23 +68,101 @@ public class BesuSimulateClient {
     final CompletableFuture<String> completableFuture = new CompletableFuture<>();
     final int requestId = RANDOM.nextInt();
 
-    // Create block overrides with parent block number
-    final Map<String, String> blockOverrides =
-        Collections.singletonMap("number", "0x" + Long.toHexString(parentBlockNumber + 1));
+    try {
+      // Decode the RLP transaction to extract fields
+      final Bytes transactionBytes = Bytes.fromHexString(transactionRlp);
+      final Transaction transaction =
+          Transaction.readFrom(new BytesValueRLPInput(transactionBytes, false));
 
-    // Create transaction call with RLP-encoded transaction
-    final SimulateV1Request.TransactionCall transactionCall =
-        new SimulateV1Request.TransactionCall(transactionRlp);
+      // Create block overrides with parent block number
+      final Map<String, String> blockOverrides =
+          Collections.singletonMap("number", "0x" + Long.toHexString(parentBlockNumber + 1));
 
-    // Create block state call
-    final SimulateV1Request.BlockStateCall blockStateCall =
-        new SimulateV1Request.BlockStateCall(blockOverrides, List.of(transactionCall));
+      // Extract transaction fields for the call
+      final String chainId =
+          transaction.getChainId().map(cid -> "0x" + cid.toString(16)).orElse(null);
+      final String from = transaction.getSender().toHexString();
+      final String to = transaction.getTo().map(address -> address.toHexString()).orElse(null);
+      final String gas = "0x" + Long.toHexString(transaction.getGasLimit());
+      final String value = transaction.getValue().toHexString();
+      final String nonce = "0x" + Long.toHexString(transaction.getNonce());
+      final String input = transaction.getPayload().toHexString();
+
+      // Handle gas pricing fields based on transaction type
+      String gasPrice = null;
+      String maxPriorityFeePerGas = null;
+      String maxFeePerGas = null;
+      String maxFeePerBlobGas = null;
+
+      if (transaction.getGasPrice().isPresent()) {
+        gasPrice = transaction.getGasPrice().get().toHexString();
+      }
+      if (transaction.getMaxPriorityFeePerGas().isPresent()) {
+        maxPriorityFeePerGas = transaction.getMaxPriorityFeePerGas().get().toHexString();
+      }
+      if (transaction.getMaxFeePerGas().isPresent()) {
+        maxFeePerGas = transaction.getMaxFeePerGas().get().toHexString();
+      }
+      if (transaction.getMaxFeePerBlobGas().isPresent()) {
+        maxFeePerBlobGas = transaction.getMaxFeePerBlobGas().get().toHexString();
+      }
+
+      // Extract access list if present
+      final List<Map<String, Object>> accessList =
+          transaction.getAccessList().map(
+                  al ->
+                      al.stream()
+                          .map(
+                              entry -> {
+                                final Map<String, Object> accessEntry = new HashMap<>();
+                                accessEntry.put("address", entry.address().toHexString());
+                                accessEntry.put(
+                                    "storageKeys",
+                                    entry.storageKeys().stream()
+                                        .map(Bytes::toHexString)
+                                        .collect(Collectors.toList()));
+                                return accessEntry;
+                              })
+                          .collect(Collectors.toList()))
+              .orElse(null);
+
+      // Extract blob versioned hashes if present
+      final List<String> blobVersionedHashes =
+          transaction.getBlobsWithCommitments().isPresent()
+              ? transaction.getBlobsWithCommitments().get().getVersionedHashes().stream()
+                  .map(vh -> vh.toBytes().toHexString())
+                  .collect(Collectors.toList())
+              : null;
+
+      // Create transaction call with decoded fields
+      final SimulateV1Request.TransactionCall transactionCall =
+          new SimulateV1Request.TransactionCall(
+              chainId,
+              from,
+              to,
+              gas,
+              gasPrice,
+              maxPriorityFeePerGas,
+              maxFeePerGas,
+              maxFeePerBlobGas,
+              value,
+              nonce,
+              input,
+              accessList,
+              blobVersionedHashes);
+
+      // Create block state call
+      final SimulateV1Request.BlockStateCall blockStateCall =
+          new SimulateV1Request.BlockStateCall(blockOverrides, List.of(transactionCall));
 
     // Create params with returnTrieLog=true
     final SimulateV1Request.SimulateV1Params params =
         new SimulateV1Request.SimulateV1Params(List.of(blockStateCall), true, true);
 
-    final SimulateV1Request jsonRpcRequest = new SimulateV1Request(requestId, params);
+    // Specify the parent block number as the block parameter for simulation context
+    final String blockParameter = "0x" + Long.toHexString(parentBlockNumber);
+
+    final SimulateV1Request jsonRpcRequest = new SimulateV1Request(requestId, params, blockParameter);
 
     // Send the request to the JSON-RPC service
     webClient
@@ -117,9 +200,34 @@ public class BesuSimulateClient {
                       && !responseBody.getResult().isEmpty()) {
                     final SimulateV1Response.BlockResult blockResult =
                         responseBody.getResult().get(0);
+
+                    // Check if any calls in the block result have errors
+                    if (blockResult.getCalls() != null && !blockResult.getCalls().isEmpty()) {
+                      final SimulateV1Response.CallResult firstCall =
+                          blockResult.getCalls().get(0);
+                      if (firstCall.getError() != null) {
+                        final String errorMessage =
+                            String.format(
+                                "Transaction simulation failed [code=%d]: %s",
+                                firstCall.getError().getCode(),
+                                firstCall.getError().getMessage());
+                        LOG.atDebug()
+                            .setMessage("eth_simulateV1 call error: {}")
+                            .addArgument(errorMessage)
+                            .log();
+                        completableFuture.completeExceptionally(new RuntimeException(errorMessage));
+                        return;
+                      }
+                    }
+
                     final String trieLog = blockResult.getTrieLog();
 
                     if (trieLog != null) {
+                      LOG.atInfo()
+                          .setMessage("eth_simulateV1 returned trielog: length={}, prefix={}")
+                          .addArgument(trieLog.length())
+                          .addArgument(trieLog.length() > 100 ? trieLog.substring(0, 100) : trieLog)
+                          .log();
                       completableFuture.complete(trieLog);
                     } else {
                       completableFuture.completeExceptionally(
@@ -143,6 +251,12 @@ public class BesuSimulateClient {
                         "cannot call eth_simulateV1 on besu: " + response.cause().getMessage()));
               }
             });
+    } catch (Exception e) {
+      LOG.error("Failed to decode transaction RLP: {}", e.getMessage());
+      LOG.debug("Exception decoding transaction RLP", e);
+      completableFuture.completeExceptionally(
+          new RuntimeException("Failed to decode transaction RLP: " + e.getMessage(), e));
+    }
 
     return completableFuture;
   }

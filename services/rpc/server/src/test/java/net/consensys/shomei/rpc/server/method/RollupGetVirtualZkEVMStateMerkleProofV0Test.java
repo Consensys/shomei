@@ -29,17 +29,25 @@ import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.TrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.crypto.KeyPair;
+import org.hyperledger.besu.crypto.SignatureAlgorithm;
+import org.hyperledger.besu.crypto.SignatureAlgorithmFactory;
+import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.datatypes.TransactionType;
+import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
+import org.hyperledger.besu.ethereum.core.Transaction;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,12 +66,42 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
 
   public RollupGetVirtualZkEVMStateMerkleProofV0 method;
 
-  private static final String TEST_TRANSACTION_RLP =
-      "0xf86c808504a817c800825208943535353535353535353535353535353535353535880de0b6b3a76400008025a028ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa636276a067cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83";
+  // Test account from genesis with balance 0x09184e72a000 (10000000000000 wei)
+  private static final String TEST_ACCOUNT_PRIVATE_KEY =
+      "0x45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8";
+  // private static final Address TEST_ACCOUNT_ADDRESS =
+  //     Address.fromHexString("0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b");
 
   @BeforeEach
   public void setup() {
     method = new RollupGetVirtualZkEVMStateMerkleProofV0(worldStateArchive, besuSimulateClient);
+  }
+
+  /**
+   * Creates a signed transaction RLP using the test account that has balance in the genesis file.
+   * Balance: 0x09184e72a000 (10000000000000 wei = 0.00001 ETH) Gas cost: 21000 * 100000000 =
+   * 2100000000000 wei Value: 1000000000000 wei Total: 3100000000000 wei (fits in budget)
+   */
+  private String createTestTransactionRlp() {
+    final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithmFactory.getInstance();
+    final KeyPair keyPair =
+        signatureAlgorithm.createKeyPair(
+            signatureAlgorithm.createPrivateKey(
+                Bytes.fromHexString(TEST_ACCOUNT_PRIVATE_KEY).toUnsignedBigInteger()));
+
+    final Transaction transaction =
+        Transaction.builder()
+            .type(TransactionType.FRONTIER)
+            .nonce(0)
+            .gasPrice(Wei.of(100000000)) // 0.1 Gwei
+            .gasLimit(21000)
+            .to(Address.fromHexString("0x3535353535353535353535353535353535353535"))
+            .value(Wei.of(1000000000000L)) // 0.000001 ETH
+            .payload(Bytes.EMPTY)
+            .chainId(BigInteger.ONE)
+            .signAndBuild(keyPair);
+
+    return transaction.encoded().toHexString();
   }
 
   @Test
@@ -76,7 +114,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
     when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
     when(traceManager.getTrace(7L)).thenReturn(Optional.empty());
 
-    final JsonRpcRequestContext request = request(8L, TEST_TRANSACTION_RLP);
+    final JsonRpcRequestContext request = request(8L, createTestTransactionRlp());
     final JsonRpcResponse response = method.response(request);
 
     assertThat(response).isInstanceOf(ShomeiJsonRpcErrorResponse.class);
@@ -90,9 +128,10 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
   public void shouldReturnValidResponseWhenSimulationSucceeds() throws Exception {
     // Mock trielog bytes (RLP encoded trielog layer)
     final String mockTrieLogHex = createMockTrieLogHex();
+    final String testTxRlp = createTestTransactionRlp();
 
     // Mock the BesuSimulateClient to return a trielog
-    when(besuSimulateClient.simulateTransaction(eq(7L), eq(TEST_TRANSACTION_RLP)))
+    when(besuSimulateClient.simulateTransaction(eq(7L), eq(testTxRlp)))
         .thenReturn(CompletableFuture.completedFuture(mockTrieLogHex));
 
     // Mock world state archive behavior
@@ -110,7 +149,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
     when(worldStateArchive.generateVirtualTrace(eq(7L), any(TrieLogLayer.class)))
         .thenReturn(mockTraces);
 
-    final JsonRpcRequestContext request = request(8L, TEST_TRANSACTION_RLP);
+    final JsonRpcRequestContext request = request(8L, testTxRlp);
     final JsonRpcResponse response = method.response(request);
 
     assertThat(response).isInstanceOf(JsonRpcSuccessResponse.class);
@@ -129,7 +168,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
         .thenReturn(
             CompletableFuture.failedFuture(new RuntimeException("Simulation failed")));
 
-    final JsonRpcRequestContext request = request(8L, TEST_TRANSACTION_RLP);
+    final JsonRpcRequestContext request = request(8L, createTestTransactionRlp());
     final JsonRpcResponse response = method.response(request);
 
     assertThat(response).isInstanceOf(ShomeiJsonRpcErrorResponse.class);
@@ -149,7 +188,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
     when(besuSimulateClient.simulateTransaction(anyLong(), anyString()))
         .thenReturn(CompletableFuture.failedFuture(new RuntimeException(detailedErrorMessage)));
 
-    final JsonRpcRequestContext request = request(8L, TEST_TRANSACTION_RLP);
+    final JsonRpcRequestContext request = request(8L, createTestTransactionRlp());
     final JsonRpcResponse response = method.response(request);
 
     assertThat(response).isInstanceOf(ShomeiJsonRpcErrorResponse.class);

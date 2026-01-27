@@ -15,6 +15,7 @@ package net.consensys.shomei.rpc.client.model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class SimulateV1Response {
@@ -62,6 +63,7 @@ public class SimulateV1Response {
     this.error = error;
   }
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
   public static class BlockResult {
     @JsonProperty("number")
     private String number;
@@ -74,6 +76,9 @@ public class SimulateV1Response {
 
     @JsonProperty("gasUsed")
     private String gasUsed;
+
+    @JsonProperty("blobGasUsed")
+    private String blobGasUsed;
 
     @JsonProperty("baseFeePerGas")
     private String baseFeePerGas;
@@ -116,6 +121,14 @@ public class SimulateV1Response {
       this.gasUsed = gasUsed;
     }
 
+    public String getBlobGasUsed() {
+      return blobGasUsed;
+    }
+
+    public void setBlobGasUsed(String blobGasUsed) {
+      this.blobGasUsed = blobGasUsed;
+    }
+
     public String getBaseFeePerGas() {
       return baseFeePerGas;
     }
@@ -141,6 +154,7 @@ public class SimulateV1Response {
     }
   }
 
+  @JsonIgnoreProperties(ignoreUnknown = true)
   public static class CallResult {
     @JsonProperty("status")
     private String status;
@@ -153,6 +167,9 @@ public class SimulateV1Response {
 
     @JsonProperty("returnData")
     private String returnData;
+
+    @JsonProperty("error")
+    private JsonRpcError error;
 
     public String getStatus() {
       return status;
@@ -184,6 +201,14 @@ public class SimulateV1Response {
 
     public void setReturnData(String returnData) {
       this.returnData = returnData;
+    }
+
+    public JsonRpcError getError() {
+      return error;
+    }
+
+    public void setError(JsonRpcError error) {
+      this.error = error;
     }
   }
 
