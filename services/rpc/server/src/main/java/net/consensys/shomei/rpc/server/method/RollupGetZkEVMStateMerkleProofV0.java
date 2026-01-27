@@ -89,7 +89,7 @@ public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
                 .toHexString(),
             traceManager
                 .getZkStateRootHash(param.getEndBlockNumber())
-                .map(Hash::toHexString)
+                .map(h -> h.toHexString())
                 .orElseThrow(),
             traces,
             IMPL_VERSION));

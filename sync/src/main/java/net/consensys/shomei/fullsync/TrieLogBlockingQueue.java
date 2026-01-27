@@ -72,6 +72,7 @@ public class TrieLogBlockingQueue extends PriorityBlockingQueue<TrieLogObserver.
   public TrieLogObserver.TrieLogIdentifier waitForNewElement() {
     long distance;
     CompletableFuture<Boolean> foundBlockFuture;
+    Boolean blocksFound;
     try {
       do {
         // remove deprecated trielog (already imported block)
@@ -105,8 +106,18 @@ public class TrieLogBlockingQueue extends PriorityBlockingQueue<TrieLogObserver.
             foundBlockFuture = onTrieLogMissing.apply(distance);
           }
         }
-      } while (!completableFuture.isDone()
-          && !foundBlockFuture.completeOnTimeout(false, 5, TimeUnit.SECONDS).get());
+
+        // Wait for the future to complete or timeout after 5 seconds
+        blocksFound = foundBlockFuture.completeOnTimeout(false, 5, TimeUnit.SECONDS).get();
+
+        // If no blocks were found, add a delay before retrying to avoid hammering Besu
+        // when we've caught up to the chain tip. Without this delay, Shomei would
+        // immediately retry in a tight loop since Besu responds quickly with empty results.
+        if (!blocksFound && !completableFuture.isDone()) {
+          TimeUnit.SECONDS.sleep(2);
+        }
+
+      } while (!completableFuture.isDone() && !blocksFound);
       return null;
     } catch (Exception ex) {
       return null;

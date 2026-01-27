@@ -66,9 +66,12 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
 
   public RollupGetVirtualZkEVMStateMerkleProofV0 method;
 
-  // Test account from genesis with balance 0x09184e72a000 (10000000000000 wei)
+  // private static final String TEST_ACCOUNT_ADDRESS = "f17f52151EbEF6C7334FAD080c5704D77216b732";
   private static final String TEST_ACCOUNT_PRIVATE_KEY =
-      "0x45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8";
+      "0xae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f";
+  // Test account from genesis with balance 0x09184e72a000 (10000000000000 wei)
+  // private static final String TEST_ACCOUNT_PRIVATE_KEY =
+  //     "0x45a915e4d060149eb4365960e6a7a45f334393093061116b197e3240065ff2d8";
   // private static final Address TEST_ACCOUNT_ADDRESS =
   //     Address.fromHexString("0xa94f5374fce5edbc8e2a8697c15331677e6ebf0b");
 

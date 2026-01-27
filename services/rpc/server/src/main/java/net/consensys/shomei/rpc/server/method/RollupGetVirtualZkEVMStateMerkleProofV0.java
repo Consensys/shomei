@@ -91,21 +91,28 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
       System.out.println("Trielog bytes: " + trieLogBytes);
 
       // Decode the trielog
+      System.out.println("Starting trielog decode...");
       final TrieLogLayer trieLogLayer =
           worldStateArchive.getTrieLogLayerConverter().decodeTrieLog(RLP.input(trieLogBytes));
+      System.out.println("Trielog decode complete");
 
       // Apply the virtual trielog and generate the trace
       // This generates a trace without persisting the state
+      System.out.println("Starting generateVirtualTrace for parent block: " + parentBlockNumber);
       final List<List<Trace>> traces =
           worldStateArchive.generateVirtualTrace(parentBlockNumber, trieLogLayer);
+      System.out.println("generateVirtualTrace complete");
 
       // Get the parent state root hash
+      System.out.println("Getting parent state root hash for block: " + parentBlockNumber);
       final String zkParentStateRootHash =
           worldStateArchive
               .getTraceManager()
               .getZkStateRootHash(parentBlockNumber)
               .orElse(ZKTrie.DEFAULT_TRIE_ROOT)
               .toHexString();
+      System.out.println("Parent state root hash: " + zkParentStateRootHash);
+      System.out.println("Creating success response...");
 
       return new JsonRpcSuccessResponse(
           requestContext.getRequest().getId(),

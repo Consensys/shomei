@@ -90,6 +90,28 @@ public class GetRawTrieLogClient {
                     .addArgument(responseBody)
                     .log();
 
+                // Check if the response contains an error
+                if (responseBody.getError() != null) {
+                  final String errorMessage =
+                      String.format(
+                          "getTrieLogsByRange error [code=%d]: %s",
+                          responseBody.getError().getCode(),
+                          responseBody.getError().getMessage());
+                  LOG.atDebug()
+                      .setMessage("getTrieLogsByRange returned error: {}")
+                      .addArgument(errorMessage)
+                      .log();
+                  completableFuture.completeExceptionally(new RuntimeException(errorMessage));
+                  return;
+                }
+
+                // Check if result is present
+                if (responseBody.getResult() == null) {
+                  completableFuture.completeExceptionally(
+                      new RuntimeException("getTrieLogsByRange returned null result"));
+                  return;
+                }
+
                 try {
                   TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction =
                       trieLogManager.updater();
