@@ -69,7 +69,9 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
     final long parentBlockNumber = blockNumber - 1;
     final String transactionRlp = param.getTransaction();
 
-    // Check if the parent block (blockNumber - 1) exists in the canonical chain
+    // blockNumber represents the virtual block we want to build
+    // We need to build on top of the state at parentBlockNumber (blockNumber - 1)
+    // Check if the parent block exists in the canonical chain
     if (!worldStateArchive.getTraceManager().getTrace(parentBlockNumber).isPresent()) {
       return new ShomeiJsonRpcErrorResponse(
           requestContext.getRequest().getId(),
@@ -79,6 +81,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
     try {
       // Call eth_simulateV1 to get the trielog for the virtual block
+      // Simulate on top of parentBlockNumber state to build virtual block at blockNumber
       final CompletableFuture<String> trieLogFuture =
           besuSimulateClient.simulateTransaction(parentBlockNumber, transactionRlp);
 
@@ -98,12 +101,13 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
       // Apply the virtual trielog and generate the trace
       // This generates a trace without persisting the state
-      System.out.println("Starting generateVirtualTrace for parent block: " + parentBlockNumber);
+      // Use parentBlockNumber as the base state for applying the virtual trielog
+      System.out.println("Starting generateVirtualTrace on parent block: " + parentBlockNumber);
       final List<List<Trace>> traces =
           worldStateArchive.generateVirtualTrace(parentBlockNumber, trieLogLayer);
       System.out.println("generateVirtualTrace complete");
 
-      // Get the parent state root hash
+      // Get the parent state root hash (state at parentBlockNumber that we're building on)
       System.out.println("Getting parent state root hash for block: " + parentBlockNumber);
       final String zkParentStateRootHash =
           worldStateArchive
