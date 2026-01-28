@@ -187,9 +187,6 @@ public class ZkWorldStateArchive implements Closeable {
    */
   public List<List<Trace>> generateVirtualTrace(
       final long parentBlockNumber, final TrieLogLayer trieLogLayer) {
-    System.out.println("generateVirtualTrace: Starting for parentBlockNumber=" + parentBlockNumber);
-    System.out.println("generateVirtualTrace: Looking up cached worldstate for parent block");
-
     // Get the cached worldstate for the parent block
     final WorldStateStorage parentStorage = cachedWorldStates.entrySet().stream()
         .filter(entry -> entry.getKey().blockNumber().equals(parentBlockNumber))
@@ -198,53 +195,31 @@ public class ZkWorldStateArchive implements Closeable {
         .orElseThrow(() -> new IllegalStateException(
             "Worldstate for parent block " + parentBlockNumber + " is not cached"));
 
-    System.out.println("generateVirtualTrace: Found cached worldstate for parent block");
-    System.out.println("generateVirtualTrace: Creating layered storage over parent snapshot");
-
     // Create a layered storage that overlays in-memory writes on top of the parent snapshot
     // This ensures we don't modify the cached parent state during simulation
     try (final WorldStateStorage virtualStorage = new LayeredWorldStateStorage(parentStorage)) {
-      System.out.println("generateVirtualTrace: Layered storage created successfully");
-      System.out.println("generateVirtualTrace: Creating ephemeral trace manager");
-
       // Use an in-memory trace manager that won't persist to disk
       final TraceManager ephemeralTraceManager = new InMemoryStorageProvider().getTraceManager();
-      System.out.println("generateVirtualTrace: Creating virtual world state");
 
       final ZkEvmWorldState virtualWorldState = new ZkEvmWorldState(virtualStorage, ephemeralTraceManager);
-      System.out.println("generateVirtualTrace: Virtual world state created");
 
       // Apply the trielog and generate trace for the virtual block
       // Use the virtual block number from the trielog (parentBlockNumber + 1)
       final long virtualBlockNumber = trieLogLayer.getBlockNumber();
-      System.out.println("generateVirtualTrace: Virtual block number from trielog: " + virtualBlockNumber);
-      System.out.println("generateVirtualTrace: Calling rollForward with trielog");
 
       virtualWorldState.getAccumulator().rollForward(trieLogLayer);
-      System.out.println("generateVirtualTrace: rollForward completed");
-      System.out.println("generateVirtualTrace: Committing virtual block " + virtualBlockNumber);
-
       virtualWorldState.commit(virtualBlockNumber, trieLogLayer.getBlockHash(), true);
-      System.out.println("generateVirtualTrace: Commit completed");
 
       // Retrieve the trace for the virtual block
-      System.out.println("generateVirtualTrace: Retrieving trace for block " + virtualBlockNumber);
       final Optional<Bytes> traceBytes = ephemeralTraceManager.getTrace(virtualBlockNumber);
 
       if (traceBytes.isEmpty()) {
-        System.out.println("generateVirtualTrace: ERROR - No trace found for virtual block!");
         throw new IllegalStateException(
             "Failed to generate trace for virtual block " + virtualBlockNumber +
             " on parent " + parentBlockNumber);
       }
 
-      System.out.println("generateVirtualTrace: Trace retrieved, size=" + traceBytes.get().size() + " bytes");
-      System.out.println("generateVirtualTrace: Deserializing trace");
-
-      final List<List<Trace>> result = List.of(Trace.deserialize(RLP.input(traceBytes.get())));
-      System.out.println("generateVirtualTrace: Successfully completed, returning traces");
-
-      return result;
+      return List.of(Trace.deserialize(RLP.input(traceBytes.get())));
     } catch (Exception e) {
       if (e instanceof IllegalStateException) {
         throw (IllegalStateException) e;

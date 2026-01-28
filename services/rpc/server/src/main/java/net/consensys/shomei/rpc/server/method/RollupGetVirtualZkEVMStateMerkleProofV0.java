@@ -88,35 +88,23 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
       final String trieLogHex = trieLogFuture.get();
       final Bytes trieLogBytes = Bytes.fromHexString(trieLogHex);
 
-      // Log trielog for debugging
-      System.out.println("Received trielog hex length: " + trieLogHex.length());
-      System.out.println("Trielog hex prefix: " + (trieLogHex.length() > 200 ? trieLogHex.substring(0, 200) : trieLogHex));
-      System.out.println("Trielog bytes: " + trieLogBytes);
-
       // Decode the trielog
-      System.out.println("Starting trielog decode...");
       final TrieLogLayer trieLogLayer =
           worldStateArchive.getTrieLogLayerConverter().decodeTrieLog(RLP.input(trieLogBytes));
-      System.out.println("Trielog decode complete");
 
       // Apply the virtual trielog and generate the trace
       // This generates a trace without persisting the state
       // Use parentBlockNumber as the base state for applying the virtual trielog
-      System.out.println("Starting generateVirtualTrace on parent block: " + parentBlockNumber);
       final List<List<Trace>> traces =
           worldStateArchive.generateVirtualTrace(parentBlockNumber, trieLogLayer);
-      System.out.println("generateVirtualTrace complete");
 
       // Get the parent state root hash (state at parentBlockNumber that we're building on)
-      System.out.println("Getting parent state root hash for block: " + parentBlockNumber);
       final String zkParentStateRootHash =
           worldStateArchive
               .getTraceManager()
               .getZkStateRootHash(parentBlockNumber)
               .orElse(ZKTrie.DEFAULT_TRIE_ROOT)
               .toHexString();
-      System.out.println("Parent state root hash: " + zkParentStateRootHash);
-      System.out.println("Creating success response...");
 
       return new JsonRpcSuccessResponse(
           requestContext.getRequest().getId(),
