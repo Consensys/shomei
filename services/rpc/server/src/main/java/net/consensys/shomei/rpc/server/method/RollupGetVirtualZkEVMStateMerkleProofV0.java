@@ -69,17 +69,16 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
     final long parentBlockNumber = blockNumber - 1;
     final String transactionRlp = param.getTransaction();
 
-    // blockNumber represents the virtual block we want to build
-    // We need to build on top of the state at parentBlockNumber (blockNumber - 1)
-    // Check if the parent block exists in the canonical chain
-    if (!worldStateArchive.getTraceManager().getTrace(parentBlockNumber).isPresent()) {
-      return new ShomeiJsonRpcErrorResponse(
-          requestContext.getRequest().getId(),
-          RpcErrorType.INVALID_PARAMS,
-          "BLOCK_MISSING_IN_CHAIN - block %d is missing".formatted(parentBlockNumber));
-    }
 
     try {
+      // blockNumber represents the virtual block we want to build, fail early if we
+      // do not have it in cache
+      if (worldStateArchive.getCachedWorldState(parentBlockNumber).isEmpty()) {
+        throw new RuntimeException(
+            String.format("Worldstate for parent block %d is not cached",
+                parentBlockNumber));
+      }
+
       // Call eth_simulateV1 to get the trielog for the virtual block
       // Simulate on top of parentBlockNumber state to build virtual block at blockNumber
       final CompletableFuture<String> trieLogFuture =
