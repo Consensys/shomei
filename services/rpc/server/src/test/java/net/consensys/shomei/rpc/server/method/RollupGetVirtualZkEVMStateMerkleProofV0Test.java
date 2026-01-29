@@ -207,8 +207,8 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
             "2.0",
             "rollup_getVirtualZkEVMStateMerkleProofV0",
             new Object[] {
-              new RollupGetVirtualZkEvmStateMerkleProofV0Parameter(
-                  String.valueOf(blockNumber), transactionRlp)
+                new RollupGetVirtualZkEvmStateMerkleProofV0Parameter(
+                    String.valueOf(blockNumber), transactionRlp)
             }));
   }
 

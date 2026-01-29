@@ -17,7 +17,6 @@ import static net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper.WRA
 import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
 
 import net.consensys.shomei.ZkAccount;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
