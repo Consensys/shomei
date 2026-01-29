@@ -19,8 +19,10 @@ import net.consensys.shomei.observer.TrieLogObserver;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -73,55 +75,75 @@ public class TrieLogBlockingQueue extends PriorityBlockingQueue<TrieLogObserver.
     long distance;
     CompletableFuture<Boolean> foundBlockFuture;
     Boolean blocksFound;
-    try {
-      do {
-        // remove deprecated trielog (already imported block)
-        iterator()
-            .forEachRemaining(
-                trieLogIdentifier -> {
-                  if (trieLogIdentifier.blockNumber() <= currentShomeiHeadSupplier.get()) {
-                    remove(trieLogIdentifier);
-                  }
-                });
 
-        if (importValidators.stream()
-            .anyMatch(blockImportValidator -> !blockImportValidator.canImportBlock())) {
-          /*
-           * We wait until all the rules allow us to import the block (minimum block confirmations, max limit, or others)
-           */
-          clear();
-          // just wait a second and check again:
-          foundBlockFuture =
-              CompletableFuture.supplyAsync(
-                  () -> false, CompletableFuture.delayedExecutor(1, TimeUnit.SECONDS));
-        } else {
-          final TrieLogObserver.TrieLogIdentifier trieLogIdentifier = peek();
-          distance =
-              distance(trieLogIdentifier, currentShomeiHeadSupplier.get())
-                  .orElse(INITIAL_SYNC_BLOCK_NUMBER_RANGE);
-          if (distance == 1) {
-            remove(trieLogIdentifier);
-            return trieLogIdentifier;
-          } else { // missing trielog we need to import them
-            foundBlockFuture = onTrieLogMissing.apply(distance);
-          }
+    while (!completableFuture.isDone()) {
+      // remove deprecated trielog (already imported block)
+      iterator()
+          .forEachRemaining(
+              trieLogIdentifier -> {
+                if (trieLogIdentifier.blockNumber() <= currentShomeiHeadSupplier.get()) {
+                  remove(trieLogIdentifier);
+                }
+              });
+
+      if (importValidators.stream()
+          .anyMatch(blockImportValidator -> !blockImportValidator.canImportBlock())) {
+        /*
+         * We wait until all the rules allow us to import the block (minimum block confirmations, max limit, or others)
+         */
+        clear();
+        // just wait a second and check again:
+        foundBlockFuture =
+            CompletableFuture.supplyAsync(
+                () -> false, CompletableFuture.delayedExecutor(1, TimeUnit.SECONDS));
+      } else {
+        final TrieLogObserver.TrieLogIdentifier trieLogIdentifier = peek();
+        distance =
+            distance(trieLogIdentifier, currentShomeiHeadSupplier.get())
+                .orElse(INITIAL_SYNC_BLOCK_NUMBER_RANGE);
+        if (distance == 1) {
+          remove(trieLogIdentifier);
+          return trieLogIdentifier;
+        } else { // missing trielog we need to import them
+          foundBlockFuture = onTrieLogMissing.apply(distance);
         }
+      }
 
-        // Wait for the future to complete or timeout after 5 seconds
-        blocksFound = foundBlockFuture.completeOnTimeout(false, 5, TimeUnit.SECONDS).get();
+      // Wait for the future to complete with a short timeout to allow frequent shutdown checks
+      try {
+        blocksFound = foundBlockFuture.get(1, TimeUnit.SECONDS);
+      } catch (TimeoutException e) {
+        // Timeout is normal, continue loop to check completableFuture.isDone()
+        blocksFound = false;
+      } catch (InterruptedException e) {
+        // Restore interrupted status and exit cleanly
+        Thread.currentThread().interrupt();
+        return null;
+      } catch (ExecutionException e) {
+        // Log and continue on execution failure
+        blocksFound = false;
+      }
 
-        // If no blocks were found, add a delay before retrying to avoid hammering Besu
-        // when we've caught up to the chain tip. Without this delay, Shomei would
-        // immediately retry in a tight loop since Besu responds quickly with empty results.
-        if (!blocksFound && !completableFuture.isDone()) {
+      // If blocks were found, exit and let caller process them
+      if (blocksFound) {
+        return null;
+      }
+
+      // If no blocks were found, add a delay before retrying to avoid hammering Besu
+      // when we've caught up to the chain tip. Without this delay, Shomei would
+      // immediately retry in a tight loop since Besu responds quickly with empty results.
+      if (!completableFuture.isDone()) {
+        try {
           TimeUnit.SECONDS.sleep(2);
+        } catch (InterruptedException e) {
+          // Restore interrupted status and exit cleanly
+          Thread.currentThread().interrupt();
+          return null;
         }
-
-      } while (!completableFuture.isDone() && !blocksFound);
-      return null;
-    } catch (Exception ex) {
-      return null;
+      }
     }
+
+    return null;
   }
 
   public void stop() {

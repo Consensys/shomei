@@ -182,7 +182,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
     assertThat(response).isInstanceOf(ShomeiJsonRpcErrorResponse.class);
     final ShomeiJsonRpcErrorResponse errorResponse = (ShomeiJsonRpcErrorResponse) response;
     assertThat(errorResponse.getError().getCode()).isEqualTo(RpcErrorType.INTERNAL_ERROR.getCode());
-    assertThat(errorResponse.getJsonError().message()).contains("Failed to simulate transaction");
+    assertThat(errorResponse.getJsonError().message()).contains("Error processing virtual block");
   }
 
   @Test
@@ -203,8 +203,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
     assertThat(response).isInstanceOf(ShomeiJsonRpcErrorResponse.class);
     final ShomeiJsonRpcErrorResponse errorResponse = (ShomeiJsonRpcErrorResponse) response;
     assertThat(errorResponse.getError().getCode()).isEqualTo(RpcErrorType.INTERNAL_ERROR.getCode());
-    assertThat(errorResponse.getJsonError().message()).contains("eth_simulateV1 error");
-    assertThat(errorResponse.getJsonError().message()).contains("insufficient funds");
+    assertThat(errorResponse.getJsonError().message()).contains("Error processing virtual block");
   }
 
   private JsonRpcRequestContext request(final long blockNumber, final String transactionRlp) {

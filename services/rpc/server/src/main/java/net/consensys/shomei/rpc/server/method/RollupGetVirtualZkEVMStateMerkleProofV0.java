@@ -24,9 +24,6 @@ import net.consensys.shomei.storage.ZkWorldStateArchive;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trielog.TrieLogLayer;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
@@ -88,10 +85,8 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
       // Call eth_simulateV1 to get the trielog for the virtual block
       // Simulate on top of parentBlockNumber state to build virtual block at blockNumber
-      final CompletableFuture<String> trieLogFuture =
-          besuSimulateClient.simulateTransaction(parentBlockNumber, transactionRlp);
-
-      final String trieLogHex = trieLogFuture.get();
+      final String trieLogHex =
+          besuSimulateClient.simulateTransaction(parentBlockNumber, transactionRlp).join();
       final Bytes trieLogBytes = Bytes.fromHexString(trieLogHex);
 
       // Decode the trielog
@@ -123,11 +118,6 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
               virtualTraceResult.traces(),
               IMPL_VERSION));
 
-    } catch (InterruptedException | ExecutionException e) {
-      return new ShomeiJsonRpcErrorResponse(
-          requestContext.getRequest().getId(),
-          RpcErrorType.INTERNAL_ERROR,
-          "Failed to simulate transaction: " + e.getMessage());
     } catch (Exception e) {
       return new ShomeiJsonRpcErrorResponse(
           requestContext.getRequest().getId(),
