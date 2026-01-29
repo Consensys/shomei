@@ -14,6 +14,7 @@
 package net.consensys.shomei.storage.worldstate;
 
 import net.consensys.shomei.trie.model.FlattenedLeaf;
+import net.consensys.shomei.trie.model.LeafOpening;
 import net.consensys.shomei.trie.storage.TrieStorage;
 
 import java.util.Map;
@@ -129,6 +130,7 @@ public class LayeredWorldStateStorage implements WorldStateStorage {
     Bytes parentLeft = parentLeftNode.getKey();
 
     // Compare which left key is larger (closer to hkey)
+    // HEAD (0) always works correctly as a fallback
     if (overlayLeft.compareTo(parentLeft) > 0) {
       leftNode = Map.entry(overlayLeft, overlayRange.getLeftNodeValue());
     } else {
@@ -145,11 +147,24 @@ public class LayeredWorldStateStorage implements WorldStateStorage {
     Bytes overlayRight = overlayRange.getRightNodeKey();
     Bytes parentRight = parentRightNode.getKey();
 
-    // Compare which right key is smaller (closer to hkey)
-    if (overlayRight.compareTo(parentRight) < 0) {
+    // Choose the smallest key > hkey between overlay and parent
+    // Need to ensure the key is actually > hkey to handle empty storages correctly
+    boolean overlayRightValid = overlayRight.compareTo(hkey) > 0;
+    boolean parentRightValid = parentRight.compareTo(hkey) > 0;
+
+    if (overlayRightValid && parentRightValid) {
+      // Both valid, choose the smaller (closer to hkey)
+      rightNode =
+          overlayRight.compareTo(parentRight) < 0
+              ? Map.entry(overlayRight, overlayRange.getRightNodeValue())
+              : parentRightNode;
+    } else if (overlayRightValid) {
       rightNode = Map.entry(overlayRight, overlayRange.getRightNodeValue());
-    } else {
+    } else if (parentRightValid) {
       rightNode = parentRightNode;
+    } else {
+      // Neither has a valid right key > hkey, return TAIL
+      rightNode = Map.entry(LeafOpening.TAIL.getHkey(), FlattenedLeaf.TAIL);
     }
 
     return new TrieStorage.Range(leftNode, centerNode, rightNode);
