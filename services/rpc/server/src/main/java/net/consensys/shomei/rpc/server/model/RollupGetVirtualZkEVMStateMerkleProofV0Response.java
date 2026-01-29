@@ -22,21 +22,26 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @SuppressWarnings("unused")
 public class RollupGetVirtualZkEVMStateMerkleProofV0Response {
 
-  @JsonProperty("zkStateMerkleProof")
-  private final List<List<Trace>> zkStateMerkleProof;
-
   @JsonProperty("zkParentStateRootHash")
   private final String zkParentStateRootHash;
+
+  @JsonProperty("zkEndStateRootHash")
+  private final String zkEndStateRootHash;
+
+  @JsonProperty("zkStateMerkleProof")
+  private final List<List<Trace>> zkStateMerkleProof;
 
   @JsonProperty("zkStateManagerVersion")
   private final String zkStateManagerVersion;
 
   public RollupGetVirtualZkEVMStateMerkleProofV0Response(
-      final List<List<Trace>> zkStateMerkleProof,
       final String zkParentStateRootHash,
+      final String zkEndStateRootHash,
+      final List<List<Trace>> zkStateMerkleProof,
       final String zkStateManagerVersion) {
-    this.zkStateMerkleProof = zkStateMerkleProof;
     this.zkParentStateRootHash = zkParentStateRootHash;
+    this.zkEndStateRootHash = zkEndStateRootHash;
+    this.zkStateMerkleProof = zkStateMerkleProof;
     this.zkStateManagerVersion = zkStateManagerVersion;
   }
 }

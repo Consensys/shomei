@@ -22,10 +22,8 @@ import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEVMStateMerklePro
 import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEvmStateMerkleProofV0Parameter;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
 import net.consensys.shomei.trie.ZKTrie;
-import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.TrieLogLayer;
 
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -103,7 +101,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
       // Apply the virtual trielog and generate the trace
       // This generates a trace without persisting the state
       // Use parentBlockNumber as the base state for applying the virtual trielog
-      final List<List<Trace>> traces =
+      final var virtualTraceResult =
           worldStateArchive.generateVirtualTrace(parentBlockNumber, trieLogLayer);
 
       // Get the parent state root hash (state at parentBlockNumber that we're building on)
@@ -114,10 +112,16 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
               .orElse(ZKTrie.DEFAULT_TRIE_ROOT)
               .toHexString();
 
+      // Get the resulting state root hash (state after applying the virtual block)
+      final String zkEndStateRootHash = virtualTraceResult.zkEndStateRootHash().toHexString();
+
       return new JsonRpcSuccessResponse(
           requestContext.getRequest().getId(),
           new RollupGetVirtualZkEVMStateMerkleProofV0Response(
-              traces, zkParentStateRootHash, IMPL_VERSION));
+              zkParentStateRootHash,
+              zkEndStateRootHash,
+              virtualTraceResult.traces(),
+              IMPL_VERSION));
 
     } catch (InterruptedException | ExecutionException e) {
       return new ShomeiJsonRpcErrorResponse(

@@ -177,15 +177,20 @@ public class ZkWorldStateArchive implements Closeable {
   }
 
   /**
+   * Result of generating a virtual trace.
+   */
+  public record VirtualTraceResult(List<List<Trace>> traces, Hash zkEndStateRootHash) {}
+
+  /**
    * Generate a virtual trace from a trielog without persisting state changes.
    * This is used for simulating transactions on a virtual block.
    *
    * @param parentBlockNumber the parent block number on which to base the virtual state
    * @param trieLogLayer the trielog to apply
-   * @return the generated trace
+   * @return the generated trace and resulting state root hash
    * @throws IllegalStateException if the worldstate for the parent block is not cached
    */
-  public List<List<Trace>> generateVirtualTrace(
+  public VirtualTraceResult generateVirtualTrace(
       final long parentBlockNumber, final TrieLogLayer trieLogLayer) {
     // Get the cached worldstate for the parent block
     final WorldStateStorage parentStorage = cachedWorldStates.entrySet().stream()
@@ -219,7 +224,15 @@ public class ZkWorldStateArchive implements Closeable {
             " on parent " + parentBlockNumber);
       }
 
-      return List.of(Trace.deserialize(RLP.input(traceBytes.get())));
+      // Get the resulting state root hash after applying the virtual block
+      final Hash zkEndStateRootHash = ephemeralTraceManager
+          .getZkStateRootHash(virtualBlockNumber)
+          .orElseThrow(() -> new IllegalStateException(
+              "Failed to get state root hash for virtual block " + virtualBlockNumber));
+
+      return new VirtualTraceResult(
+          List.of(Trace.deserialize(RLP.input(traceBytes.get()))),
+          zkEndStateRootHash);
     } catch (Exception e) {
       if (e instanceof IllegalStateException) {
         throw (IllegalStateException) e;

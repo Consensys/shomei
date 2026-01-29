@@ -24,10 +24,12 @@ import net.consensys.shomei.rpc.client.BesuSimulateClient;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEvmStateMerkleProofV0Parameter;
 import net.consensys.shomei.storage.TraceManager;
+import net.consensys.shomei.storage.TrieLogManager;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.TrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
+import net.consensys.shomei.worldview.ZkEvmWorldState;
 
 import java.math.BigInteger;
 import java.util.List;
@@ -60,9 +62,11 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
 
   @Mock public ZkWorldStateArchive worldStateArchive;
   @Mock public BesuSimulateClient besuSimulateClient;
+  @Mock public TrieLogManager trieLogManager;
   @Mock public TraceManager traceManager;
   @Mock public TrieLogLayerConverter trieLogLayerConverter;
   @Mock public TrieLogLayer trieLogLayer;
+  @Mock public ZkEvmWorldState mockZkWorldState;
 
   public RollupGetVirtualZkEVMStateMerkleProofV0 method;
 
@@ -114,8 +118,8 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
 
   @Test
   public void shouldReturnBlockMissingWhenParentBlockUnavailable() {
-    when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
-    when(traceManager.getTrace(7L)).thenReturn(Optional.empty());
+    when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(7L)).thenReturn(Optional.empty());
 
     final JsonRpcRequestContext request = request(8L, createTestTransactionRlp());
     final JsonRpcResponse response = method.response(request);
@@ -138,9 +142,12 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
         .thenReturn(CompletableFuture.completedFuture(mockTrieLogHex));
 
     // Mock world state archive behavior
-    when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
-    when(traceManager.getTrace(7L))
+    when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01"))); // Parent block exists
+    when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
+
+    when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
     when(traceManager.getZkStateRootHash(7L)).thenReturn(Optional.of(Hash.ZERO));
 
     // Mock the trielog layer converter
@@ -149,8 +156,10 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
 
     // Mock virtual trace generation
     final List<List<Trace>> mockTraces = List.of(List.of());
+    final ZkWorldStateArchive.VirtualTraceResult mockResult =
+        new ZkWorldStateArchive.VirtualTraceResult(mockTraces, Hash.ZERO);
     when(worldStateArchive.generateVirtualTrace(eq(7L), any(TrieLogLayer.class)))
-        .thenReturn(mockTraces);
+        .thenReturn(mockResult);
 
     final JsonRpcRequestContext request = request(8L, testTxRlp);
     final JsonRpcResponse response = method.response(request);
@@ -162,9 +171,10 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
 
   @Test
   public void shouldReturnErrorWhenSimulationFails() {
-    when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
-    when(traceManager.getTrace(7L))
+    when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
+    when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
 
     // Mock simulation failure
     when(besuSimulateClient.simulateTransaction(anyLong(), anyString()))
@@ -182,9 +192,10 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
 
   @Test
   public void shouldReturnErrorWithDetailsWhenSimulationReturnsError() {
-    when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
-    when(traceManager.getTrace(7L))
+    when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
+    when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
 
     // Mock simulation returning a detailed error from eth_simulateV1
     final String detailedErrorMessage = "eth_simulateV1 error [code=-32000]: insufficient funds";
