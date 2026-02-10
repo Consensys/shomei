@@ -26,12 +26,13 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
 
 /**
- * A layered worldstate storage that overlays an in-memory layer on top of a base (parent) storage.
+ * LayeredWorldStateStorage composes an in-memory overlay and a base (parent) storage.
  * All reads check the overlay first, then fall back to the parent.
  * All writes go only to the overlay, leaving the parent unmodified.
  * Deletes are tracked explicitly to prevent fallback to parent for deleted keys.
+ *
  * This is useful for virtual/simulated blocks where we want to apply changes temporarily
- * without modifying the cached parent state.
+ * without modifying the cached parent state or persist the state permanently.
  */
 public class LayeredWorldStateStorage implements WorldStateStorage {
 
@@ -179,7 +180,7 @@ public class LayeredWorldStateStorage implements WorldStateStorage {
   /**
    * Wrapper around the overlay's TrieUpdater that tracks deleted keys and handles re-insertions.
    */
-  private class LayeredTrieUpdater implements TrieStorage.TrieUpdater {
+  private class LayeredTrieUpdater implements WorldStateUpdater {
     private final TrieStorage.TrieUpdater delegate;
 
     LayeredTrieUpdater(TrieStorage.TrieUpdater delegate) {
@@ -208,6 +209,16 @@ public class LayeredWorldStateStorage implements WorldStateStorage {
     @Override
     public void commit() {
       delegate.commit();
+    }
+
+    @Override
+    public void setBlockHash(final Hash blockHash) {
+      overlayStorage.setBlockHash(blockHash);
+    }
+
+    @Override
+    public void setBlockNumber(final long blockNumber) {
+      overlayStorage.setBlockNumber(blockNumber);
     }
   }
 
