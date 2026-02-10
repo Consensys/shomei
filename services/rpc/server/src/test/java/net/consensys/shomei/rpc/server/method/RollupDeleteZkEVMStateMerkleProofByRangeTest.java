@@ -73,7 +73,8 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
     final List<Trace> traces =
-        List.of(accountStateTrie.readWithTrace(Hash.ZERO, MimcSafeBytes.safeByte32(Hash.ZERO)));
+        List.of(accountStateTrie.readWithTrace(Hash.ZERO, MimcSafeBytes.safeByte32(Bytes32.wrap(
+            Hash.ZERO))));
 
     final List<Trace> traces2 =
         List.of(
