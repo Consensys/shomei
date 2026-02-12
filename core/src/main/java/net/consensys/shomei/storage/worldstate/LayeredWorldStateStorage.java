@@ -14,13 +14,9 @@
 package net.consensys.shomei.storage.worldstate;
 
 import net.consensys.shomei.trie.model.FlattenedLeaf;
-import net.consensys.shomei.trie.model.LeafOpening;
-import net.consensys.shomei.trie.storage.TrieStorage;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Hash;
@@ -34,68 +30,139 @@ import org.hyperledger.besu.datatypes.Hash;
  * This is useful for virtual/simulated blocks where we want to apply changes temporarily
  * without modifying the cached parent state or persist the state permanently.
  */
-public class LayeredWorldStateStorage implements WorldStateStorage {
+public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
-  private final WorldStateStorage parentStorage;
-  private final InMemoryWorldStateStorage overlayStorage;
-  private final Set<Bytes> deletedKeys = ConcurrentHashMap.newKeySet();
+  private final WorldStateStorage parent;
 
-  public LayeredWorldStateStorage(final WorldStateStorage parentStorage) {
-    this.parentStorage = parentStorage;
-    this.overlayStorage = new InMemoryWorldStateStorage();
+  public LayeredWorldStateStorage(final WorldStateStorage parent) {
+    super();
+    this.parent = parent;
   }
 
   @Override
-  public Optional<FlattenedLeaf> getFlatLeaf(Bytes key) {
-    // If key was deleted in overlay, don't fall back to parent
-    if (deletedKeys.contains(key)) {
-      return Optional.empty();
+  public Optional<FlattenedLeaf> getFlatLeaf(final Bytes key) {
+    // null  = key not in overlay at all → ask parent
+    // Optional.empty() = key explicitly deleted in overlay → return empty
+    // Optional.of(val) = key exists in overlay → return value
+    final Optional<FlattenedLeaf> overlayValue = getFlatLeafStorage().get(key);
+    if (overlayValue == null) {
+      return parent.getFlatLeaf(key);
+    }
+    return overlayValue;
+  }
+
+  @Override
+  public Optional<Bytes> getTrieNode(final Bytes location, final Bytes nodeHash) {
+    final Optional<Bytes> overlayValue = getTrieNodeStorage().get(location);
+    if (overlayValue == null) {
+      return parent.getTrieNode(location, nodeHash);
+    }
+    return overlayValue;
+  }
+
+  @Override
+  public Range getNearestKeys(final Bytes hkey) {
+
+    final Range parentRange = parent.getNearestKeys(hkey);
+
+    // --- Center: check overlay directly, then parent ---
+    Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode;
+    final Optional<FlattenedLeaf> overlayCenter = getFlatLeafStorage().get(hkey);
+    if (overlayCenter != null && overlayCenter.isPresent()) {
+      centerNode = Optional.of(Map.entry(hkey, overlayCenter.get()));
+    } else if (overlayCenter != null && overlayCenter.isEmpty()) {
+      centerNode = Optional.empty();
+    } else {
+      centerNode = parentRange.getCenterNode();
     }
 
-    // Check overlay first, then parent
-    Optional<FlattenedLeaf> overlayResult = overlayStorage.getFlatLeaf(key);
-    return overlayResult.isPresent() ? overlayResult : parentStorage.getFlatLeaf(key);
+    // --- Left: closest key < hkey ---
+    final Map.Entry<Bytes, FlattenedLeaf> leftNode =
+            resolveLeftNode(hkey, parentRange);
+
+    // --- Right: closest key > hkey ---
+    final Map.Entry<Bytes, FlattenedLeaf> rightNode =
+            resolveRightNode(hkey, parentRange);
+
+    return new Range(leftNode, centerNode, rightNode);
   }
 
-  @Override
-  public Optional<Bytes> getTrieNode(Bytes location, Bytes nodeHash) {
-    // Check overlay first, then parent
-    Optional<Bytes> overlayResult = overlayStorage.getTrieNode(location, nodeHash);
-    return overlayResult.isPresent() ? overlayResult : parentStorage.getTrieNode(location, nodeHash);
+  private Map.Entry<Bytes, FlattenedLeaf> resolveLeftNode(
+          final Bytes hkey, final Range parentRange) {
+
+    final Map.Entry<Bytes, FlattenedLeaf> parentLeft =
+            getValidParentNode(
+                    parentRange.getLeftNodeKey(), parentRange.getLeftNodeValue(), true);
+
+    Map.Entry<Bytes, Optional<FlattenedLeaf>> overlayLeft =
+            getFlatLeafStorage().lowerEntry(hkey);
+    // skip deleted entries
+    while (overlayLeft != null && overlayLeft.getValue().isEmpty()) {
+      overlayLeft = getFlatLeafStorage().lowerEntry(overlayLeft.getKey());
+    }
+
+    if (overlayLeft != null && overlayLeft.getValue().isPresent()
+            && overlayLeft.getKey().compareTo(parentLeft.getKey()) > 0) {
+      return Map.entry(overlayLeft.getKey(), overlayLeft.getValue().get());
+    }
+
+    return parentLeft;
+  }
+
+  private Map.Entry<Bytes, FlattenedLeaf> resolveRightNode(
+          final Bytes hkey, final Range parentRange) {
+
+    final Map.Entry<Bytes, FlattenedLeaf> parentRight =
+            getValidParentNode(
+                    parentRange.getRightNodeKey(), parentRange.getRightNodeValue(), false);
+
+    Map.Entry<Bytes, Optional<FlattenedLeaf>> overlayRight =
+            getFlatLeafStorage().higherEntry(hkey);
+    // skip deleted entries
+    while (overlayRight != null && overlayRight.getValue().isEmpty()) {
+      overlayRight = getFlatLeafStorage().higherEntry(overlayRight.getKey());
+    }
+
+    if (overlayRight != null && overlayRight.getKey().compareTo(parentRight.getKey()) < 0) {
+      return Map.entry(overlayRight.getKey(), overlayRight.getValue().get());
+    }
+
+    return parentRight;
   }
 
   /**
-   * Get a valid (non-deleted) node from parent storage, searching in the specified direction if
-   * the initial node is deleted.
-   *
-   * @param initialKey the initial key to check
-   * @param initialValue the initial value
-   * @param searchLeft true to search left (for smaller keys), false to search right (for larger
-   *     keys)
-   * @return a non-deleted entry from parent, or the initial entry if no better option exists
+   * Check if a key has been explicitly deleted in the overlay.
+   */
+  private boolean isDeletedInOverlay(final Bytes key) {
+    final Optional<FlattenedLeaf> value = getFlatLeafStorage().get(key);
+    return value != null && value.isEmpty();
+  }
+
+  /**
+   * Walk through parent storage to find a node that hasn't been deleted in the overlay.
    */
   private Map.Entry<Bytes, FlattenedLeaf> getValidParentNode(
-      Bytes initialKey, FlattenedLeaf initialValue, boolean searchLeft) {
+          final Bytes initialKey,
+          final FlattenedLeaf initialValue,
+          final boolean searchLeft) {
+
     Bytes currentKey = initialKey;
     FlattenedLeaf currentValue = initialValue;
 
-    // Keep searching while the current key is deleted
-    while (deletedKeys.contains(currentKey) && !currentKey.equals(Bytes.EMPTY)) {
-      // Get nearest keys relative to current position
-      TrieStorage.Range nextRange = parentStorage.getNearestKeys(currentKey);
+    while (isDeletedInOverlay(currentKey) && !currentKey.equals(Bytes.EMPTY)) {
+      final Range nextRange = parent.getNearestKeys(currentKey);
 
-      // Move in the specified direction
       if (searchLeft) {
-        Bytes nextKey = nextRange.getLeftNodeKey();
+        final Bytes nextKey = nextRange.getLeftNodeKey();
         if (nextKey.equals(currentKey) || nextKey.equals(Bytes.EMPTY)) {
-          break; // No more keys in this direction
+          break;
         }
         currentKey = nextKey;
         currentValue = nextRange.getLeftNodeValue();
       } else {
-        Bytes nextKey = nextRange.getRightNodeKey();
+        final Bytes nextKey = nextRange.getRightNodeKey();
         if (nextKey.equals(currentKey) || nextKey.equals(Bytes.EMPTY)) {
-          break; // No more keys in this direction
+          break;
         }
         currentKey = nextKey;
         currentValue = nextRange.getRightNodeValue();
@@ -106,98 +173,28 @@ public class LayeredWorldStateStorage implements WorldStateStorage {
   }
 
   @Override
-  public TrieStorage.Range getNearestKeys(Bytes hkey) {
-    // Get nearest keys from both overlay and parent
-    final TrieStorage.Range overlayRange = overlayStorage.getNearestKeys(hkey);
-    final TrieStorage.Range parentRange = parentStorage.getNearestKeys(hkey);
-
-    // Check for exact match (center node) in overlay first, then parent (if not deleted)
-    Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode = overlayRange.getCenterNode();
-    if (centerNode.isEmpty()) {
-      centerNode =
-          parentRange
-              .getCenterNode()
-              .filter(entry -> !deletedKeys.contains(entry.getKey()));
-    }
-
-    // For left node: pick the one closest to hkey from below (largest key <= hkey)
-    // Get valid (non-deleted) left node from parent
-    Map.Entry<Bytes, FlattenedLeaf> parentLeftNode =
-        getValidParentNode(
-            parentRange.getLeftNodeKey(), parentRange.getLeftNodeValue(), true);
-
-    Map.Entry<Bytes, FlattenedLeaf> leftNode;
-    Bytes overlayLeft = overlayRange.getLeftNodeKey();
-    Bytes parentLeft = parentLeftNode.getKey();
-
-    // Compare which left key is larger (closer to hkey)
-    // HEAD (0) always works correctly as a fallback
-    if (overlayLeft.compareTo(parentLeft) > 0) {
-      leftNode = Map.entry(overlayLeft, overlayRange.getLeftNodeValue());
-    } else {
-      leftNode = parentLeftNode;
-    }
-
-    // For right node: pick the one closest to hkey from above (smallest key > hkey)
-    // Get valid (non-deleted) right node from parent
-    Map.Entry<Bytes, FlattenedLeaf> parentRightNode =
-        getValidParentNode(
-            parentRange.getRightNodeKey(), parentRange.getRightNodeValue(), false);
-
-    Map.Entry<Bytes, FlattenedLeaf> rightNode;
-    Bytes overlayRight = overlayRange.getRightNodeKey();
-    Bytes parentRight = parentRightNode.getKey();
-
-    // Choose the smallest key > hkey between overlay and parent
-    // Need to ensure the key is actually > hkey to handle empty storages correctly
-    boolean overlayRightValid = overlayRight.compareTo(hkey) > 0;
-    boolean parentRightValid = parentRight.compareTo(hkey) > 0;
-
-    if (overlayRightValid && parentRightValid) {
-      // Both valid, choose the smaller (closer to hkey)
-      rightNode =
-          overlayRight.compareTo(parentRight) < 0
-              ? Map.entry(overlayRight, overlayRange.getRightNodeValue())
-              : parentRightNode;
-    } else if (overlayRightValid) {
-      rightNode = Map.entry(overlayRight, overlayRange.getRightNodeValue());
-    } else if (parentRightValid) {
-      rightNode = parentRightNode;
-    } else {
-      // Neither has a valid right key > hkey, return TAIL
-      rightNode = Map.entry(LeafOpening.TAIL.getHkey(), FlattenedLeaf.TAIL);
-    }
-
-    return new TrieStorage.Range(leftNode, centerNode, rightNode);
+  public TrieUpdater updater() {
+    return new LayeredTrieUpdater(this);
   }
 
-  @Override
-  public TrieStorage.TrieUpdater updater() {
-    // Return a wrapper that tracks deletes and re-insertions
-    return new LayeredTrieUpdater(overlayStorage.updater());
-  }
 
   /**
    * Wrapper around the overlay's TrieUpdater that tracks deleted keys and handles re-insertions.
    */
-  private class LayeredTrieUpdater implements WorldStateUpdater {
-    private final TrieStorage.TrieUpdater delegate;
+  private static class LayeredTrieUpdater implements WorldStateUpdater {
+    private final LayeredWorldStateStorage delegate;
 
-    LayeredTrieUpdater(TrieStorage.TrieUpdater delegate) {
+    LayeredTrieUpdater(final LayeredWorldStateStorage delegate) {
       this.delegate = delegate;
     }
 
     @Override
     public void putFlatLeaf(Bytes key, FlattenedLeaf value) {
-      // If key was previously deleted, remove it from deleted set
-      deletedKeys.remove(key);
       delegate.putFlatLeaf(key, value);
     }
 
     @Override
     public void removeFlatLeafValue(Bytes key) {
-      // Track this deletion
-      deletedKeys.add(key);
       delegate.removeFlatLeafValue(key);
     }
 
@@ -213,41 +210,37 @@ public class LayeredWorldStateStorage implements WorldStateStorage {
 
     @Override
     public void setBlockHash(final Hash blockHash) {
-      overlayStorage.setBlockHash(blockHash);
+      delegate.setBlockHash(blockHash);
     }
 
     @Override
     public void setBlockNumber(final long blockNumber) {
-      overlayStorage.setBlockNumber(blockNumber);
+      delegate.setBlockNumber(blockNumber);
     }
   }
 
   @Override
   public Optional<Long> getWorldStateBlockNumber() {
-    // Check overlay first, then parent
-    Optional<Long> overlayResult = overlayStorage.getWorldStateBlockNumber();
-    return overlayResult.isPresent() ? overlayResult : parentStorage.getWorldStateBlockNumber();
+    final Optional<Long> overlayResult = super.getWorldStateBlockNumber();
+    return overlayResult.isPresent() ? overlayResult : parent.getWorldStateBlockNumber();
   }
 
   @Override
   public Optional<Hash> getWorldStateBlockHash() {
-    // Check overlay first, then parent
-    Optional<Hash> overlayResult = overlayStorage.getWorldStateBlockHash();
-    return overlayResult.isPresent() ? overlayResult : parentStorage.getWorldStateBlockHash();
+    final Optional<Hash> overlayResult = super.getWorldStateBlockHash();
+    return overlayResult.isPresent() ? overlayResult : parent.getWorldStateBlockHash();
   }
 
   @Override
   public Optional<Hash> getWorldStateRootHash() {
-    // Check overlay first, then parent
-    Optional<Hash> overlayResult = overlayStorage.getWorldStateRootHash();
-    return overlayResult.isPresent() ? overlayResult : parentStorage.getWorldStateRootHash();
+    final Optional<Hash> overlayResult = super.getWorldStateRootHash();
+    return overlayResult.isPresent() ? overlayResult : parent.getWorldStateRootHash();
   }
 
   @Override
-  public Optional<Hash> getZkStateRootHash(long blockNumber) {
-    // Check overlay first, then parent
-    Optional<Hash> overlayResult = overlayStorage.getZkStateRootHash(blockNumber);
-    return overlayResult.isPresent() ? overlayResult : parentStorage.getZkStateRootHash(blockNumber);
+  public Optional<Hash> getZkStateRootHash(final long blockNumber) {
+    final Optional<Hash> overlayResult = super.getZkStateRootHash(blockNumber);
+    return overlayResult.isPresent() ? overlayResult : parent.getZkStateRootHash(blockNumber);
   }
 
   @Override
@@ -257,8 +250,7 @@ public class LayeredWorldStateStorage implements WorldStateStorage {
   }
 
   @Override
-  public void close() throws Exception {
-    // Close overlay only, don't touch parent (it's managed elsewhere)
-    overlayStorage.close();
+  public void close() {
+    // Don't close parent — it's managed elsewhere
   }
 }
