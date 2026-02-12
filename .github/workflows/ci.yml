@@ -74,6 +74,8 @@ jobs:
     needs: assemble
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     env:
       architecture: amd64
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
@@ -145,11 +147,14 @@ jobs:
           ./gradlew clean build assemble publish jreleaserFullRelease
 
   dockerTests:
-    needs: 
+    needs:
       - assemble
       - unitTests
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write  # required for Trivy SARIF upload
     environment: docker
     steps:
       - name: Checkout
@@ -226,12 +231,14 @@ jobs:
 
   dockerPublish:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: 
+    needs:
       - assemble
       - unitTests
       - dockerTests
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     environment: docker
     steps:
       - name: Checkout
