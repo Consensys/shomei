@@ -9,7 +9,7 @@ updates:
       day: monday
       time: "03:00"
     open-pull-requests-limit: 5
-    assignees: ["OlivierBBB", "letypequividelespoubelles"]
+    assignees: ["garyschulte", "matkt"]
     labels: ["dependencies", "github-actions"]
     commit-message:
       prefix: "deps(actions)"
