@@ -19,23 +19,43 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.hyperledger.besu.datatypes.Hash;
 
-public record TrieLogElement(
-    Long blockNumber, Hash blockHash, boolean isInitialSync, String trieLog) {
+public class TrieLogElement {
+  private Long blockNumber;
+  private String blockHash;
+  private boolean isInitialSync;
+  private String trieLog;
 
-  public TrieLogIdentifier getTrieLogIdentifier() {
-    return new TrieLogIdentifier(blockNumber, blockHash, isInitialSync);
-  }
+  public TrieLogElement() {}
 
   @JsonCreator
   public TrieLogElement(
       @JsonProperty("blockNumber") final Long blockNumber,
-      @JsonProperty("blockHash") final Hash blockHash,
-      @JsonProperty("syncing") final boolean isInitialSync,
+      @JsonProperty("blockHash") final String blockHash,
       @JsonProperty("trieLog") final String trieLog) {
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;
-    this.isInitialSync = isInitialSync;
+    this.isInitialSync = false; // Default to false since syncing field is not in response
     this.trieLog = trieLog;
+  }
+
+  public Long blockNumber() {
+    return blockNumber;
+  }
+
+  public String blockHash() {
+    return blockHash;
+  }
+
+  public boolean isInitialSync() {
+    return isInitialSync;
+  }
+
+  public String trieLog() {
+    return trieLog;
+  }
+
+  public TrieLogIdentifier getTrieLogIdentifier() {
+    return new TrieLogIdentifier(blockNumber, Hash.fromHexString(blockHash), isInitialSync);
   }
 
   @Override

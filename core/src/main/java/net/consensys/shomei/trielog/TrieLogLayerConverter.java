@@ -55,7 +55,9 @@ public class TrieLogLayerConverter {
     trieLogLayer.setBlockHash(Hash.wrap(input.readBytes32()));
     trieLogLayer.setBlockNumber(input.readLongScalar());
 
-    while (!input.isEndOfCurrentList()) {
+    // Only process list items (account entries). Stop when encountering non-list items like
+    // the optional zkTraceComparisonFeature integer that may be appended by Besu's trielog format
+    while (!input.isEndOfCurrentList() && input.nextIsList()) {
       input.enterList();
 
       final Address address = Address.readFrom(input);
@@ -115,12 +117,13 @@ public class TrieLogLayerConverter {
               oldValueFound =
                   maybeAccountIndex
                       .flatMap(
-                          index ->
-                              new StorageTrieRepositoryWrapper(index, worldStateStorage, null)
+                          index -> {
+                            return new StorageTrieRepositoryWrapper(index, worldStateStorage, null)
                                   .getFlatLeaf(storageSlotKey.slotHash())
                                   .map(FlattenedLeaf::leafValue)
-                                  .map(UInt256::fromBytes))
-                      .orElse(null);
+                                  .map(UInt256::fromBytes);
+                          })
+                      .orElse(null);  // Return null for new accounts to match trielog's null representation
             }
             LOG.atTrace()
                 .setMessage(
@@ -158,6 +161,13 @@ public class TrieLogLayerConverter {
       // lenient leave list for forward compatible additions.
       input.leaveListLenient();
     }
+
+    // zkTraceComparisonFeature is optional (read as last element in container, before leaving)
+    // This is written by Besu's ZkTrieLogFactory when includeMetadata=true
+    if (!input.isEndOfCurrentList()) {
+      input.readInt(); // consume but don't use
+    }
+
     input.leaveListLenient();
     trieLogLayer.freeze();
 
@@ -172,6 +182,7 @@ public class TrieLogLayerConverter {
 
     final Optional<FlattenedLeaf> flatLeaf =
         worldStateStorage.getFlatLeaf(WRAP_ACCOUNT.apply(accountKey.accountHash()));
+
 
     if (in.nextIsNull() && flatLeaf.isEmpty()) {
       in.skipNext();
@@ -189,7 +200,6 @@ public class TrieLogLayerConverter {
               .orElseThrow();
 
       in.enterList();
-
       final UInt256 nonce = UInt256.valueOf(in.readLongScalar());
       final Wei balance = Wei.of(in.readUInt256Scalar());
       final Hash evmStorageRoot;

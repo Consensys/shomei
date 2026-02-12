@@ -93,7 +93,7 @@ public class ZKTrie {
         new InMemoryStorage() {
           @Override
           public Optional<Bytes> getTrieNode(final Bytes location, final Bytes nodeHash) {
-            return Optional.ofNullable(super.getTrieNodeStorage().get(nodeHash));
+            return super.getTrieNodeStorage().get(nodeHash);
             // In a sparse Merkle trie, the hash value of a parent node is computed based on the
             // hashes of its children nodes.
             // so the hash value of a parent node at each level will be the same as long as its
@@ -105,7 +105,7 @@ public class ZKTrie {
 
           @Override
           public void putTrieNode(final Bytes location, final Bytes nodeHash, final Bytes value) {
-            super.getTrieNodeStorage().put(nodeHash, value);
+            super.getTrieNodeStorage().put(nodeHash, Optional.of(value));
           }
         };
     return new ZKTrie(initWorldState(inMemoryStorage::putTrieNode).getHash(), inMemoryStorage);
@@ -118,7 +118,7 @@ public class ZKTrie {
   }
 
   public static ZKTrie loadTrie(final Bytes32 rootHash, final TrieStorage worldStateStorage) {
-    return new ZKTrie(rootHash, worldStateStorage);
+      return new ZKTrie(rootHash, worldStateStorage);
   }
 
   /**
@@ -156,16 +156,16 @@ public class ZKTrie {
   }
 
   public void setHeadAndTail() {
-    // head
-    final Long headIndex = pathResolver.getNextFreeLeafNodeIndex();
-    updater.putFlatLeaf(LeafOpening.HEAD.getHkey(), FlattenedLeaf.HEAD);
-    state.put(pathResolver.getLeafPath(headIndex), LeafOpening.HEAD.getEncodesBytes());
-    pathResolver.incrementNextFreeLeafNodeIndex();
-    // tail
-    final Long tailIndex = pathResolver.getNextFreeLeafNodeIndex();
-    updater.putFlatLeaf(LeafOpening.TAIL.getHkey(), FlattenedLeaf.TAIL);
-    state.put(pathResolver.getLeafPath(tailIndex), LeafOpening.TAIL.getEncodesBytes());
-    pathResolver.incrementNextFreeLeafNodeIndex();
+      // head
+      final Long headIndex = pathResolver.getNextFreeLeafNodeIndex();
+      updater.putFlatLeaf(LeafOpening.HEAD.getHkey(), FlattenedLeaf.HEAD);
+      state.put(pathResolver.getLeafPath(headIndex), LeafOpening.HEAD.getEncodesBytes());
+      pathResolver.incrementNextFreeLeafNodeIndex();
+      // tail
+      final Long tailIndex = pathResolver.getNextFreeLeafNodeIndex();
+      updater.putFlatLeaf(LeafOpening.TAIL.getHkey(), FlattenedLeaf.TAIL);
+      state.put(pathResolver.getLeafPath(tailIndex), LeafOpening.TAIL.getEncodesBytes());
+      pathResolver.incrementNextFreeLeafNodeIndex();
   }
 
   public Node<Bytes> getSubRootNode() {
