@@ -10,6 +10,8 @@ on:
     branches:
       - main
 
+permissions: {} # lock everything by default (least-privilege)
+
 jobs:
   validate:
     runs-on: ubuntu-22.04
@@ -31,6 +33,8 @@ jobs:
   assemble:
     # 4 cpu, 16G ram
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     env:
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
       TAG_VERSION: ${{ needs.validate_release_tag.outputs.tag_version }}  # Use the output from the validate_release_tag step

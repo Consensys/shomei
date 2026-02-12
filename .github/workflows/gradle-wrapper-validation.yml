@@ -1,6 +1,8 @@
 name: "Validate Gradle Wrapper"
 on: [push, pull_request]
 
+permissions: {} # lock everything by default (least-privilege)
+
 jobs:
   validation:
     name: "Validation"
