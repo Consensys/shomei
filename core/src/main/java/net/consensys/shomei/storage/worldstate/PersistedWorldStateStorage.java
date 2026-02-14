@@ -13,6 +13,7 @@
 
 package net.consensys.shomei.storage.worldstate;
 
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.services.storage.api.BidirectionalIterator;
 import net.consensys.shomei.services.storage.api.KeyValueStorage;
 import net.consensys.shomei.services.storage.api.KeyValueStorage.KeyValuePair;
@@ -151,44 +152,65 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
 
   @Override
   public WorldStateUpdater updater() {
+    return updater(Optional.empty());
+  }
+
+
+  @Override
+  public WorldStateUpdater updater(final Optional<AtomicCompositeTransaction> maybeAtomic) {
+    final Optional<KeyValueStorageTransaction> atomicTrieNodeTx = maybeAtomic
+        .map(atx -> atx.wrapAsSegmentTransaction(
+            trieNodeStorage.getSegmentIdentifier()));
+
+    final Optional<KeyValueStorageTransaction> atomicFlatLeafTx = maybeAtomic
+        .map(atx -> atx.wrapAsSegmentTransaction(
+            flatLeafStorage.getSegmentIdentifier()));
+
     return new WorldStateUpdater() {
       @Override
       public void setBlockHash(final Hash blockHash) {
-        trieNodeTx.get().put(WORLD_BLOCK_HASH_KEY, blockHash.toArrayUnsafe());
+        atomicTrieNodeTx.orElse(trieNodeTx.get()).put(WORLD_BLOCK_HASH_KEY, blockHash.toArrayUnsafe());
       }
 
       @Override
       public void setBlockNumber(final long blockNumber) {
-        trieNodeTx.get().put(WORLD_BLOCK_NUMBER_KEY, Longs.toByteArray(blockNumber));
+        atomicTrieNodeTx.orElse(trieNodeTx.get()).put(WORLD_BLOCK_NUMBER_KEY, Longs.toByteArray(blockNumber));
       }
 
       @Override
       public void putFlatLeaf(final Bytes key, final FlattenedLeaf value) {
-        flatLeafTx.get().put(key.toArrayUnsafe(), RLP.encode(value::writeTo).toArrayUnsafe());
+        atomicFlatLeafTx.orElse(flatLeafTx.get()).put(key.toArrayUnsafe(), RLP.encode(value::writeTo).toArrayUnsafe());
       }
 
       @Override
       public void putTrieNode(final Bytes location, final Bytes nodeHash, final Bytes value) {
-        trieNodeTx.get().put(location.toArrayUnsafe(), value.toArrayUnsafe());
+        atomicTrieNodeTx.orElse(trieNodeTx.get()).put(location.toArrayUnsafe(), value.toArrayUnsafe());
       }
 
       @Override
       public void removeFlatLeafValue(final Bytes key) {
-        flatLeafTx.get().remove(key.toArrayUnsafe());
+        atomicFlatLeafTx.orElse(flatLeafTx.get()).remove(key.toArrayUnsafe());
       }
 
       @Override
       public synchronized void commit() {
-        flatLeafTx.getAndUpdate(
-            flatTx -> {
-              flatTx.commit();
-              return flatLeafStorage.startTransaction();
-            });
-        trieNodeTx.getAndUpdate(
-            trieTx -> {
-              trieTx.commit();
-              return trieNodeStorage.startTransaction();
-            });
+        if (maybeAtomic.isPresent()) {
+          // it is the caller's responsibility to commit the composite transaction,
+          // the segmented transaction commits are no-ops, but we commit here just to
+          // be thorough and future-proof:
+          atomicFlatLeafTx.ifPresent(KeyValueStorageTransaction::commit);
+          atomicTrieNodeTx.ifPresent(KeyValueStorageTransaction::commit);
+        } else {
+          // commit and refresh the outer worldstate transactions:
+          flatLeafTx.getAndUpdate(flatTx -> {
+            flatTx.commit();
+            return flatLeafStorage.startTransaction();
+          });
+          trieNodeTx.getAndUpdate(trieTx -> {
+            trieTx.commit();
+            return trieNodeStorage.startTransaction();
+          });
+        }
       }
     };
   }

@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 
 import net.consensys.shomei.services.storage.api.BidirectionalIterator;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.SegmentIdentifier;
 import net.consensys.shomei.services.storage.api.SnapshotKeyValueStorage;
 import net.consensys.shomei.services.storage.api.StorageException;
 
@@ -34,8 +35,8 @@ public class RocksDBKeyValueSnapshot implements SnapshotKeyValueStorage {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDBKeyValueSnapshot.class);
 
   /** The Snap tx. */
-  final RocksDBTransaction snapTx;
-
+  final RocksDBSegmentedTransaction snapTx;
+  final RocksDBSegmentIdentifier segmentIdentifier;
   private final AtomicBoolean closed = new AtomicBoolean(false);
 
   /**
@@ -45,6 +46,7 @@ public class RocksDBKeyValueSnapshot implements SnapshotKeyValueStorage {
    */
   RocksDBKeyValueSnapshot(final RocksDBSegmentedStorage.RocksDBSegment segment) {
     this.snapTx = segment.createSnapshotTransaction();
+    this.segmentIdentifier = RocksDBSegmentIdentifier.fromHandle(this.snapTx.columnFamilyHandle);
   }
 
   @Override
@@ -96,6 +98,11 @@ public class RocksDBKeyValueSnapshot implements SnapshotKeyValueStorage {
     // The use of a transaction on a transaction based key value store is dubious
     // at best.  return our snapshot transaction instead.
     return snapTx;
+  }
+
+  @Override
+  public SegmentIdentifier getSegmentIdentifier() {
+    return segmentIdentifier;
   }
 
   @Override

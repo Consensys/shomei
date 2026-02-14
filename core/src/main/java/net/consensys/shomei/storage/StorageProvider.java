@@ -13,7 +13,10 @@
 
 package net.consensys.shomei.storage;
 
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
+
+import java.util.Optional;
 
 public interface StorageProvider {
 
@@ -22,4 +25,6 @@ public interface StorageProvider {
   TraceManager getTraceManager();
 
   TrieLogManager getTrieLogManager();
+
+  Optional<AtomicCompositeTransaction> getAtomicCompositeTransaction();
 }

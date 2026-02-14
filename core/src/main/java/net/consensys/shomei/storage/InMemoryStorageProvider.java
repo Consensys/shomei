@@ -14,6 +14,7 @@
 package net.consensys.shomei.storage;
 
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.trace.Trace;
@@ -38,7 +39,7 @@ public class InMemoryStorageProvider implements StorageProvider {
       private final HashMap<Long, Hash> zkStateRootStorage = new HashMap<>();
 
       @Override
-      public TraceManagerUpdater updater() {
+      public TraceManagerUpdater updater(final Optional<AtomicCompositeTransaction> maybeAtomic) {
         return new TraceManagerUpdater(null) {
           @Override
           public TraceManagerUpdater saveTrace(final long blockNumber, final List<Trace> traces) {
@@ -106,5 +107,11 @@ public class InMemoryStorageProvider implements StorageProvider {
         };
       }
     };
+  }
+
+  @Override
+  public Optional<AtomicCompositeTransaction> getAtomicCompositeTransaction() {
+    // In-memory storage doesn't need atomic transactions
+    return Optional.empty();
   }
 }

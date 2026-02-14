@@ -13,50 +13,50 @@
 
 package net.consensys.shomei.services.storage.rocksdb;
 
-import net.consensys.shomei.services.storage.api.BidirectionalIterator;
-import net.consensys.shomei.services.storage.api.KeyValueStorage.KeyValuePair;
+import net.consensys.shomei.services.storage.api.AtomicCompositeTransaction;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.SegmentIdentifier;
 import net.consensys.shomei.services.storage.api.StorageException;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
+import java.util.function.Function;
 
-import org.rocksdb.AbstractRocksIterator;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.OptimisticTransactionDB;
 import org.rocksdb.ReadOptions;
 import org.rocksdb.RocksDBException;
-import org.rocksdb.RocksIterator;
-import org.rocksdb.Snapshot;
 import org.rocksdb.Transaction;
 import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** The Rocks db snapshot transaction. */
-public class RocksDBTransaction implements KeyValueStorageTransaction, AutoCloseable {
-  private static final Logger LOG = LoggerFactory.getLogger(RocksDBSnapshotTransaction.class);
+/**
+ * Minimal transaction implementation for a segmented RocksDB which allows mutating
+ * multiple RocksDB segments with a single transaction.
+ *
+ */
+public class RocksDBFlatTransaction implements AtomicCompositeTransaction, AutoCloseable {
+  private static final Logger LOG = LoggerFactory.getLogger(RocksDBFlatTransaction.class);
   private static final String NO_SPACE_LEFT_ON_DEVICE = "No space left on device";
 
-  protected final OptimisticTransactionDB db;
-  protected final ColumnFamilyHandle columnFamilyHandle;
-  protected final Transaction innerTx;
-  protected final WriteOptions writeOptions;
-  protected final ReadOptions readOptions;
-  protected final AtomicBoolean isClosed = new AtomicBoolean(false);
+  private final OptimisticTransactionDB db;
+  private final Transaction innerTx;
+  private final WriteOptions writeOptions;
+  private final ReadOptions readOptions;
+  private final AtomicBoolean isClosed = new AtomicBoolean(false);
+  private final Function<RocksDBSegmentIdentifier, ColumnFamilyHandle> columnFamilyMapper;
 
   /**
-   * Instantiates a new RocksDb snapshot transaction.
+   * Instantiates a new raw/flat RocksDb transaction.
    *
    * @param db the db
-   * @param columnFamilyHandle the column family handle
    */
-  public RocksDBTransaction(
-      final OptimisticTransactionDB db, final ColumnFamilyHandle columnFamilyHandle) {
+  public RocksDBFlatTransaction(final OptimisticTransactionDB db,
+      Function<RocksDBSegmentIdentifier, ColumnFamilyHandle> columnFamilyMapper) {
 
     this.db = db;
-    this.columnFamilyHandle = columnFamilyHandle;
+    this.columnFamilyMapper = columnFamilyMapper;
     this.writeOptions = new WriteOptions();
     this.innerTx = db.beginTransaction(writeOptions);
     this.readOptions = new ReadOptions().setVerifyChecksums(false);
@@ -65,11 +65,11 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
   /**
    * Get data against given key.
    *
+   * @param columnFamilyHandle the column family
    * @param key the key
    * @return the optional data
    */
-  @Override
-  public Optional<byte[]> get(final byte[] key) {
+  public Optional<byte[]> get(ColumnFamilyHandle columnFamilyHandle, final byte[] key) {
     throwIfClosed();
 
     try {
@@ -79,29 +79,38 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
     }
   }
 
-  @Override
-  public Optional<BidirectionalIterator<KeyValuePair>> getNearestTo(byte[] key) {
-    throwIfClosed();
-
-    try {
-      RocksIterator iterator = innerTx.getIterator(readOptions, columnFamilyHandle);
-      iterator.seekForPrev(key);
-
-      return Optional.of(iterator)
-          .filter(AbstractRocksIterator::isValid)
-          .map(RocksDBIterator::create);
-    } catch (final Throwable t) {
-      throw new StorageException(t);
-    }
-  }
-
-  @Override
-  public RocksDBTransaction put(final byte[] key, final byte[] value) {
+  /**
+   * Put data for a given key.
+   *
+   * @param columnFamilyHandle the column family
+   * @param key the key
+   * @param value the data
+   */
+  public void put(ColumnFamilyHandle columnFamilyHandle, final byte[] key, final byte[] value) {
     throwIfClosed();
 
     try {
       innerTx.put(columnFamilyHandle, key, value);
-      return this;
+    } catch (final RocksDBException e) {
+      if (e.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE)) {
+        LOG.error(e.getMessage());
+        System.exit(0);
+      }
+      throw new StorageException(e);
+    }
+  }
+
+  /**
+   * remove data for given key.
+   *
+   * @param columnFamilyHandle the column family
+   * @param key the key
+   */
+  public void remove(ColumnFamilyHandle columnFamilyHandle, final byte[] key) {
+    throwIfClosed();
+
+    try {
+      innerTx.delete(columnFamilyHandle, key);
     } catch (final RocksDBException e) {
       if (e.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE)) {
         LOG.error(e.getMessage());
@@ -112,47 +121,14 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
   }
 
   @Override
-  public RocksDBTransaction remove(final byte[] key) {
-    throwIfClosed();
-
-    try {
-      innerTx.delete(columnFamilyHandle, key);
-      return this;
-    } catch (final RocksDBException e) {
-      if (e.getMessage().contains(NO_SPACE_LEFT_ON_DEVICE)) {
-        LOG.error(e.getMessage());
-        System.exit(0);
-      }
-      throw new StorageException(e);
-    }
+  public KeyValueStorageTransaction wrapAsSegmentTransaction(final SegmentIdentifier segment) {
+    return new RocksDBSegmentedTransaction.RocksDBWrappedSegmentedTransaction(
+        db, columnFamilyMapper.apply((RocksDBSegmentIdentifier) segment), innerTx, writeOptions, readOptions);
   }
 
   /**
-   * Stream.
-   *
-   * @return the stream
+   * Commit and close the current transaction
    */
-  public Stream<KeyValuePair> stream() {
-    throwIfClosed();
-
-    final RocksIterator rocksIterator = innerTx.getIterator(readOptions, columnFamilyHandle);
-    rocksIterator.seekToFirst();
-    return RocksDBIterator.create(rocksIterator).toStream();
-  }
-
-  /**
-   * Stream keys.
-   *
-   * @return the stream
-   */
-  public Stream<byte[]> streamKeys() {
-    throwIfClosed();
-
-    final RocksIterator rocksIterator = innerTx.getIterator(readOptions, columnFamilyHandle);
-    rocksIterator.seekToFirst();
-    return RocksDBIterator.create(rocksIterator).toStreamKeys();
-  }
-
   @Override
   public void commit() throws StorageException {
     throwIfClosed();
@@ -169,6 +145,9 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
     }
   }
 
+  /**
+   * Rollback and close the current transaction
+   */
   @Override
   public void rollback() {
     try {
@@ -186,7 +165,7 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
 
   void throwIfClosed() {
     if (isClosed.get()) {
-      LOG.debug("Attempted to access closed snapshot");
+      LOG.debug("Attempted to access closed transaction");
       throw new StorageException("Attempted to access closed transaction");
     }
   }
@@ -197,31 +176,5 @@ public class RocksDBTransaction implements KeyValueStorageTransaction, AutoClose
     writeOptions.close();
     readOptions.close();
     isClosed.set(true);
-  }
-
-  public static class RocksDBSnapshotTransaction extends RocksDBTransaction {
-    private final Snapshot snapshot;
-
-    public RocksDBSnapshotTransaction(
-        final OptimisticTransactionDB db, final ColumnFamilyHandle columnFamilyHandle) {
-      super(db, columnFamilyHandle);
-      this.snapshot = db.getSnapshot();
-      this.readOptions.setSnapshot(snapshot);
-    }
-
-    @Override
-    public void commit() throws StorageException {
-      // no-op
-    }
-
-    @Override
-    public void close() {
-      innerTx.close();
-      db.releaseSnapshot(snapshot);
-      writeOptions.close();
-      readOptions.close();
-      snapshot.close();
-      isClosed.set(true);
-    }
   }
 }

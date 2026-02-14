@@ -16,6 +16,7 @@ package net.consensys.shomei.services.storage.rocksdb;
 import net.consensys.shomei.services.storage.api.BidirectionalIterator;
 import net.consensys.shomei.services.storage.api.KeyValueStorage;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.SegmentIdentifier;
 import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
 import net.consensys.shomei.services.storage.api.SnapshotKeyValueStorage;
 import net.consensys.shomei.services.storage.api.StorageException;
@@ -183,18 +184,31 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
     }
   }
 
+  public RocksDBFlatTransaction getRocksDBFlatTransaction() {
+      throwIfClosed();
+      final WriteOptions options = new WriteOptions();
+      options.setIgnoreMissingColumnFamilies(true);
+      return new RocksDBFlatTransaction(db, this::getSegmentBySegmentId);
+  }
+
   public SnappableKeyValueStorage getKeyValueStorageForSegment(
       final RocksDBSegmentIdentifier segmentId) {
     throwIfClosed();
     return new RocksDBKeyValueSegment(columnHandlesByName.get(segmentId));
   }
 
+  public ColumnFamilyHandle getSegmentBySegmentId(RocksDBSegmentIdentifier segmentId) {
+    return columnHandlesByName.get(segmentId).getHandle();
+  }
+
   protected class RocksDBSegment {
 
     private final AtomicReference<ColumnFamilyHandle> reference;
+    private final SegmentIdentifier segmentIdentifier;
 
     RocksDBSegment(ColumnFamilyHandle handle) {
       this.reference = new AtomicReference<>(handle);
+      this.segmentIdentifier = RocksDBSegmentIdentifier.fromHandle(handle);
     }
 
     /** Truncate. */
@@ -262,7 +276,7 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
       throwIfClosed();
       final WriteOptions options = new WriteOptions();
       options.setIgnoreMissingColumnFamilies(true);
-      return new RocksDBTransaction(db, getHandle());
+      return new RocksDBSegmentedTransaction(db, getHandle());
     }
 
     public SnapshotKeyValueStorage takeSnapshot() {
@@ -270,9 +284,13 @@ public class RocksDBSegmentedStorage implements AutoCloseable {
       return new RocksDBKeyValueSnapshot(this);
     }
 
-    RocksDBTransaction createSnapshotTransaction() {
+    RocksDBSegmentedTransaction createSnapshotTransaction() {
       throwIfClosed();
-      return new RocksDBTransaction.RocksDBSnapshotTransaction(db, getHandle());
+      return new RocksDBSegmentedTransaction.RocksDBSnapshotSegmentedTransaction(db, getHandle());
+    }
+
+    SegmentIdentifier getSegmentIdentifier() {
+      return segmentIdentifier;
     }
 
     @Override
