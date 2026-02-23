@@ -15,19 +15,19 @@ package net.consensys.shomei.rpc.server.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class RollupForkChoiceUpdatedParameter {
 
   private final String finalizedBlockNumber;
 
-  private final Hash finalizedBlockHash;
+  private final Bytes32 finalizedBlockHash;
 
   @JsonCreator
   public RollupForkChoiceUpdatedParameter(
       @JsonProperty(required = true, value = "finalizedBlockNumber")
           final String finalizedBlockNumber,
-      @JsonProperty(required = true, value = "finalizedBlockHash") final Hash finalizedBlockHash) {
+      @JsonProperty(required = true, value = "finalizedBlockHash") final Bytes32 finalizedBlockHash) {
     this.finalizedBlockNumber = finalizedBlockNumber;
     this.finalizedBlockHash = finalizedBlockHash;
   }
@@ -36,7 +36,7 @@ public class RollupForkChoiceUpdatedParameter {
     return Long.decode(finalizedBlockNumber);
   }
 
-  public Hash getFinalizedBlockHash() {
+  public Bytes32 getFinalizedBlockHash() {
     return finalizedBlockHash;
   }
 

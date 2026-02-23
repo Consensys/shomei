@@ -45,7 +45,6 @@ import java.util.stream.Stream;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.trie.Node;
 import org.hyperledger.besu.ethereum.trie.NodeUpdater;
 import org.hyperledger.besu.ethereum.trie.Proof;
@@ -59,8 +58,7 @@ public class ZKTrie {
 
   public static final ZKTrie EMPTY_TRIE = generateEmptyTrie();
 
-  public static final Hash DEFAULT_TRIE_ROOT =
-      Hash.wrap(createTrie(new InMemoryStorage()).getTopRootHash());
+  public static final Bytes32 DEFAULT_TRIE_ROOT = createTrie(new InMemoryStorage()).getTopRootHash();
 
   private static final int ZK_TRIE_DEPTH = 40;
 
@@ -188,15 +186,15 @@ public class ZKTrie {
     return pathResolver.getNextFreeLeafNodeIndex();
   }
 
-  public Optional<FlattenedLeaf> getFlatLeaf(final Hash hkey) {
+  public Optional<FlattenedLeaf> getFlatLeaf(final Bytes32 hkey) {
     return worldStateStorage.getFlatLeaf(hkey);
   }
 
-  public Optional<Long> getLeafIndex(final Hash hkey) {
+  public Optional<Long> getLeafIndex(final Bytes32 hkey) {
     return getFlatLeaf(hkey).map(FlattenedLeaf::leafIndex);
   }
 
-  public Optional<Bytes> get(final Hash hkey) {
+  public Optional<Bytes> get(final Bytes32 hkey) {
     return worldStateStorage
         .getFlatLeaf(hkey)
         .map(FlattenedLeaf::leafIndex)
@@ -216,7 +214,7 @@ public class ZKTrie {
     return state.getAndProve(path);
   }
 
-  public MerkleProof getProof(final Hash hkey, final MimcSafeBytes<? extends Bytes> key) {
+  public MerkleProof getProof(final Bytes32 hkey, final MimcSafeBytes<? extends Bytes> key) {
     // GET the openings HKEY-,  hash(k) , HKEY+
     final Range nearestKeys = worldStateStorage.getNearestKeys(hkey);
     // CHECK if hash(k) exist
@@ -295,7 +293,7 @@ public class ZKTrie {
     }
   }
 
-  public Trace readWithTrace(final Hash hkey, final MimcSafeBytes<? extends Bytes> key) {
+  public Trace readWithTrace(final Bytes32 hkey, final MimcSafeBytes<? extends Bytes> key) {
     // GET the openings HKEY-,  hash(k) , HKEY+
     final Range nearestKeys = worldStateStorage.getNearestKeys(hkey);
     // CHECK if hash(k) exist
@@ -348,7 +346,7 @@ public class ZKTrie {
   }
 
   public Trace putWithTrace(
-      final Hash hKey,
+      final Bytes32 hKey,
       final MimcSafeBytes<? extends Bytes> key,
       final MimcSafeBytes<? extends Bytes> newValue) {
     checkArgument(hKey.size() == Bytes32.SIZE);
@@ -454,7 +452,7 @@ public class ZKTrie {
     }
   }
 
-  public Trace removeWithTrace(final Hash hkey, final MimcSafeBytes<? extends Bytes> key) {
+  public Trace removeWithTrace(final Bytes32 hkey, final MimcSafeBytes<? extends Bytes> key) {
     checkArgument(hkey.size() == Bytes32.SIZE);
 
     // GET the openings HKEY-,  hash(k) , HKEY+

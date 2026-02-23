@@ -18,7 +18,6 @@ import net.consensys.shomei.util.bytes.MimcSafeBytes;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 
 /** A MutableZkAccount is a mutable representation of an Ethereum account in the ZkEvm world. */
@@ -27,11 +26,11 @@ public class MutableZkAccount extends ZkAccount {
   public MutableZkAccount(
       final AccountKey accountKey,
       final MimcSafeBytes<Bytes32> keccakCodeHash,
-      final Hash mimcCodeHash,
+      final Bytes32 mimcCodeHash,
       final long codeSize,
       final long nonce,
       final Wei balance,
-      final Hash storageRoot) {
+      final Bytes32 storageRoot) {
     super(
         accountKey,
         UInt256.valueOf(nonce),
@@ -50,7 +49,7 @@ public class MutableZkAccount extends ZkAccount {
     this.keccakCodeHash = keccakCodeHash;
   }
 
-  public void setMimcCodeHash(final Hash mimcCodeHash) {
+  public void setMimcCodeHash(final Bytes32 mimcCodeHash) {
     this.mimcCodeHash = mimcCodeHash;
   }
 
@@ -66,7 +65,7 @@ public class MutableZkAccount extends ZkAccount {
     this.balance = balance;
   }
 
-  public void setStorageRoot(final Hash storageRoot) {
+  public void setStorageRoot(final Bytes32 storageRoot) {
     this.storageRoot = storageRoot;
   }
 }

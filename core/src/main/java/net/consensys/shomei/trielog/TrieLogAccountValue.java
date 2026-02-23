@@ -27,19 +27,19 @@ public class TrieLogAccountValue {
 
   private final UInt256 nonce;
   private final Wei balance;
-  private final Hash storageRoot;
-  private final Hash codeHash;
+  private final Bytes32 storageRoot;
+  private final Bytes32 codeHash;
 
-  private final Hash mimcCodeHash;
+  private final Bytes32 mimcCodeHash;
 
   private final UInt256 codeSize;
 
   public TrieLogAccountValue(
       final UInt256 nonce,
       final Wei balance,
-      final Hash storageRoot,
-      final Hash codeHash,
-      final Hash mimcCodeHash,
+      final Bytes32 storageRoot,
+      final Bytes32 codeHash,
+      final Bytes32 mimcCodeHash,
       final UInt256 codeSize) {
     this.nonce = nonce;
     this.balance = balance;
@@ -81,7 +81,7 @@ public class TrieLogAccountValue {
    *
    * @return the hash of the root node of the storage trie.
    */
-  public Hash getStorageRoot() {
+  public Bytes32 getStorageRoot() {
     return storageRoot;
   }
 
@@ -90,7 +90,7 @@ public class TrieLogAccountValue {
    *
    * @return the hash of the account code (which may be {@link Hash#EMPTY}).
    */
-  public Hash getCodeHash() {
+  public Bytes32 getCodeHash() {
     return codeHash;
   }
 
@@ -99,7 +99,7 @@ public class TrieLogAccountValue {
    *
    * @return the mimc hash of the account code.
    */
-  public Hash getMimcCodeHash() {
+  public Bytes32 getMimcCodeHash() {
     return mimcCodeHash;
   }
 
@@ -165,9 +165,9 @@ public class TrieLogAccountValue {
     return new TrieLogAccountValue(
         nonce,
         balance,
-        Hash.wrap(storageRoot),
-        Hash.wrap(keccakCodeHash),
-        Hash.wrap(mimcCodeHash),
+        storageRoot,
+        keccakCodeHash,
+        mimcCodeHash,
         codeSize);
   }
 }

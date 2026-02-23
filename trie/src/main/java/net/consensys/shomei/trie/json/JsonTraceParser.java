@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.trie.Node;
@@ -64,6 +65,17 @@ public class JsonTraceParser {
                     jsonGen.writeString(node.toHexString());
                   }
                 }),
+              new SimpleModule()
+                      .addSerializer(
+                      Bytes32.class,
+                      new JsonSerializer<>() {
+                          @Override
+                          public void serialize(
+                                  Bytes32 node, JsonGenerator jsonGen, SerializerProvider serProv)
+                                  throws IOException {
+                              jsonGen.writeString(node.toHexString());
+                          }
+                      }),
         new SimpleModule()
             .addSerializer(
                 Optional.class,

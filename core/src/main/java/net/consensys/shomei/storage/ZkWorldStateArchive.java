@@ -30,7 +30,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +82,7 @@ public class ZkWorldStateArchive implements Closeable {
     setupHeadMetrics(metricsService);
   }
 
-  public Optional<ZkEvmWorldState> getCachedWorldState(Hash blockHash) {
+  public Optional<ZkEvmWorldState> getCachedWorldState(Bytes32 blockHash) {
     return cachedWorldStates.entrySet().stream()
         .filter(entry -> entry.getKey().blockHash().equals(blockHash))
         .map(Map.Entry::getValue)
@@ -180,7 +180,7 @@ public class ZkWorldStateArchive implements Closeable {
     return headWorldState.getBlockNumber();
   }
 
-  public Hash getCurrentBlockHash() {
+  public Bytes32 getCurrentBlockHash() {
     return headWorldState.getBlockHash();
   }
 

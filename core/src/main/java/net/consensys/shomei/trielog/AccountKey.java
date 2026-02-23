@@ -18,14 +18,15 @@ import net.consensys.zkevm.HashProvider;
 
 import java.util.Objects;
 
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
 import org.jetbrains.annotations.NotNull;
 
-public record AccountKey(Hash accountHash, MimcSafeBytes<Address> address)
+public record AccountKey(Bytes32 accountHash, MimcSafeBytes<Bytes> address)
     implements Comparable<AccountKey> {
 
-  public AccountKey(final Hash accountHash, final Address address) {
+  public AccountKey(final Bytes32 accountHash, final Address address) {
     this(accountHash, MimcSafeBytes.safeAddress(address));
   }
 
@@ -33,7 +34,7 @@ public record AccountKey(Hash accountHash, MimcSafeBytes<Address> address)
     this(MimcSafeBytes.safeAddress(address));
   }
 
-  public AccountKey(final MimcSafeBytes<Address> address) {
+  public AccountKey(final MimcSafeBytes<Bytes> address) {
     this(HashProvider.trieHash(address), address);
   }
 
