@@ -14,6 +14,7 @@
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
@@ -34,7 +35,6 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
@@ -73,24 +73,23 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
     final List<Trace> traces =
-        List.of(accountStateTrie.readWithTrace(Hash.ZERO, MimcSafeBytes.safeByte32(Bytes32.wrap(
-            Hash.ZERO))));
+        List.of(accountStateTrie.readWithTrace(KECCAK_HASH_ZERO, MimcSafeBytes.safeByte32(KECCAK_HASH_ZERO)));
 
     final List<Trace> traces2 =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.wrap(Bytes32.random()), MimcSafeBytes.safeByte32(Bytes32.random())));
+                Bytes32.random(), MimcSafeBytes.safeByte32(Bytes32.random())));
 
     final List<Trace> traces3 =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.wrap(Bytes32.random()), MimcSafeBytes.safeByte32(Bytes32.random())));
+                Bytes32.random(), MimcSafeBytes.safeByte32(Bytes32.random())));
 
     final TraceManager.TraceManagerUpdater updater = traceManager.updater();
-    updater.saveZkStateRootHash(0, Hash.wrap(accountStateTrie.getTopRootHash()));
-    updater.saveZkStateRootHash(1, Hash.wrap(accountStateTrie.getTopRootHash()));
-    updater.saveZkStateRootHash(2, Hash.wrap(accountStateTrie.getTopRootHash()));
-    updater.saveZkStateRootHash(3, Hash.wrap(accountStateTrie.getTopRootHash()));
+    updater.saveZkStateRootHash(0, accountStateTrie.getTopRootHash());
+    updater.saveZkStateRootHash(1, accountStateTrie.getTopRootHash());
+    updater.saveZkStateRootHash(2, accountStateTrie.getTopRootHash());
+    updater.saveZkStateRootHash(3, accountStateTrie.getTopRootHash());
     updater.saveTrace(1, traces);
     updater.saveTrace(2, traces2);
     updater.saveTrace(3, traces3);

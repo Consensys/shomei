@@ -39,7 +39,7 @@ import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.vertx.core.Vertx;
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +94,7 @@ public class Runner {
             syncOption.getMinConfirmationsBeforeImporting(),
             syncOption.isEnableFinalizedBlockLimit(),
             Optional.ofNullable(syncOption.getFinalizedBlockNumberLimit()),
-            Optional.ofNullable(syncOption.getFinalizedBlockHashLimit()).map(Hash::fromHexString));
+            Optional.ofNullable(syncOption.getFinalizedBlockHashLimit()).map(Bytes32::fromHexString));
 
     fullSyncDownloader = new FullSyncDownloader(worldStateArchive, getRawTrieLogClient, fullSyncRules);
 

@@ -16,7 +16,6 @@ package net.consensys.shomei.trie.trace;
 import net.consensys.shomei.trie.model.LeafOpening;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
 import org.hyperledger.besu.ethereum.rlp.RLPOutput;
 import org.hyperledger.besu.ethereum.trie.Node;
@@ -109,7 +108,7 @@ public class ReadZeroTrace implements Trace {
       location = in.readBytes();
     }
     final long newNextFreeNode = in.readLongScalar();
-    final Node<Bytes> subRoot = new StoredNode<>(null, null, Hash.wrap(in.readBytes32()));
+    final Node<Bytes> subRoot = new StoredNode<>(null, null, in.readBytes32());
     final LeafOpening leftLeaf = LeafOpening.readFrom(in.readBytes());
     final LeafOpening rightLeaf = LeafOpening.readFrom(in.readBytes());
     final TraceProof leftProof = TraceProof.readFrom(in);

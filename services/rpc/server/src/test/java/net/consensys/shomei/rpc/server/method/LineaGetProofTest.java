@@ -14,6 +14,7 @@
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.trie.ZKTrie.EMPTY_TRIE;
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -32,7 +33,6 @@ import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
@@ -54,12 +54,12 @@ public class LineaGetProofTest {
   public void setup() {
     final ZkEvmWorldState zkEvmWorldState = mock(ZkEvmWorldState.class);
     final WorldStateStorage worldStateStorage = mock(WorldStateStorage.class);
-    lenient().when(worldStateArchive.getCurrentBlockHash()).thenReturn(Hash.EMPTY);
+    lenient().when(worldStateArchive.getCurrentBlockHash()).thenReturn(KECCAK_HASH_EMPTY);
     lenient().when(worldStateArchive.getCachedWorldState(eq(1L))).thenReturn(Optional.of(zkEvmWorldState));
-    lenient().when(worldStateArchive.getCachedWorldState(eq(Hash.EMPTY)))
+    lenient().when(worldStateArchive.getCachedWorldState(eq(KECCAK_HASH_EMPTY)))
         .thenReturn(Optional.of(zkEvmWorldState));
     lenient().when(zkEvmWorldState.getZkEvmWorldStateStorage()).thenReturn(worldStateStorage);
-    lenient().when(zkEvmWorldState.getStateRootHash()).thenReturn(Hash.wrap(EMPTY_TRIE.getTopRootHash()));
+    lenient().when(zkEvmWorldState.getStateRootHash()).thenReturn(EMPTY_TRIE.getTopRootHash());
     lenient().when(worldStateStorage.getTrieNode(any(Bytes.class), any(Bytes.class)))
         .thenReturn(Optional.of(EMPTY_TRIE.getTopRootHash()));
     lenient().when(worldStateStorage.getNearestKeys(any(Bytes.class)))

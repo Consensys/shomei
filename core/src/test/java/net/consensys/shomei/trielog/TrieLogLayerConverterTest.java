@@ -16,11 +16,11 @@ package net.consensys.shomei.trielog;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
+import net.consensys.zkevm.HashProvider;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPInput;
 import org.junit.jupiter.api.Test;
@@ -44,6 +44,6 @@ public class TrieLogLayerConverterTest {
     assertThat(mockAccount).isPresent();
     assertThat(mockAccount.get().getNonce()).isEqualTo(UInt256.ZERO);
     assertThat(mockAccount.get().getBalance()).isEqualTo(Wei.fromEth(1));
-    assertThat(mockAccount.get().getCodeHash()).isEqualTo(Hash.EMPTY);
+    assertThat(mockAccount.get().getCodeHash()).isEqualTo(HashProvider.KECCAK_HASH_EMPTY);
   }
 }

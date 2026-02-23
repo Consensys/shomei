@@ -18,7 +18,7 @@ import net.consensys.shomei.trie.storage.TrieStorage;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 
 /**
  * The WorldStateStorage class is responsible for managing the world state of a blockchain. It
@@ -40,7 +40,7 @@ public interface WorldStateStorage extends TrieStorage, AutoCloseable {
    *
    * @return the block hash of the current world state.
    */
-  Optional<Hash> getWorldStateBlockHash();
+  Optional<Bytes32> getWorldStateBlockHash();
 
   /**
    * Returns the zk state root of the given block number.
@@ -48,14 +48,14 @@ public interface WorldStateStorage extends TrieStorage, AutoCloseable {
    * @param blockNumber the block number.
    * @return the zk state root of the given block number.
    */
-  Optional<Hash> getZkStateRootHash(long blockNumber);
+  Optional<Bytes32> getZkStateRootHash(long blockNumber);
 
   /**
    * Returns the zk state root of the current world state.
    *
    * @return the zk state root of the current world state.
    */
-  Optional<Hash> getWorldStateRootHash();
+  Optional<Bytes32> getWorldStateRootHash();
 
   /**
    * Returns a non-persistable snapshot of this worldstate storage.
@@ -72,7 +72,7 @@ public interface WorldStateStorage extends TrieStorage, AutoCloseable {
   /** Updater for the world state repository. */
   interface WorldStateUpdater extends TrieUpdater {
 
-    void setBlockHash(final Hash blockHash);
+    void setBlockHash(final Bytes32 blockHash);
 
     void setBlockNumber(final long blockNumber);
   }

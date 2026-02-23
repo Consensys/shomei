@@ -17,11 +17,12 @@ import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class TrieLogElement {
+
   private Long blockNumber;
-  private String blockHash;
+  private Bytes32 blockHash;
   private boolean isInitialSync;
   private String trieLog;
 
@@ -30,11 +31,11 @@ public class TrieLogElement {
   @JsonCreator
   public TrieLogElement(
       @JsonProperty("blockNumber") final Long blockNumber,
-      @JsonProperty("blockHash") final String blockHash,
+      @JsonProperty("blockHash") final Bytes32 blockHash,
       @JsonProperty("trieLog") final String trieLog) {
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;
-    this.isInitialSync = false; // Default to false since syncing field is not in response
+    this.isInitialSync = false;
     this.trieLog = trieLog;
   }
 
@@ -42,7 +43,7 @@ public class TrieLogElement {
     return blockNumber;
   }
 
-  public String blockHash() {
+  public Bytes32 blockHash() {
     return blockHash;
   }
 
@@ -55,7 +56,7 @@ public class TrieLogElement {
   }
 
   public TrieLogIdentifier getTrieLogIdentifier() {
-    return new TrieLogIdentifier(blockNumber, Hash.fromHexString(blockHash), isInitialSync);
+    return new TrieLogIdentifier(blockNumber, blockHash, isInitialSync);
   }
 
   @Override

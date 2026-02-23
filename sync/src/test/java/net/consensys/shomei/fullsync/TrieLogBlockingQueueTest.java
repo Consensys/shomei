@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +56,7 @@ public class TrieLogBlockingQueueTest {
   // ===========================================================================
 
   private static TrieLogIdentifier makeTrieLog(final long blockNumber) {
-    return new TrieLogIdentifier(blockNumber, Hash.wrap(Bytes32.wrap(Bytes.random(32))), false);
+    return new TrieLogIdentifier(blockNumber, Bytes32.wrap(Bytes.random(32)), false);
   }
 
   private static BlockImportValidator alwaysAllow() {

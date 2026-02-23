@@ -14,6 +14,7 @@
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
@@ -33,7 +34,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
@@ -97,10 +97,10 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
     Bytes trace =
         Trace.serialize(
             List.of(
-                accountStateTrie.readWithTrace(Hash.ZERO, MimcSafeBytes.safeByte32(Hash.ZERO))));
+                accountStateTrie.readWithTrace(KECCAK_HASH_ZERO, MimcSafeBytes.safeByte32(KECCAK_HASH_ZERO))));
 
     when(traceManager.getZkStateRootHash(anyLong()))
-        .thenReturn(Optional.of(Hash.wrap(accountStateTrie.getTopRootHash())));
+        .thenReturn(Optional.of(accountStateTrie.getTopRootHash()));
     when(traceManager.getTrace(anyLong())).thenReturn(Optional.of(trace));
     final JsonRpcRequestContext request = request("0", "0", IMPL_VERSION);
     final JsonRpcResponse expectedResponse =

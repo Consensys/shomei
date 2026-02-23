@@ -31,6 +31,7 @@ import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.datatypes.BytesHolder;
 import org.hyperledger.besu.ethereum.core.Transaction;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPInput;
 import org.slf4j.Logger;
@@ -142,7 +143,7 @@ public class BesuSimulateClient {
       final List<String> blobVersionedHashes =
           transaction.getBlobsWithCommitments().isPresent()
               ? transaction.getBlobsWithCommitments().get().getVersionedHashes().stream()
-                  .map(vh -> vh.toBytes().toHexString())
+                  .map(BytesHolder::toHexString)
                   .collect(Collectors.toList())
               : null;
 

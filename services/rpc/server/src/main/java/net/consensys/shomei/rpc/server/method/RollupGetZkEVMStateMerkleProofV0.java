@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
@@ -88,7 +89,7 @@ public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
                 .toHexString(),
             traceManager
                 .getZkStateRootHash(param.getEndBlockNumber())
-                .map(h -> h.toHexString())
+                .map(Bytes32::toHexString)
                 .orElseThrow(),
             traces,
             IMPL_VERSION));

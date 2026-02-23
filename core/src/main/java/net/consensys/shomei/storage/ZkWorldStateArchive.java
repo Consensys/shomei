@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,7 +86,7 @@ public class ZkWorldStateArchive implements Closeable {
     setupHeadMetrics(metricsService);
   }
 
-  public Optional<ZkEvmWorldState> getCachedWorldState(Hash blockHash) {
+  public Optional<ZkEvmWorldState> getCachedWorldState(Bytes32 blockHash) {
     return cachedWorldStates.entrySet().stream()
         .filter(entry -> entry.getKey().blockHash().equals(blockHash))
         .map(Map.Entry::getValue)
@@ -179,7 +179,7 @@ public class ZkWorldStateArchive implements Closeable {
   /**
    * Result of generating a virtual trace.
    */
-  public record VirtualTraceResult(List<List<Trace>> traces, Hash zkEndStateRootHash) {}
+  public record VirtualTraceResult(List<List<Trace>> traces, Bytes32 zkEndStateRootHash) {}
 
   /**
    * Generate a virtual trace from a trielog without persisting state changes.
@@ -225,7 +225,7 @@ public class ZkWorldStateArchive implements Closeable {
       }
 
       // Get the resulting state root hash after applying the virtual block
-      final Hash zkEndStateRootHash = ephemeralTraceManager
+      final Bytes32 zkEndStateRootHash = ephemeralTraceManager
           .getZkStateRootHash(virtualBlockNumber)
           .orElseThrow(() -> new IllegalStateException(
               "Failed to get state root hash for virtual block " + virtualBlockNumber));
@@ -250,7 +250,7 @@ public class ZkWorldStateArchive implements Closeable {
     return headWorldState.getBlockNumber();
   }
 
-  public Hash getCurrentBlockHash() {
+  public Bytes32 getCurrentBlockHash() {
     return headWorldState.getBlockHash();
   }
 

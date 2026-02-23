@@ -21,21 +21,20 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Hash;
 
 public class LeafOpening {
 
   public static final LeafOpening HEAD =
-      new LeafOpening(0, 1, Hash.wrap(Bytes32.ZERO), Bytes32.ZERO);
+      new LeafOpening(0, 1, Bytes32.ZERO, Bytes32.ZERO);
 
   public static final LeafOpening TAIL =
       new LeafOpening(
           0,
           1,
-          Hash.fromHexString("12ab655e9a2ca55660b44d1e5c37b00159aa76fed00000010a11800000000000"),
+          Bytes32.fromHexString("12ab655e9a2ca55660b44d1e5c37b00159aa76fed00000010a11800000000000"),
           Bytes32.ZERO);
 
-  private final Hash hkey;
+  private final Bytes32 hkey;
 
   private Bytes hval;
 
@@ -43,14 +42,14 @@ public class LeafOpening {
 
   private long nextLeaf;
 
-  public LeafOpening(final Hash hkey, final UInt256 hval) {
+  public LeafOpening(final Bytes32 hkey, final UInt256 hval) {
     this.hkey = hkey;
     this.hval = hval;
     this.prevLeaf = 0;
     this.nextLeaf = 1;
   }
 
-  public LeafOpening(final long prevLeaf, final long nextLeaf, final Hash hkey, final Bytes hval) {
+  public LeafOpening(final long prevLeaf, final long nextLeaf, final Bytes32 hkey, final Bytes hval) {
     this.hkey = hkey;
     this.hval = hval;
     this.prevLeaf = prevLeaf;
@@ -80,7 +79,7 @@ public class LeafOpening {
     this.nextLeaf = nextLeaf;
   }
 
-  public Hash getHkey() {
+  public Bytes32 getHkey() {
     return hkey;
   }
 
@@ -119,7 +118,7 @@ public class LeafOpening {
             new LeafOpening(
                 bytesInput.readUInt256().toLong(),
                 bytesInput.readUInt256().toLong(),
-                Hash.wrap(bytesInput.readBytes32()),
+                bytesInput.readBytes32(),
                 bytesInput.readBytes32()));
   }
 

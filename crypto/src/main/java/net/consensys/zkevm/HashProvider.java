@@ -25,8 +25,11 @@ import org.slf4j.LoggerFactory;
 
 public class HashProvider {
   private static final Logger LOG = LoggerFactory.getLogger(HashProvider.class);
+
+  public static final Bytes32 KECCAK_HASH_EMPTY = Bytes32.wrap(Hash.EMPTY.getBytes());
+  public static final Bytes32 KECCAK_HASH_ZERO = Bytes32.wrap(Hash.ZERO.getBytes());
   // default to bls12-377
-  private static Function<Bytes, Hash> trieHashFunction = HashProvider::mimcBls12377;
+  private static Function<Bytes, Bytes32> trieHashFunction = HashProvider::mimcBls12377;
 
   @SuppressWarnings("WeakerAccess")
   public static final boolean ENABLED;
@@ -46,27 +49,27 @@ public class HashProvider {
     ENABLED = enabled;
   }
 
-  public static Hash trieHash(final Bytes bytes) {
+  public static Bytes32 trieHash(final Bytes bytes) {
     return trieHashFunction.apply(bytes);
   }
 
-  public static void setTrieHashFunction(Function<Bytes, Hash> hashFunction) {
+  public static void setTrieHashFunction(Function<Bytes, Bytes32> hashFunction) {
     trieHashFunction = hashFunction;
   }
 
-  public static Hash keccak256(final Bytes bytes) {
-    return Hash.hash(bytes);
+  public static Bytes32 keccak256(final Bytes bytes) {
+    return Bytes32.wrap(Hash.hash(bytes).getBytes());
   }
 
-  public static Hash mimcBls12377(final Bytes bytes) {
+  public static Bytes32 mimcBls12377(final Bytes bytes) {
     final byte[] output = new byte[Bytes32.SIZE];
     LibGnark.computeMimcBls12377(bytes.toArrayUnsafe(), bytes.size(), output);
-    return Hash.wrap(Bytes32.wrap(output));
+    return Bytes32.wrap(output);
   }
 
-  public static Hash mimcBn254(final Bytes bytes) {
+  public static Bytes32 mimcBn254(final Bytes bytes) {
     final byte[] output = new byte[Bytes32.SIZE];
     LibGnark.computeMimcBn254(bytes.toArrayUnsafe(), bytes.size(), output);
-    return Hash.wrap(Bytes32.wrap(output));
+    return Bytes32.wrap(output);
   }
 }

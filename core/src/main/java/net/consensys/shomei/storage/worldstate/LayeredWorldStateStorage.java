@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 
 /**
  * LayeredWorldStateStorage composes an in-memory overlay and a base (parent) storage.
@@ -209,7 +209,7 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
     }
 
     @Override
-    public void setBlockHash(final Hash blockHash) {
+    public void setBlockHash(final Bytes32 blockHash) {
       delegate.setBlockHash(blockHash);
     }
 
@@ -226,20 +226,20 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
   }
 
   @Override
-  public Optional<Hash> getWorldStateBlockHash() {
-    final Optional<Hash> overlayResult = super.getWorldStateBlockHash();
+  public Optional<Bytes32> getWorldStateBlockHash() {
+    final Optional<Bytes32> overlayResult = super.getWorldStateBlockHash();
     return overlayResult.isPresent() ? overlayResult : parent.getWorldStateBlockHash();
   }
 
   @Override
-  public Optional<Hash> getWorldStateRootHash() {
-    final Optional<Hash> overlayResult = super.getWorldStateRootHash();
+  public Optional<Bytes32> getWorldStateRootHash() {
+    final Optional<Bytes32> overlayResult = super.getWorldStateRootHash();
     return overlayResult.isPresent() ? overlayResult : parent.getWorldStateRootHash();
   }
 
   @Override
-  public Optional<Hash> getZkStateRootHash(final long blockNumber) {
-    final Optional<Hash> overlayResult = super.getZkStateRootHash(blockNumber);
+  public Optional<Bytes32> getZkStateRootHash(final long blockNumber) {
+    final Optional<Bytes32> overlayResult = super.getZkStateRootHash(blockNumber);
     return overlayResult.isPresent() ? overlayResult : parent.getZkStateRootHash(blockNumber);
   }
 

@@ -42,7 +42,6 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -126,7 +125,7 @@ public class LayeredWorldStateTraceTest {
             41,
             Wei.of(15353),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             createDumFullBytes(15),
             7L);
   }
@@ -135,7 +134,7 @@ public class LayeredWorldStateTraceTest {
     return new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
             createDumFullBytes(15),
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             7L,
             41,
             Wei.of(15353),
@@ -148,7 +147,7 @@ public class LayeredWorldStateTraceTest {
             48,
             Wei.of(9835),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(54)),
+            createDumDigest(54),
             createDumFullBytes(85),
             19L);
   }
@@ -161,7 +160,7 @@ public class LayeredWorldStateTraceTest {
   @Test
   public void testTraceReadZero() throws IOException {
     final Bytes32 key = createDumDigest(36);
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     InMemoryWorldStateStorage parentStorage = new InMemoryWorldStateStorage();
     AccountTrieRepositoryWrapper parentRepo = new AccountTrieRepositoryWrapper(parentStorage);
@@ -188,7 +187,7 @@ public class LayeredWorldStateTraceTest {
   public void testTraceReadSimpleValueFromParent() throws IOException {
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     InMemoryWorldStateStorage parentStorage = new InMemoryWorldStateStorage();
     AccountTrieRepositoryWrapper parentRepo = new AccountTrieRepositoryWrapper(parentStorage);
@@ -372,11 +371,11 @@ public class LayeredWorldStateTraceTest {
     ZKTrie account2Storage = loadStorageTrie(zkAccount2.getStorageRoot(), storageRepo);
 
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
+    final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
 
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     AccountTrieRepositoryWrapper layeredRepo = new AccountTrieRepositoryWrapper(layeredStorage);
     ZKTrie layeredTrie = loadAccountTrie(parentRoot, layeredRepo);
     final Trace trace4 =
@@ -413,11 +412,11 @@ public class LayeredWorldStateTraceTest {
     ZKTrie account2Storage = loadStorageTrie(zkAccount2.getStorageRoot(), storageRepo);
 
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
+    final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
 
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     final Trace trace4 =
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
@@ -456,11 +455,11 @@ public class LayeredWorldStateTraceTest {
     ZKTrie account2Storage = loadStorageTrie(zkAccount2.getStorageRoot(), storageRepo);
 
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
+    final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
 
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     final Trace trace4 =
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
@@ -498,13 +497,13 @@ public class LayeredWorldStateTraceTest {
             loadStorageTrie(zkAccount2.getStorageRoot(), parentStorageRepo);
 
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
+    final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     parentAccount2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     parentAccount2Storage.commit();
     final Bytes32 parentStorageRoot = parentAccount2Storage.getTopRootHash();
 
-    zkAccount2.setStorageRoot(Hash.wrap(parentStorageRoot));
+    zkAccount2.setStorageRoot(parentStorageRoot);
     parentTrie.putWithTrace(
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
     parentTrie.commit();
@@ -527,19 +526,19 @@ public class LayeredWorldStateTraceTest {
     Trace trace2 = layeredAccount2Storage.removeWithTrace(slotKeyHash, slotKey);
     trace2.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(layeredAccount2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(layeredAccount2Storage.getTopRootHash());
     Trace trace3 =
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
     final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
-    final Hash newSlotKeyHash = HashProvider.trieHash(newSlotKey);
+    final Bytes32 newSlotKeyHash = HashProvider.trieHash(newSlotKey);
     final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
     Trace trace4 =
             layeredAccount2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(layeredAccount2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(layeredAccount2Storage.getTopRootHash());
     Trace trace5 =
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
@@ -575,13 +574,13 @@ public class LayeredWorldStateTraceTest {
             loadStorageTrie(zkAccount2.getStorageRoot(), parentStorageRepo);
 
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
+    final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     parentAccount2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     parentAccount2Storage.commit();
     final Bytes32 parentStorageRoot = parentAccount2Storage.getTopRootHash();
 
-    zkAccount2.setStorageRoot(Hash.wrap(parentStorageRoot));
+    zkAccount2.setStorageRoot(parentStorageRoot);
     parentTrie.putWithTrace(
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
     parentTrie.commit();
@@ -604,19 +603,19 @@ public class LayeredWorldStateTraceTest {
     Trace trace2 = layeredAccount2Storage.removeWithTrace(slotKeyHash, slotKey);
     trace2.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(layeredAccount2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(layeredAccount2Storage.getTopRootHash());
     Trace trace3 =
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
     final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
-    final Hash newSlotKeyHash = HashProvider.trieHash(newSlotKey);
+    final Bytes32 newSlotKeyHash = HashProvider.trieHash(newSlotKey);
     final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
     Trace trace4 =
             layeredAccount2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(layeredAccount2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(layeredAccount2Storage.getTopRootHash());
     Trace trace5 =
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
@@ -657,11 +656,11 @@ public class LayeredWorldStateTraceTest {
             loadStorageTrie(zkAccount2.getStorageRoot(), layeredStorageRepo);
 
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
+    final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     layeredAccount2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
 
-    zkAccount2.setStorageRoot(Hash.wrap(layeredAccount2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(layeredAccount2Storage.getTopRootHash());
     layeredTrie.putWithTrace(
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
@@ -671,19 +670,19 @@ public class LayeredWorldStateTraceTest {
     Trace trace2 = layeredAccount2Storage.removeWithTrace(slotKeyHash, slotKey);
     trace2.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(layeredAccount2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(layeredAccount2Storage.getTopRootHash());
     Trace trace3 =
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
     final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
-    final Hash newSlotKeyHash = HashProvider.trieHash(newSlotKey);
+    final Bytes32 newSlotKeyHash = HashProvider.trieHash(newSlotKey);
     final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
     Trace trace4 =
             layeredAccount2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(layeredAccount2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(layeredAccount2Storage.getTopRootHash());
     Trace trace5 =
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());

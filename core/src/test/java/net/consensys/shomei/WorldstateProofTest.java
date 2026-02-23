@@ -31,7 +31,6 @@ import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,7 +47,7 @@ public class WorldstateProofTest {
   public void testGetProofForMissingKey() throws IOException {
 
     final Bytes32 key = createDumDigest(36);
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -64,7 +63,7 @@ public class WorldstateProofTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
