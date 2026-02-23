@@ -340,7 +340,7 @@ public class ZkEvmWorldState {
     if (storage.getTrieNode(Bytes.EMPTY, null).isEmpty()) {
       return ZKTrie.createTrie(storage);
     } else {
-      return ZKTrie.loadTrie(Bytes32.wrap(stateRoot), storage);
+      return ZKTrie.loadTrie(stateRoot, storage);
     }
   }
 
@@ -348,7 +348,7 @@ public class ZkEvmWorldState {
     if (storage.getTrieNode(Bytes.EMPTY, null).isEmpty()) {
       return ZKTrie.createTrie(storage);
     } else {
-      return ZKTrie.loadTrie(Bytes32.wrap(zkAccount.getPrior().getStorageRoot()), storage);
+      return ZKTrie.loadTrie(zkAccount.getPrior().getStorageRoot(), storage);
     }
   }
 }

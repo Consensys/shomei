@@ -125,8 +125,7 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
   @Override
   public Optional<Bytes32> getWorldStateRootHash() {
     return getWorldStateBlockNumber()
-        .flatMap(this::getZkStateRootHash)
-        .map(Bytes32::wrap);
+        .flatMap(this::getZkStateRootHash);
   }
 
   @Override

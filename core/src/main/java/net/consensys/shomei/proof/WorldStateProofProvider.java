@@ -41,8 +41,7 @@ public class WorldStateProofProvider {
       final AccountKey accountKey, final List<StorageSlotKey> accountStorageKeys) {
 
     final ZKTrie accountTrie =
-        ZKTrie.loadTrie(
-                Bytes32.wrap(zkEvmWorldState.getStateRootHash()),
+        ZKTrie.loadTrie(zkEvmWorldState.getStateRootHash(),
             new AccountTrieRepositoryWrapper(zkEvmWorldState.getZkEvmWorldStateStorage()));
     final MerkleProof accountProof =
         accountTrie.getProof(accountKey.accountHash(), accountKey.address());
