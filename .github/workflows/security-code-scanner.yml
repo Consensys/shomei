@@ -41,7 +41,7 @@ jobs:
           {
             "language": "java-kotlin",
             "build_mode": "manual",
-            "build_command": "cd shomei && ./gradlew",
+            "build_command": "./gradlew",
             "version": "21",
             "distribution": "temurin"
           }
