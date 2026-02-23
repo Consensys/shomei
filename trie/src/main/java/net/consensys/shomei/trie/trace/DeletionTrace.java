@@ -16,8 +16,6 @@ package net.consensys.shomei.trie.trace;
 import net.consensys.shomei.trie.model.LeafOpening;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
 import org.hyperledger.besu.ethereum.rlp.RLPOutput;
 import org.hyperledger.besu.ethereum.trie.Node;
@@ -146,8 +144,8 @@ public class DeletionTrace implements Trace {
       location = in.readBytes();
     }
     final long newNextFreeNode = in.readLongScalar();
-    final Node<Bytes> oldSubRoot = new StoredNode<>(null, null, Bytes32.wrap(Hash.wrap(in.readBytes32()).getBytes()));
-    final Node<Bytes> newSubRoot = new StoredNode<>(null, null, Bytes32.wrap(Hash.wrap(in.readBytes32()).getBytes()));
+    final Node<Bytes> oldSubRoot = new StoredNode<>(null, null, in.readBytes32());
+    final Node<Bytes> newSubRoot = new StoredNode<>(null, null, in.readBytes32());
     final TraceProof leftProof = TraceProof.readFrom(in);
     final TraceProof deletedProof = TraceProof.readFrom(in);
     final TraceProof rightProof = TraceProof.readFrom(in);
