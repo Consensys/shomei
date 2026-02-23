@@ -7,7 +7,7 @@ if (!shomeiPluginDir.exists() || shomeiPluginDir.listFiles()?.length == 0) {
     println "Downloading besu-shomei-plugin ${shomeiPluginVersion}..."
     def zipFile = file("${rootProject.projectDir}/.gradle/shomei-plugin-${shomeiPluginVersion}.zip")
     zipFile.parentFile.mkdirs()
-    new URL("https://github.com/Consensys/besu-shomei-plugin/releases/download/v${shomeiPluginVersion}/besu-shomei-plugin-v${shomeiVersion}.zip")
+    new URL("https://github.com/Consensys/besu-shomei-plugin/releases/download/v${shomeiPluginVersion}/besu-shomei-plugin-v${shomeiPluginVersion}.zip")
             .withInputStream { is -> zipFile.bytes = is.bytes }
     copy {
         from zipTree(zipFile)
