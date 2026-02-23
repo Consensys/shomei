@@ -14,6 +14,7 @@
 package net.consensys.shomei;
 
 import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.trielog.AccountKey;
@@ -24,7 +25,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 import org.junit.jupiter.api.Test;
 
@@ -34,12 +34,12 @@ public class ZkAccountTest {
   public void testHashZeroAccount() {
     final ZkAccount zkAccount =
         new ZkAccount(
-            new AccountKey(Hash.ZERO, Address.ZERO),
+            new AccountKey(KECCAK_HASH_ZERO, Address.ZERO),
             0L,
             Wei.ZERO,
-            Hash.ZERO,
-            Hash.ZERO,
-            safeByte32(Hash.ZERO),
+                KECCAK_HASH_ZERO,
+                KECCAK_HASH_ZERO,
+            safeByte32(KECCAK_HASH_ZERO),
             0L);
 
     assertThat(HashProvider.trieHash(zkAccount.getEncodedBytes()))
@@ -54,8 +54,8 @@ public class ZkAccountTest {
         new AccountKey(Address.fromHexString("0x742d35Cc6634C0532925a3b844Bc454e4438f44e"));
     UInt256 nonce = UInt256.valueOf(42);
     Wei balance = Wei.fromHexString("0x56bc75e2d63100000");
-    Hash storageRoot = Hash.wrap(Bytes32.random());
-    Hash mimcCodeHash = Hash.wrap(Bytes32.random());
+    Bytes32 storageRoot = Bytes32.random();
+    Bytes32 mimcCodeHash = Bytes32.random();
     MimcSafeBytes<Bytes32> keccakCodeHash = safeByte32(Bytes32.random());
     UInt256 codeSize = UInt256.valueOf(100);
 

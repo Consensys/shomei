@@ -1,6 +1,23 @@
 
 apply plugin: 'java-library'
 
+def shomeiPluginDir = file("${rootProject.projectDir}/.gradle/shomei-plugin/${shomeiPluginVersion}")
+
+if (!shomeiPluginDir.exists() || shomeiPluginDir.listFiles()?.length == 0) {
+    println "Downloading besu-shomei-plugin ${shomeiPluginVersion}..."
+    def zipFile = file("${rootProject.projectDir}/.gradle/shomei-plugin-${shomeiPluginVersion}.zip")
+    zipFile.parentFile.mkdirs()
+    new URL("https://github.com/Consensys/besu-shomei-plugin/releases/download/v${shomeiPluginVersion}/besu-shomei-plugin-v${shomeiPluginVersion}.zip")
+            .withInputStream { is -> zipFile.bytes = is.bytes }
+    copy {
+        from zipTree(zipFile)
+        into shomeiPluginDir
+        include '**/*.jar'
+    }
+    zipFile.delete()
+    println "besu-shomei-plugin extracted to ${shomeiPluginDir}"
+}
+
 tasks.named('jar') {
     archiveBaseName = 'shomei-core'
     manifest {
@@ -35,8 +52,8 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-    testImplementation 'ConsenSys:besu-shomei-plugin'
-    testImplementation 'ConsenSys:besu-shomei-plugin-test-support'
+    testImplementation "Consensys:besu-shomei-plugin-test-support:${shomeiPluginVersion}@jar"
+    testImplementation fileTree(dir: shomeiPluginDir, include: '**/*.jar')
 
     testImplementation project(':util')
     testImplementation 'org.junit.jupiter:junit-jupiter-api'

@@ -18,6 +18,7 @@ import net.consensys.shomei.worldview.ZkEvmWorldState;
 
 import java.util.Optional;
 
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.BlockParameterOrBlockHash;
@@ -43,7 +44,7 @@ public abstract class BlockParameterJsonRpcMethod implements JsonRpcMethod {
           worldStateArchive.getCachedWorldState(blockParameterOrBlockHash.getNumber().getAsLong());
     } else if (blockParameterOrBlockHash.getBlockHash()) {
       worldState =
-          worldStateArchive.getCachedWorldState(blockParameterOrBlockHash.getHash().orElseThrow());
+          worldStateArchive.getCachedWorldState(blockParameterOrBlockHash.getHash().map(hash -> Bytes32.wrap(hash.getBytes())).orElseThrow());
     } else if (blockParameterOrBlockHash.isLatest()) {
       worldState = worldStateArchive.getCachedWorldState(worldStateArchive.getCurrentBlockHash());
     }

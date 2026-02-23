@@ -18,6 +18,7 @@ dependencies {
 
     implementation project(':core')
     implementation project(':services:rpc:client')
+    implementation project(':crypto')
 
     implementation 'io.vertx:vertx-core'
 

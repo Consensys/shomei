@@ -70,6 +70,10 @@ public class AccountTrieRepositoryWrapper implements TrieStorage {
     return new Range(left, center, right);
   }
 
+  public TrieStorage getTrieStorage() {
+    return trieStorage;
+  }
+
   @Override
   public Optional<Bytes> getTrieNode(final Bytes location, final Bytes nodeHash) {
     return trieStorage.getTrieNode(location, nodeHash);

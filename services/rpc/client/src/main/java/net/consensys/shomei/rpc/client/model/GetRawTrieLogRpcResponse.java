@@ -29,6 +29,9 @@ public class GetRawTrieLogRpcResponse {
   @JsonProperty("result")
   private List<TrieLogElement> result;
 
+  @JsonProperty("error")
+  private JsonRpcError error;
+
   @JsonProperty("jsonrpc")
   public String getJsonrpc() {
     return jsonrpc;
@@ -59,6 +62,16 @@ public class GetRawTrieLogRpcResponse {
     this.result = result;
   }
 
+  @JsonProperty("error")
+  public JsonRpcError getError() {
+    return error;
+  }
+
+  @JsonProperty("error")
+  public void setError(JsonRpcError error) {
+    this.error = error;
+  }
+
   @Override
   public String toString() {
     return "GetRawTrieLogRpcResponse{"
@@ -69,6 +82,8 @@ public class GetRawTrieLogRpcResponse {
         + id
         + ", result="
         + result
+        + ", error="
+        + error
         + '}';
   }
 }

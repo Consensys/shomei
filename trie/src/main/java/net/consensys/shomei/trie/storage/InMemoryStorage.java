@@ -18,6 +18,7 @@ import net.consensys.shomei.trie.model.FlattenedLeaf;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -27,27 +28,30 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public class InMemoryStorage implements TrieStorage, TrieStorage.TrieUpdater {
 
-  private final TreeMap<Bytes, FlattenedLeaf> flatLeafStorage =
-      new TreeMap<>(Comparator.naturalOrder());
-  private final Map<Bytes, Bytes> trieNodeStorage = new ConcurrentHashMap<>();
+  private final TreeMap<Bytes, Optional<FlattenedLeaf>> flatLeafStorage =
+          new TreeMap<>(Comparator.naturalOrder());
+  private final Map<Bytes, Optional<Bytes>> trieNodeStorage = new ConcurrentHashMap<>();
 
-  public TreeMap<Bytes, FlattenedLeaf> getFlatLeafStorage() {
+public TreeMap<Bytes, Optional<FlattenedLeaf>> getFlatLeafStorage() {
     return flatLeafStorage;
   }
 
-  public Map<Bytes, Bytes> getTrieNodeStorage() {
+  public Map<Bytes, Optional<Bytes>> getTrieNodeStorage() {
     return trieNodeStorage;
   }
 
   @Override
   public Optional<FlattenedLeaf> getFlatLeaf(final Bytes hkey) {
-    return Optional.ofNullable(flatLeafStorage.get(hkey));
+    final Optional<FlattenedLeaf> value = flatLeafStorage.get(hkey);
+    return Objects.requireNonNullElseGet(value, Optional::empty);
   }
 
   @Override
   public Range getNearestKeys(final Bytes hkey) {
-    final Iterator<Map.Entry<Bytes, FlattenedLeaf>> iterator =
-        flatLeafStorage.entrySet().iterator();
+    final Iterator<Map.Entry<Bytes, Optional<FlattenedLeaf>>> iterator =
+            flatLeafStorage.entrySet().stream()
+                    .filter(e -> e.getValue().isPresent())
+                    .iterator();
     Map.Entry<Bytes, FlattenedLeaf> next = Map.entry(Bytes32.ZERO, FlattenedLeaf.HEAD);
     Map.Entry<Bytes, FlattenedLeaf> left = next;
     Optional<Map.Entry<Bytes, FlattenedLeaf>> maybeMiddle = Optional.empty();
@@ -58,7 +62,8 @@ public class InMemoryStorage implements TrieStorage, TrieStorage.TrieUpdater {
       } else {
         left = next;
       }
-      next = iterator.next();
+      var rawEntry = iterator.next();
+      next = Map.entry(rawEntry.getKey(), rawEntry.getValue().get());
     }
     return new Range(
         Map.entry(left.getKey(), left.getValue()),
@@ -66,29 +71,36 @@ public class InMemoryStorage implements TrieStorage, TrieStorage.TrieUpdater {
         Map.entry(next.getKey(), next.getValue()));
   }
 
+
   @Override
   public Optional<Bytes> getTrieNode(final Bytes location, final Bytes nodeHash) {
-    return Optional.ofNullable(trieNodeStorage.get(location));
+    final Optional<Bytes> value = trieNodeStorage.get(location);
+    if (value == null) {
+      // Key was never inserted
+      return Optional.empty();
+    }
+    // Returns the Optional: present = exists, empty = deleted
+    return value;
   }
 
   @Override
   public void putTrieNode(final Bytes location, final Bytes nodeHash, final Bytes value) {
-    trieNodeStorage.put(location, value);
+    trieNodeStorage.put(location, Optional.of(value));
   }
 
   @Override
-  public InMemoryStorage updater() {
+  public TrieUpdater updater() {
     return this;
   }
 
   @Override
   public void putFlatLeaf(final Bytes key, final FlattenedLeaf value) {
-    flatLeafStorage.put(key, value);
+    flatLeafStorage.put(key, Optional.of(value));
   }
 
   @Override
   public void removeFlatLeafValue(final Bytes key) {
-    flatLeafStorage.remove(key);
+    flatLeafStorage.put(key, Optional.empty());
   }
 
   @Override

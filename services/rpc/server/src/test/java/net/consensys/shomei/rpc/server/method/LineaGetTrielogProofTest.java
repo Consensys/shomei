@@ -15,6 +15,7 @@ package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.trie.ZKTrie.EMPTY_TRIE;
 import static net.consensys.shomei.util.bytes.MimcSafeBytes.safeByte32;
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -38,9 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
@@ -59,8 +60,8 @@ public class LineaGetTrielogProofTest {
   @Mock public ZkWorldStateArchive worldStateArchive;
   @Mock public TrieLogLayerConverter trieLogLayerConverter;
 
-  private Hash testParentBlockHash;
-  private Hash testBlockHash;
+  private Bytes32 testParentBlockHash;
+  private Bytes32 testBlockHash;
   private Address testAddress;
   private AccountKey testAccountKey;
   private ZkAccount testAccount, testPriorAccount;
@@ -68,8 +69,8 @@ public class LineaGetTrielogProofTest {
   @BeforeEach
   public void setup() {
     // Setup common test data used across tests
-    testParentBlockHash = Hash.fromHexString("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef");
-    testBlockHash = Hash.fromHexString("0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890");
+    testParentBlockHash = Bytes32.fromHexString("0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef");
+    testBlockHash = Bytes32.fromHexString("0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890");
     testAddress = Address.fromHexString("0x1000000000000000000000000000000000000001");
     testAccountKey = new AccountKey(testAddress);
 
@@ -79,8 +80,8 @@ public class LineaGetTrielogProofTest {
         UInt256.valueOf(1), // Prior nonce
         Wei.of(1000),      // Prior balance
         ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
-        Hash.ZERO,
-        safeByte32(Hash.ZERO),
+            KECCAK_HASH_ZERO,
+        safeByte32(KECCAK_HASH_ZERO),
         UInt256.ZERO
     );
 
@@ -89,8 +90,8 @@ public class LineaGetTrielogProofTest {
         UInt256.valueOf(2), // Updated nonce
         Wei.of(2000),      // Updated balance
         ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
-        Hash.ZERO,
-        safeByte32(Hash.ZERO),
+            KECCAK_HASH_ZERO,
+        safeByte32(KECCAK_HASH_ZERO),
         UInt256.ZERO
     );
 
@@ -200,9 +201,9 @@ public class LineaGetTrielogProofTest {
         testAccountKey,
         UInt256.valueOf(1),
         Wei.of(1000),
-        Hash.wrap(EMPTY_TRIE.getTopRootHash()),
-        Hash.ZERO,
-        safeByte32(Hash.ZERO),
+        EMPTY_TRIE.getTopRootHash(),
+            KECCAK_HASH_ZERO,
+        safeByte32(KECCAK_HASH_ZERO),
         UInt256.ZERO
     );
 
@@ -290,8 +291,8 @@ public class LineaGetTrielogProofTest {
         UInt256.valueOf(1),
         Wei.of(1500),
         ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
-        Hash.ZERO,
-        safeByte32(Hash.ZERO),
+            KECCAK_HASH_ZERO,
+        safeByte32(KECCAK_HASH_ZERO),
         UInt256.ZERO
     );
 
@@ -300,8 +301,8 @@ public class LineaGetTrielogProofTest {
         UInt256.valueOf(3),
         Wei.of(3000),
         ZKTrie.DEFAULT_TRIE_ROOT, // Will be updated when we add storage
-        Hash.ZERO,
-        safeByte32(Hash.ZERO),
+            KECCAK_HASH_ZERO,
+        safeByte32(KECCAK_HASH_ZERO),
         UInt256.ZERO
     );
 
@@ -354,10 +355,10 @@ public class LineaGetTrielogProofTest {
 
     // Find proofs for each account (using address as key, not account hash)
     Optional<MerkleAccountProof> proof1 = accountProofs.stream()
-        .filter(p -> p.getAccountProof().getKey().equals(testAddress))
+        .filter(p -> p.getAccountProof().getKey().equals(testAddress.getBytes()))
         .findFirst();
     Optional<MerkleAccountProof> proof2 = accountProofs.stream()
-        .filter(p -> p.getAccountProof().getKey().equals(address2))
+        .filter(p -> p.getAccountProof().getKey().equals(address2.getBytes()))
         .findFirst();
 
     assertThat(proof1).isPresent();
@@ -392,7 +393,7 @@ public class LineaGetTrielogProofTest {
 
     // Create a TrieLogLayer to set up the initial state
     final TrieLogLayer setupLayer = new TrieLogLayer();
-    setupLayer.setBlockHash(Hash.ZERO);
+    setupLayer.setBlockHash(KECCAK_HASH_ZERO);
     setupLayer.setBlockNumber(0L);
 
     // Add each account and its storage to the setup layer
@@ -412,7 +413,7 @@ public class LineaGetTrielogProofTest {
 
     // Roll forward to create the state and commit
     worldState.getAccumulator().rollForward(setupLayer);
-    worldState.commit(0L, Hash.ZERO, true);
+    worldState.commit(0L, KECCAK_HASH_ZERO, true);
 
     return worldState;
   }

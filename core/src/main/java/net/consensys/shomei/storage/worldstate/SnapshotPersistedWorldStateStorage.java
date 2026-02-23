@@ -21,7 +21,7 @@ import java.io.IOException;
 
 import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,7 @@ public class SnapshotPersistedWorldStateStorage extends PersistedWorldStateStora
   public WorldStateUpdater updater() {
     return new WorldStateUpdater() {
       @Override
-      public void setBlockHash(final Hash blockHash) {
+      public void setBlockHash(final Bytes32 blockHash) {
         trieNodeTx.get().put(WORLD_BLOCK_HASH_KEY, blockHash.toArrayUnsafe());
       }
 
