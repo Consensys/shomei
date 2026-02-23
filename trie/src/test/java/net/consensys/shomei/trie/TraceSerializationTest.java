@@ -34,7 +34,7 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ public class TraceSerializationTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     final InsertionTrace expectedTrace = (InsertionTrace) zkTrie.putWithTrace(hkey, key, value);
 
@@ -76,7 +76,7 @@ public class TraceSerializationTest {
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
     final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     zkTrie.putWithTrace(hkey, key, dumValue);
 
@@ -97,7 +97,7 @@ public class TraceSerializationTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     zkTrie.putWithTrace(hkey, key, value);
 
@@ -119,7 +119,7 @@ public class TraceSerializationTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     // try read zero trace before inserting the key in the trie
     final ReadZeroTrace expectedReadZeroTrace = (ReadZeroTrace) zkTrie.readWithTrace(hkey, key);
@@ -128,6 +128,7 @@ public class TraceSerializationTest {
     final ReadZeroTrace decodedReadZeroTrace =
         ReadZeroTrace.readFrom(RLP.input(RLP.encode(expectedReadZeroTrace::writeTo)));
 
+    System.out.println(JSON_OBJECT_MAPPER.writeValueAsString(decodedReadZeroTrace));
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(decodedReadZeroTrace))
         .isEqualTo(JSON_OBJECT_MAPPER.writeValueAsString(expectedReadZeroTrace));
 
@@ -153,7 +154,7 @@ public class TraceSerializationTest {
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final MimcSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
     final MimcSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     List<Trace> expectedTraces = new ArrayList<>();
     expectedTraces.add(zkTrie.putWithTrace(hkey, key, dumValue));
