@@ -13,6 +13,7 @@
 
 package net.consensys.shomei.rpc.server.method;
 
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -41,7 +42,6 @@ import org.hyperledger.besu.crypto.KeyPair;
 import org.hyperledger.besu.crypto.SignatureAlgorithm;
 import org.hyperledger.besu.crypto.SignatureAlgorithmFactory;
 import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.TransactionType;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
@@ -143,7 +143,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
     when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
 
     when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
-    when(traceManager.getZkStateRootHash(7L)).thenReturn(Optional.of(Hash.ZERO));
+    when(traceManager.getZkStateRootHash(7L)).thenReturn(Optional.of(KECCAK_HASH_ZERO));
 
     // Mock the trielog layer converter
     when(worldStateArchive.getTrieLogLayerConverter()).thenReturn(trieLogLayerConverter);
@@ -152,7 +152,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
     // Mock virtual trace generation
     final List<List<Trace>> mockTraces = List.of(List.of());
     final ZkWorldStateArchive.VirtualTraceResult mockResult =
-        new ZkWorldStateArchive.VirtualTraceResult(mockTraces, Hash.ZERO);
+        new ZkWorldStateArchive.VirtualTraceResult(mockTraces, KECCAK_HASH_ZERO);
     when(worldStateArchive.generateVirtualTrace(eq(7L), any(TrieLogLayer.class)))
         .thenReturn(mockResult);
 
@@ -221,7 +221,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
     // Create a simple RLP-encoded trielog
     final BytesValueRLPOutput output = new BytesValueRLPOutput();
     output.startList();
-    output.writeBytes(Hash.ZERO); // blockHash
+    output.writeBytes(KECCAK_HASH_ZERO); // blockHash
     output.startList(); // account changes
     output.endList();
     output.startList(); // storage changes
