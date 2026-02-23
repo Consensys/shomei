@@ -41,9 +41,9 @@ jobs:
           {
             "language": "java-kotlin",
             "build_mode": "manual",
-            "build_command": "./gradlew",
+            "build_command": "./gradlew --no-daemon clean compileJava compileTestJava assemble",
             "version": "21",
-            "distribution": "temurin"
+            "distribution": "adopt"
           }
         ]
     secrets:
