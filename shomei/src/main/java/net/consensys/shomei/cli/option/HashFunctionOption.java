@@ -18,7 +18,7 @@ import net.consensys.zkevm.HashProvider;
 import java.util.function.Function;
 
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 import picocli.CommandLine;
 
 public class HashFunctionOption {
@@ -28,9 +28,9 @@ public class HashFunctionOption {
     MIMC_BN254(HashProvider::mimcBn254),
     MIMC_BLS12_377(HashProvider::mimcBls12377);
 
-    Function<Bytes, Hash> hashFunction;
+    Function<Bytes, Bytes32> hashFunction;
 
-    HashFunction(Function<Bytes, Hash> hashFunction) {
+    HashFunction(Function<Bytes, Bytes32> hashFunction) {
       this.hashFunction = hashFunction;
     }
   }
@@ -54,7 +54,7 @@ public class HashFunctionOption {
       arity = "1")
   private HashFunction hashFunction = DEFAULT_HASH_FUNCTION;
 
-  public Function<Bytes, Hash> getHashFunction() {
+  public Function<Bytes, Bytes32> getHashFunction() {
     return hashFunction.hashFunction;
   }
 

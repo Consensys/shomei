@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.tuweni.bytes.Bytes32;
+
 public class WorldStateProofProvider {
 
   private final ZkEvmWorldState zkEvmWorldState;
@@ -40,7 +42,7 @@ public class WorldStateProofProvider {
 
     final ZKTrie accountTrie =
         ZKTrie.loadTrie(
-            zkEvmWorldState.getStateRootHash(),
+                Bytes32.wrap(zkEvmWorldState.getStateRootHash()),
             new AccountTrieRepositoryWrapper(zkEvmWorldState.getZkEvmWorldStateStorage()));
     final MerkleProof accountProof =
         accountTrie.getProof(accountKey.accountHash(), accountKey.address());
@@ -66,7 +68,7 @@ public class WorldStateProofProvider {
       final List<StorageSlotKey> accountStorageKeys) {
     final ZKTrie storageTrie =
         ZKTrie.loadTrie(
-            account.getStorageRoot(),
+            Bytes32.wrap(account.getStorageRoot()),
             new StorageTrieRepositoryWrapper(
                 accountIndex, zkEvmWorldState.getZkEvmWorldStateStorage()));
     return accountStorageKeys.stream()

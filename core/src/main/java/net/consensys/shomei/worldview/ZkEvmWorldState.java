@@ -29,6 +29,7 @@ import net.consensys.shomei.trie.storage.TrieStorage.TrieUpdater;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.trielog.StorageSlotKey;
+import net.consensys.zkevm.HashProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,8 +38,8 @@ import java.util.Objects;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,10 +55,10 @@ public class ZkEvmWorldState {
 
   private final ZkEvmWorldStateUpdateAccumulator accumulator;
 
-  private Hash stateRoot;
+  private Bytes32 stateRoot;
 
   private long blockNumber;
-  private Hash blockHash;
+  private Bytes32 blockHash;
 
   private final WorldStateStorage zkEvmWorldStateStorage;
 
@@ -67,7 +68,7 @@ public class ZkEvmWorldState {
       final WorldStateStorage zkEvmWorldStateStorage, final TraceManager traceManager) {
     this.stateRoot = zkEvmWorldStateStorage.getWorldStateRootHash().orElse(DEFAULT_TRIE_ROOT);
     this.blockNumber = zkEvmWorldStateStorage.getWorldStateBlockNumber().orElse(-1L);
-    this.blockHash = zkEvmWorldStateStorage.getWorldStateBlockHash().orElse(Hash.EMPTY);
+    this.blockHash = zkEvmWorldStateStorage.getWorldStateBlockHash().orElse(HashProvider.KECCAK_HASH_EMPTY);
     this.accumulator = new ZkEvmWorldStateUpdateAccumulator();
     this.zkEvmWorldStateStorage = zkEvmWorldStateStorage;
     this.traceManager = traceManager;
@@ -77,7 +78,7 @@ public class ZkEvmWorldState {
     return zkEvmWorldStateStorage;
   }
 
-  public void commit(final long blockNumber, final Hash blockHash, final boolean generateTrace) {
+  public void commit(final long blockNumber, final Bytes32 blockHash, final boolean generateTrace) {
     LOG.atDebug()
         .setMessage("Commit world state for block number {} and block hash {}")
         .addArgument(blockNumber)
@@ -121,14 +122,14 @@ public class ZkEvmWorldState {
     accumulator.reset();
   }
 
-  record State(Hash stateRoot, List<Trace> traces) {}
+  record State(Bytes32 stateRoot, List<Trace> traces) {}
 
   private State generateNewState(final TrieUpdater updater, final boolean generateTrace) {
     final ZKTrie zkAccountTrie =
         loadAccountTrie(new AccountTrieRepositoryWrapper(zkEvmWorldStateStorage, updater));
     final List<Trace> traces = updateAccounts(zkAccountTrie, updater, generateTrace);
     zkAccountTrie.commit();
-    return new State(Hash.wrap(zkAccountTrie.getTopRootHash()), traces);
+    return new State(zkAccountTrie.getTopRootHash(), traces);
   }
 
   private List<Trace> updateAccounts(
@@ -273,7 +274,7 @@ public class ZkEvmWorldState {
               });
       // update storage root of the account
       final MutableZkAccount mutableZkAccount = new MutableZkAccount(accountValue.getUpdated());
-      mutableZkAccount.setStorageRoot(Hash.wrap(zkStorageTrie.getTopRootHash()));
+      mutableZkAccount.setStorageRoot(zkStorageTrie.getTopRootHash());
       accountValue.setUpdated(mutableZkAccount);
 
       zkStorageTrie.commit();
@@ -318,7 +319,7 @@ public class ZkEvmWorldState {
     return traces;
   }
 
-  public Hash getStateRootHash() {
+  public Bytes32 getStateRootHash() {
     return stateRoot;
   }
 
@@ -326,7 +327,7 @@ public class ZkEvmWorldState {
     return blockNumber;
   }
 
-  public Hash getBlockHash() {
+  public Bytes32 getBlockHash() {
     return blockHash;
   }
 
@@ -339,7 +340,7 @@ public class ZkEvmWorldState {
     if (storage.getTrieNode(Bytes.EMPTY, null).isEmpty()) {
       return ZKTrie.createTrie(storage);
     } else {
-      return ZKTrie.loadTrie(stateRoot, storage);
+      return ZKTrie.loadTrie(Bytes32.wrap(stateRoot), storage);
     }
   }
 
@@ -347,7 +348,7 @@ public class ZkEvmWorldState {
     if (storage.getTrieNode(Bytes.EMPTY, null).isEmpty()) {
       return ZKTrie.createTrie(storage);
     } else {
-      return ZKTrie.loadTrie(zkAccount.getPrior().getStorageRoot(), storage);
+      return ZKTrie.loadTrie(Bytes32.wrap(zkAccount.getPrior().getStorageRoot()), storage);
     }
   }
 }

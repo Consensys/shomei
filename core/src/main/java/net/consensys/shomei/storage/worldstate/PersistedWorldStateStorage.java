@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,7 +113,7 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
   }
 
   @Override
-  public Optional<Hash> getZkStateRootHash(final long blockNumber) {
+  public Optional<Bytes32> getZkStateRootHash(final long blockNumber) {
     return traceManager.getZkStateRootHash(blockNumber);
   }
 
@@ -124,11 +123,10 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
   }
 
   @Override
-  public Optional<Hash> getWorldStateRootHash() {
+  public Optional<Bytes32> getWorldStateRootHash() {
     return getWorldStateBlockNumber()
         .flatMap(this::getZkStateRootHash)
-        .map(Bytes32::wrap)
-        .map(Hash::wrap);
+        .map(Bytes32::wrap);
   }
 
   @Override
@@ -140,8 +138,8 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
   }
 
   @Override
-  public Optional<Hash> getWorldStateBlockHash() {
-    return trieNodeTx.get().get(WORLD_BLOCK_HASH_KEY).map(Bytes32::wrap).map(Hash::wrap);
+  public Optional<Bytes32> getWorldStateBlockHash() {
+    return trieNodeTx.get().get(WORLD_BLOCK_HASH_KEY).map(Bytes32::wrap);
   }
 
   @Override
@@ -153,7 +151,7 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
   public WorldStateUpdater updater() {
     return new WorldStateUpdater() {
       @Override
-      public void setBlockHash(final Hash blockHash) {
+      public void setBlockHash(final Bytes32 blockHash) {
         trieNodeTx.get().put(WORLD_BLOCK_HASH_KEY, blockHash.toArrayUnsafe());
       }
 

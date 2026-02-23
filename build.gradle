@@ -13,6 +13,7 @@ buildscript {
     dependencies {
         classpath 'tech.pegasys.internal.license.reporter:license-reporter:1.1.1'
     }
+
 }
 
 plugins {
@@ -58,7 +59,6 @@ allprojects {
         withSourcesJar()
         withJavadocJar()
     }
-
     test {
         // set a runtime shomei version for tests not executing from a jar
         systemProperty "shomei.version", project.version
@@ -101,11 +101,12 @@ allprojects {
             }
 
             content {
-                includeGroup "ConsenSys"
-                includeModule "ConsenSys", "besu-shomei-plugin"
-                includeModule "ConsenSys", "besu-shomei-plugin-test-support"
+                includeGroup "Consensys"
+                includeModule "Consensys", "besu-shomei-plugin"
+                includeModule "Consensys", "besu-shomei-plugin-test-support"
             }
         }
+
     }
 
     dependencies {

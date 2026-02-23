@@ -14,6 +14,7 @@
 package net.consensys.shomei.fullsync;
 
 import static net.consensys.shomei.fullsync.TrieLogBlockingQueue.INITIAL_SYNC_BLOCK_NUMBER_RANGE;
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -29,7 +30,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import org.hyperledger.besu.datatypes.Hash;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -86,7 +86,7 @@ public class FullSyncDownloaderTest {
             Mockito.mock(GetRawTrieLogClient.class),
             new FullSyncRules(true, 1, 0));
     List<TrieLogIdentifier> trieLogIdentifiers =
-        List.of(new TrieLogIdentifier(1L, Hash.EMPTY, true));
+        List.of(new TrieLogIdentifier(1L, KECCAK_HASH_EMPTY, true));
     fullSyncDownloader.addTrieLogs(trieLogIdentifiers);
     fullSyncDownloader.onNewBesuHeadReceived(trieLogIdentifiers);
     fullSyncDownloader.startFullSync();
@@ -103,7 +103,7 @@ public class FullSyncDownloaderTest {
             Mockito.mock(GetRawTrieLogClient.class),
             new FullSyncRules(true, 2, 0));
     List<TrieLogIdentifier> trieLogIdentifiers =
-        List.of(new TrieLogIdentifier(1L, Hash.EMPTY, true));
+        List.of(new TrieLogIdentifier(1L, KECCAK_HASH_EMPTY, true));
     fullSyncDownloader.addTrieLogs(trieLogIdentifiers);
     fullSyncDownloader.onNewBesuHeadReceived(trieLogIdentifiers);
     fullSyncDownloader.startFullSync();
@@ -114,7 +114,7 @@ public class FullSyncDownloaderTest {
   @Test
   public void testTriggerImportWhenTrieLogAvailableFromTrieLogShipping() throws Exception {
     List<TrieLogIdentifier> trieLogIdentifiers =
-        List.of(new TrieLogIdentifier(1L, Hash.EMPTY, true));
+        List.of(new TrieLogIdentifier(1L, KECCAK_HASH_EMPTY, true));
     fullSyncDownloader.addTrieLogs(trieLogIdentifiers);
     fullSyncDownloader.onNewBesuHeadReceived(trieLogIdentifiers);
     fullSyncDownloader.startFullSync();
@@ -126,7 +126,7 @@ public class FullSyncDownloaderTest {
   @Test
   public void testNotTriggerImportWhenTrieLogAvailableButAlreadyImported() throws Exception {
     List<TrieLogIdentifier> trieLogIdentifiers =
-        List.of(new TrieLogIdentifier(0L, Hash.EMPTY, true));
+        List.of(new TrieLogIdentifier(0L, KECCAK_HASH_EMPTY, true));
     fullSyncDownloader.addTrieLogs(trieLogIdentifiers);
     fullSyncDownloader.onNewBesuHeadReceived(trieLogIdentifiers);
     fullSyncDownloader.startFullSync();
@@ -138,7 +138,7 @@ public class FullSyncDownloaderTest {
   @Test
   public void testNotTriggerImportWhenTrieLogTooFarFromHead() throws Exception {
     List<TrieLogIdentifier> trieLogIdentifiers =
-        List.of(new TrieLogIdentifier(500L, Hash.EMPTY, true));
+        List.of(new TrieLogIdentifier(500L, KECCAK_HASH_EMPTY, true));
     fullSyncDownloader.addTrieLogs(trieLogIdentifiers);
     fullSyncDownloader.onNewBesuHeadReceived(trieLogIdentifiers);
     fullSyncDownloader.startFullSync();
@@ -151,7 +151,7 @@ public class FullSyncDownloaderTest {
   public void testGetEstimateDistanceFromTheHead() {
     assertThat(fullSyncDownloader.getEstimateDistanceFromTheBesuHead()).isEqualTo(-1);
     List<TrieLogIdentifier> trieLogIdentifiers =
-        List.of(new TrieLogIdentifier(500L, Hash.EMPTY, true));
+        List.of(new TrieLogIdentifier(500L, KECCAK_HASH_EMPTY, true));
     fullSyncDownloader.onNewBesuHeadReceived(trieLogIdentifiers);
     assertThat(fullSyncDownloader.getEstimateDistanceFromTheBesuHead()).isEqualTo(500L);
   }
@@ -160,25 +160,25 @@ public class FullSyncDownloaderTest {
   public void onlyUpdateWithHigherHead() {
     assertThat(fullSyncDownloader.getEstimateBesuHeadBlockNumber()).isEmpty();
     fullSyncDownloader.onNewBesuHeadReceived(
-        List.of(new TrieLogIdentifier(501L, Hash.EMPTY, true)));
+        List.of(new TrieLogIdentifier(501L, KECCAK_HASH_EMPTY, true)));
     assertThat(fullSyncDownloader.getEstimateBesuHeadBlockNumber()).contains(501L);
-    fullSyncDownloader.onNewBesuHeadReceived(List.of(new TrieLogIdentifier(2L, Hash.EMPTY, true)));
+    fullSyncDownloader.onNewBesuHeadReceived(List.of(new TrieLogIdentifier(2L, KECCAK_HASH_EMPTY, true)));
     assertThat(fullSyncDownloader.getEstimateBesuHeadBlockNumber()).contains(501L);
   }
 
   @Test
   public void getEstimateHeadBlockNumber() {
     assertThat(fullSyncDownloader.getEstimateBesuHeadBlockNumber()).isEmpty();
-    fullSyncDownloader.onNewBesuHeadReceived(List.of(new TrieLogIdentifier(1L, Hash.EMPTY, true)));
+    fullSyncDownloader.onNewBesuHeadReceived(List.of(new TrieLogIdentifier(1L, KECCAK_HASH_EMPTY, true)));
     assertThat(fullSyncDownloader.getEstimateBesuHeadBlockNumber()).contains(1L);
-    fullSyncDownloader.onNewBesuHeadReceived(List.of(new TrieLogIdentifier(2L, Hash.EMPTY, true)));
+    fullSyncDownloader.onNewBesuHeadReceived(List.of(new TrieLogIdentifier(2L, KECCAK_HASH_EMPTY, true)));
     assertThat(fullSyncDownloader.getEstimateBesuHeadBlockNumber()).contains(2L);
   }
 
   @Test
   public void onTrieLogsReceivedUpdateEstimateHead() {
     assertThat(fullSyncDownloader.getEstimateBesuHeadBlockNumber()).isEmpty();
-    fullSyncDownloader.onNewBesuHeadReceived(List.of(new TrieLogIdentifier(1L, Hash.EMPTY, true)));
+    fullSyncDownloader.onNewBesuHeadReceived(List.of(new TrieLogIdentifier(1L, KECCAK_HASH_EMPTY, true)));
     assertThat(fullSyncDownloader.getEstimateBesuHeadBlockNumber()).contains(1L);
   }
 }

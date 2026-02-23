@@ -31,7 +31,6 @@ import java.util.function.Supplier;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
 import org.hyperledger.besu.ethereum.trie.Node;
 import org.hyperledger.besu.ethereum.trie.NodeFactory;
@@ -165,7 +164,7 @@ public class StoredNodeFactory implements NodeFactory<Bytes> {
       final Bytes location, final Bytes input, final Supplier<String> errMessage) {
 
     int type =
-        input.size() == Hash.SIZE * 2
+        input.size() == Bytes32.SIZE * 2
             ? 1
             : 2; // a leaf will only be bigger (leaf opening) or smaller (zero leaf)
 
@@ -193,16 +192,16 @@ public class StoredNodeFactory implements NodeFactory<Bytes> {
             nextFreeNode,
             this,
             valueSerializer));
-    final Bytes32 childHash = Bytes32.wrap(input.slice(Bytes32.SIZE, Hash.SIZE));
+    final Bytes32 childHash = Bytes32.wrap(input.slice(Bytes32.SIZE, Bytes32.SIZE));
     children.add(new StoredNode<>(this, Bytes.concatenate(Bytes.of((byte) 1)), childHash));
     return new BranchNode<>(Bytes.EMPTY, children, Optional.empty(), this, valueSerializer);
   }
 
   protected BranchNode<Bytes> decodeBranch(final Bytes location, final Bytes input) {
     final ArrayList<Node<Bytes>> children = new ArrayList<>(NB_CHILD);
-    final int nbChilds = input.size() / Hash.SIZE;
+    final int nbChilds = input.size() / Bytes32.SIZE;
     for (int i = 0; i < nbChilds; i++) {
-      final Bytes32 childHash = Bytes32.wrap(input.slice(i * Bytes32.SIZE, Hash.SIZE));
+      final Bytes32 childHash = Bytes32.wrap(input.slice(i * Bytes32.SIZE, Bytes32.SIZE));
       children.add(
           new StoredNode<>(
               this,
