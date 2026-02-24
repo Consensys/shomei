@@ -140,10 +140,6 @@ jobs:
           TAG_VERSION: ${{ needs.assemble.outputs.publish-version }}
         run: |
           ./gradlew clean build assemble publish jreleaserFullRelease --info
-        with:
-          name: jreleaser-logs
-          path: build/jreleaser/trace.log
-          retention-days: 1
   dockerTests:
     needs: 
       - assemble
