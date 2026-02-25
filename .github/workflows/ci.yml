@@ -140,7 +140,6 @@ jobs:
           TAG_VERSION: ${{ needs.assemble.outputs.publish-version }}
         run: |
           ./gradlew clean build assemble publish jreleaserFullRelease
-
   dockerTests:
     needs: 
       - assemble
