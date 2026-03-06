@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.services.storage.api;
 
 import java.util.Optional;
@@ -21,15 +20,15 @@ public interface KeyValueStorageTransaction {
   /**
    * Reads the value associated with the given key.
    *
-   * @param key
+   * @param key to search
    */
   Optional<byte[]> get(final byte[] key);
 
   /**
    * Returns an iterator that can be used to iterate over all key-value pairs in the storage.
    *
-   * @param key
-   * @return
+   * @param key to search
+   * @return the nearest key value
    */
   Optional<BidirectionalIterator<KeyValueStorage.KeyValuePair>> getNearestTo(byte[] key);
 
