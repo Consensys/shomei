@@ -12,6 +12,15 @@
  */
 package net.consensys.shomei.services.storage.rocksdb;
 
+import net.consensys.shomei.services.storage.api.BidirectionalIterator;
+import net.consensys.shomei.services.storage.api.KeyValueStorage;
+import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
+import net.consensys.shomei.services.storage.api.SnapshotKeyValueStorage;
+import net.consensys.shomei.services.storage.api.StorageException;
+import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames;
+import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
+
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -24,14 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import net.consensys.shomei.services.storage.api.BidirectionalIterator;
-import net.consensys.shomei.services.storage.api.KeyValueStorage;
-import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
-import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
-import net.consensys.shomei.services.storage.api.SnapshotKeyValueStorage;
-import net.consensys.shomei.services.storage.api.StorageException;
-import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames;
-import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfiguration;
 import org.rocksdb.AbstractRocksIterator;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.BloomFilter;

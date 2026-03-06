@@ -17,15 +17,13 @@ import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256
 import static net.consensys.zkevm.HashProvider.keccak256;
 import static net.consensys.zkevm.HashProvider.trieHash;
 
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
-
-import java.util.Objects;
-
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.util.bytes.BytesBuffer;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
+
+import java.util.Objects;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -35,7 +33,7 @@ public class ZkAccount {
 
   public static final PoseidonSafeBytes<Bytes32> EMPTY_KECCAK_CODE_HASH =
       safeByte32(keccak256(Bytes.EMPTY));
-  public static final Hash EMPTY_CODE_HASH = trieHash(Bytes32.ZERO);
+  public static final Bytes32 EMPTY_CODE_HASH = trieHash(Bytes32.ZERO);
 
   protected AccountKey accountKey;
   protected PoseidonSafeBytes<Bytes32> keccakCodeHash;
@@ -93,7 +91,7 @@ public class ZkAccount {
    *
    * @return the account key
    */
-  public Hash getHkey() {
+  public Bytes32 getHkey() {
     return accountKey.accountHash();
   }
 
@@ -102,7 +100,7 @@ public class ZkAccount {
    *
    * @return the account address
    */
-  public PoseidonSafeBytes<Address> getAddress() {
+  public PoseidonSafeBytes<Bytes> getAddress() {
     return accountKey.address();
   }
 

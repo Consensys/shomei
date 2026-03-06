@@ -15,11 +15,12 @@ package net.consensys.shomei.storage;
 import static net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper.WRAP_ACCOUNT;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.primitives.Longs;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
+
+import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 

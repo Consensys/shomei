@@ -13,20 +13,10 @@
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
-
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
-import org.hyperledger.besu.ethereum.rlp.RLP;
-
-import java.util.List;
-import java.util.Optional;
 
 import net.consensys.shomei.rpc.server.error.JsonInvalidVersionMessage;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
@@ -38,7 +28,17 @@ import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
+
+import java.util.List;
+import java.util.Optional;
+
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
+import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -97,10 +97,10 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
         Trace.serialize(
             List.of(
                 accountStateTrie.readWithTrace(
-                    Hash.ZERO, PoseidonSafeBytesUtils.safeByte32(Hash.ZERO))));
+                        KECCAK_HASH_ZERO, PoseidonSafeBytesUtils.safeByte32(KECCAK_HASH_ZERO))));
 
     when(traceManager.getZkStateRootHash(anyLong()))
-        .thenReturn(Optional.of(Hash.wrap(accountStateTrie.getTopRootHash())));
+        .thenReturn(Optional.of(accountStateTrie.getTopRootHash()));
     when(traceManager.getTrace(anyLong())).thenReturn(Optional.of(trace));
     final JsonRpcRequestContext request = request("0", "0", IMPL_VERSION);
     final JsonRpcResponse expectedResponse =

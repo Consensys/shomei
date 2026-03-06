@@ -12,10 +12,10 @@
  */
 package net.consensys.shomei;
 
-import org.hyperledger.besu.datatypes.Hash;
 
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 
@@ -41,7 +41,7 @@ public class MutableZkAccount extends ZkAccount {
     this.keccakCodeHash = keccakCodeHash;
   }
 
-  public void setPoseidonCodeHash(final Hash poseidonCodeHash) {
+  public void setPoseidonCodeHash(final Bytes32 poseidonCodeHash) {
     this.poseidonCodeHash = poseidonCodeHash;
   }
 
@@ -57,7 +57,7 @@ public class MutableZkAccount extends ZkAccount {
     this.balance = balance;
   }
 
-  public void setStorageRoot(final Hash storageRoot) {
+  public void setStorageRoot(final Bytes32 storageRoot) {
     this.storageRoot = storageRoot;
   }
 }

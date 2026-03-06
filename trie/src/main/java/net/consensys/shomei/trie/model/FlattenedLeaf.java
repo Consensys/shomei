@@ -12,10 +12,9 @@
  */
 package net.consensys.shomei.trie.model;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
 import org.hyperledger.besu.ethereum.rlp.RLPOutput;
-
-import org.apache.tuweni.bytes.Bytes;
 
 /**
  * This class represents a leaf of a trie in a flat format. Each leaf contains the index of the leaf

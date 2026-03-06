@@ -12,10 +12,6 @@
  */
 package net.consensys.shomei.proof;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.proof.MerkleInclusionProof;
@@ -26,6 +22,11 @@ import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.trielog.StorageSlotKey;
 import net.consensys.shomei.worldview.ZkEvmWorldState;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.tuweni.bytes.Bytes32;
 public class WorldStateProofProvider {
 
   private final ZkEvmWorldState zkEvmWorldState;
@@ -38,8 +39,7 @@ public class WorldStateProofProvider {
       final AccountKey accountKey, final List<StorageSlotKey> accountStorageKeys) {
 
     final ZKTrie accountTrie =
-        ZKTrie.loadTrie(
-            zkEvmWorldState.getStateRootHash(),
+        ZKTrie.loadTrie(zkEvmWorldState.getStateRootHash(),
             new AccountTrieRepositoryWrapper(zkEvmWorldState.getZkEvmWorldStateStorage()));
     final MerkleProof accountProof =
         accountTrie.getProof(accountKey.accountHash(), accountKey.address());
@@ -65,7 +65,7 @@ public class WorldStateProofProvider {
       final List<StorageSlotKey> accountStorageKeys) {
     final ZKTrie storageTrie =
         ZKTrie.loadTrie(
-            account.getStorageRoot(),
+            Bytes32.wrap(account.getStorageRoot()),
             new StorageTrieRepositoryWrapper(
                 accountIndex, zkEvmWorldState.getZkEvmWorldStateStorage()));
     return accountStorageKeys.stream()

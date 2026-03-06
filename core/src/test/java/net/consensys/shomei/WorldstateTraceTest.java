@@ -24,13 +24,6 @@ import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.hyperledger.besu.datatypes.Hash;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.json.JsonTraceParser;
@@ -41,6 +34,12 @@ import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 import net.consensys.zkevm.HashProvider;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -60,7 +59,7 @@ public class WorldstateTraceTest {
   public void testTraceReadZero() throws IOException {
 
     final Bytes32 key = createDumDigest(36);
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -76,7 +75,7 @@ public class WorldstateTraceTest {
 
     final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
     final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
-    final Hash hkey = key.hash();
+    final Bytes32 hkey = key.hash();
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -155,7 +154,7 @@ public class WorldstateTraceTest {
             safeUInt256(UInt256.valueOf(41L)),
             safeUInt256(UInt256.valueOf(15353L)),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             safeByte32(createDumFullBytes(15)),
             safeUInt256(UInt256.valueOf(7L)));
 
@@ -179,8 +178,9 @@ public class WorldstateTraceTest {
     final MutableZkAccount zkAccount2 =
         new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
+
             safeByte32(createDumFullBytes(15)),
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             safeUInt256(UInt256.valueOf(7L)),
             safeUInt256(UInt256.valueOf(41L)),
             safeUInt256(UInt256.valueOf(15353L)),
@@ -207,13 +207,12 @@ public class WorldstateTraceTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
-    final Hash slotKeyHash = slotKey.hash();
+    final Bytes32 slotKeyHash = slotKey.hash();
     final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
-
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     trace3.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     final Trace trace4 =
         accountStateTrie.putWithTrace(
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
@@ -229,7 +228,7 @@ public class WorldstateTraceTest {
         new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
             safeByte32(createDumFullBytes(15)),
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             safeUInt256(UInt256.valueOf(7L)),
             safeUInt256(UInt256.valueOf(41L)),
             safeUInt256(UInt256.valueOf(15353L)),
@@ -254,10 +253,10 @@ public class WorldstateTraceTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
-    final Hash slotKeyHash = slotKey.hash();
+    final Bytes32 slotKeyHash = slotKey.hash();
     final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     accountStateTrie.putWithTrace(
         zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
@@ -268,19 +267,19 @@ public class WorldstateTraceTest {
     Trace trace2 = account2Storage.removeWithTrace(slotKeyHash, slotKey);
     trace2.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     Trace trace3 =
         accountStateTrie.putWithTrace(
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
     // Write again, somewhere else
     final PoseidonSafeBytes<Bytes32> newSlotKey = safeByte32(createDumFullBytes(11));
-    final Hash newSlotKeyHash = newSlotKey.hash();
+    final Bytes32 newSlotKeyHash = newSlotKey.hash();
     final PoseidonSafeBytes<Bytes32> newSlotValue = safeByte32(createDumFullBytes(78));
     Trace trace4 = account2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     Trace trace5 =
         accountStateTrie.putWithTrace(
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
@@ -300,7 +299,7 @@ public class WorldstateTraceTest {
             safeUInt256(UInt256.valueOf(41L)),
             safeUInt256(UInt256.valueOf(15353L)),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             safeByte32(createDumFullBytes(15)),
             safeUInt256(UInt256.valueOf(7L)));
 
@@ -310,7 +309,7 @@ public class WorldstateTraceTest {
             safeUInt256(UInt256.valueOf(48L)),
             safeUInt256(UInt256.valueOf(9835L)),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(54)),
+            createDumDigest(54),
             safeByte32(createDumFullBytes(85)),
             safeUInt256(UInt256.valueOf(19L)));
 

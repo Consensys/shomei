@@ -14,16 +14,17 @@ package net.consensys.shomei.services.storage.rocksdb;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-
 import net.consensys.shomei.services.storage.api.BidirectionalIterator;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
 import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
 import net.consensys.shomei.services.storage.api.SnapshotKeyValueStorage;
 import net.consensys.shomei.services.storage.api.StorageException;
+
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
 import org.rocksdb.ReadOptions;
 
 public class RocksDBKeyValueSegment implements SnappableKeyValueStorage {

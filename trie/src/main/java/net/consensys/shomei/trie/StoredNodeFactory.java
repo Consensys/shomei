@@ -16,13 +16,11 @@ import static java.lang.String.format;
 import static net.consensys.shomei.trie.node.LeafType.fromBytes;
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
-import org.hyperledger.besu.ethereum.trie.Node;
-import org.hyperledger.besu.ethereum.trie.NodeFactory;
-import org.hyperledger.besu.ethereum.trie.NodeLoader;
-import org.hyperledger.besu.ethereum.trie.NullNode;
-import org.hyperledger.besu.ethereum.trie.StoredNode;
+import net.consensys.shomei.trie.node.BranchNode;
+import net.consensys.shomei.trie.node.EmptyLeafNode;
+import net.consensys.shomei.trie.node.LeafNode;
+import net.consensys.shomei.trie.node.LeafType;
+import net.consensys.shomei.trie.node.NextFreeNode;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,14 +29,15 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import net.consensys.shomei.trie.node.BranchNode;
-import net.consensys.shomei.trie.node.EmptyLeafNode;
-import net.consensys.shomei.trie.node.LeafNode;
-import net.consensys.shomei.trie.node.LeafType;
-import net.consensys.shomei.trie.node.NextFreeNode;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
+import org.hyperledger.besu.ethereum.trie.Node;
+import org.hyperledger.besu.ethereum.trie.NodeFactory;
+import org.hyperledger.besu.ethereum.trie.NodeLoader;
+import org.hyperledger.besu.ethereum.trie.NullNode;
+import org.hyperledger.besu.ethereum.trie.StoredNode;
 
 /**
  * The StoredNodeFactory class is responsible for creating and managing stored nodes in a stored
@@ -179,7 +178,7 @@ public class StoredNodeFactory implements NodeFactory<Bytes> {
     }
 
     int type =
-        input.size() == Hash.SIZE * 2
+        input.size() == Bytes32.SIZE * 2
             ? 1
             : 2; // a leaf will only be bigger (leaf opening) or smaller (zero leaf)
 
@@ -205,16 +204,16 @@ public class StoredNodeFactory implements NodeFactory<Bytes> {
             nextFreeNode,
             this,
             valueSerializer));
-    final Bytes32 childHash = Bytes32.wrap(input.slice(subTreeIndex, Hash.SIZE));
+    final Bytes32 childHash = Bytes32.wrap(input.slice(subTreeIndex, Bytes32.SIZE));
     children.add(new StoredNode<>(this, Bytes.concatenate(Bytes.of((byte) 1)), childHash));
     return new BranchNode<>(Bytes.EMPTY, children, Optional.empty(), this, valueSerializer);
   }
 
   protected BranchNode<Bytes> decodeBranch(final Bytes location, final Bytes input) {
     final ArrayList<Node<Bytes>> children = new ArrayList<>(NB_CHILD);
-    final int nbChilds = input.size() / Hash.SIZE;
+    final int nbChilds = input.size() / Bytes32.SIZE;
     for (int i = 0; i < nbChilds; i++) {
-      final Bytes32 childHash = Bytes32.wrap(input.slice(i * Bytes32.SIZE, Hash.SIZE));
+      final Bytes32 childHash = Bytes32.wrap(input.slice(i * Bytes32.SIZE, Bytes32.SIZE));
       children.add(
           new StoredNode<>(
               this,

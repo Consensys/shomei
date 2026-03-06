@@ -12,14 +12,15 @@
  */
 package net.consensys.shomei.services.storage.rocksdb;
 
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
-
 import net.consensys.shomei.services.storage.api.BidirectionalIterator;
 import net.consensys.shomei.services.storage.api.KeyValueStorage.KeyValuePair;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
 import net.consensys.shomei.services.storage.api.StorageException;
+
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
+
 import org.rocksdb.AbstractRocksIterator;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.OptimisticTransactionDB;

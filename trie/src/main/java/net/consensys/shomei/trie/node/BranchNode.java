@@ -12,8 +12,7 @@
  */
 package net.consensys.shomei.trie.node;
 
-import org.hyperledger.besu.ethereum.trie.Node;
-import org.hyperledger.besu.ethereum.trie.NodeFactory;
+import net.consensys.zkevm.HashProvider;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.ref.SoftReference;
@@ -23,9 +22,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import net.consensys.zkevm.HashProvider;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.ethereum.trie.Node;
+import org.hyperledger.besu.ethereum.trie.NodeFactory;
 
 public class BranchNode<V> extends org.hyperledger.besu.ethereum.trie.patricia.BranchNode<V>
     implements Node<V> {

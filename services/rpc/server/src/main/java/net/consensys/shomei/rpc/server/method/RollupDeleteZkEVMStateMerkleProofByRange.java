@@ -12,15 +12,15 @@
  */
 package net.consensys.shomei.rpc.server.method;
 
+import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
+import net.consensys.shomei.rpc.server.model.RollupDeleteZkEvmStateByRangeParameter;
+import net.consensys.shomei.storage.TraceManager;
+
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
-
-import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
-import net.consensys.shomei.rpc.server.model.RollupDeleteZkEvmStateByRangeParameter;
-import net.consensys.shomei.storage.TraceManager;
 
 public class RollupDeleteZkEVMStateMerkleProofByRange implements JsonRpcMethod {
 

@@ -14,17 +14,6 @@ package net.consensys.shomei.trie;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.trie.Node;
-import org.hyperledger.besu.ethereum.trie.NodeUpdater;
-import org.hyperledger.besu.ethereum.trie.Proof;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import net.consensys.shomei.trie.StoredSparseMerkleTrie.GetAndProve;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 import net.consensys.shomei.trie.model.LeafOpening;
@@ -45,8 +34,18 @@ import net.consensys.shomei.trie.trace.builder.ReadTraceBuilder;
 import net.consensys.shomei.trie.trace.builder.ReadZeroTraceBuilder;
 import net.consensys.shomei.trie.trace.builder.UpdateTraceBuilder;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.ethereum.trie.Node;
+import org.hyperledger.besu.ethereum.trie.NodeUpdater;
+import org.hyperledger.besu.ethereum.trie.Proof;
 
 /**
  * The ZKTrie class represents a zero-knowledge Merkle trie. It provides methods for storing,
@@ -57,8 +56,7 @@ public class ZKTrie {
 
   public static final ZKTrie EMPTY_TRIE = generateEmptyTrie();
 
-  public static final Hash DEFAULT_TRIE_ROOT =
-      Hash.wrap(createTrie(new InMemoryStorage()).getTopRootHash());
+  public static final Bytes32 DEFAULT_TRIE_ROOT = createTrie(new InMemoryStorage()).getTopRootHash();
 
   private static final int ZK_TRIE_DEPTH = 40;
 
@@ -91,7 +89,7 @@ public class ZKTrie {
         new InMemoryStorage() {
           @Override
           public Optional<Bytes> getTrieNode(final Bytes location, final Bytes nodeHash) {
-            return Optional.ofNullable(super.getTrieNodeStorage().get(nodeHash));
+            return super.getTrieNodeStorage().get(nodeHash);
             // In a sparse Merkle trie, the hash value of a parent node is computed based on the
             // hashes of its children nodes.
             // so the hash value of a parent node at each level will be the same as long as its
@@ -103,7 +101,7 @@ public class ZKTrie {
 
           @Override
           public void putTrieNode(final Bytes location, final Bytes nodeHash, final Bytes value) {
-            super.getTrieNodeStorage().put(nodeHash, value);
+            super.getTrieNodeStorage().put(nodeHash, Optional.of(value));
           }
         };
     return new ZKTrie(initWorldState(inMemoryStorage::putTrieNode).getHash(), inMemoryStorage);
@@ -116,7 +114,7 @@ public class ZKTrie {
   }
 
   public static ZKTrie loadTrie(final Bytes32 rootHash, final TrieStorage worldStateStorage) {
-    return new ZKTrie(rootHash, worldStateStorage);
+      return new ZKTrie(rootHash, worldStateStorage);
   }
 
   /**
@@ -155,16 +153,16 @@ public class ZKTrie {
   }
 
   public void setHeadAndTail() {
-    // head
-    final Long headIndex = pathResolver.getNextFreeLeafNodeIndex();
-    updater.putFlatLeaf(LeafOpening.HEAD.getHkey(), FlattenedLeaf.HEAD);
-    state.put(pathResolver.getLeafPath(headIndex), LeafOpening.HEAD.getEncodesBytes());
-    pathResolver.incrementNextFreeLeafNodeIndex();
-    // tail
-    final Long tailIndex = pathResolver.getNextFreeLeafNodeIndex();
-    updater.putFlatLeaf(LeafOpening.TAIL.getHkey(), FlattenedLeaf.TAIL);
-    state.put(pathResolver.getLeafPath(tailIndex), LeafOpening.TAIL.getEncodesBytes());
-    pathResolver.incrementNextFreeLeafNodeIndex();
+      // head
+      final Long headIndex = pathResolver.getNextFreeLeafNodeIndex();
+      updater.putFlatLeaf(LeafOpening.HEAD.getHkey(), FlattenedLeaf.HEAD);
+      state.put(pathResolver.getLeafPath(headIndex), LeafOpening.HEAD.getEncodesBytes());
+      pathResolver.incrementNextFreeLeafNodeIndex();
+      // tail
+      final Long tailIndex = pathResolver.getNextFreeLeafNodeIndex();
+      updater.putFlatLeaf(LeafOpening.TAIL.getHkey(), FlattenedLeaf.TAIL);
+      state.put(pathResolver.getLeafPath(tailIndex), LeafOpening.TAIL.getEncodesBytes());
+      pathResolver.incrementNextFreeLeafNodeIndex();
   }
 
   public Node<Bytes> getSubRootNode() {
@@ -187,15 +185,15 @@ public class ZKTrie {
     return pathResolver.getNextFreeLeafNodeIndex();
   }
 
-  public Optional<FlattenedLeaf> getFlatLeaf(final Hash hkey) {
+  public Optional<FlattenedLeaf> getFlatLeaf(final Bytes32 hkey) {
     return worldStateStorage.getFlatLeaf(hkey);
   }
 
-  public Optional<Long> getLeafIndex(final Hash hkey) {
+  public Optional<Long> getLeafIndex(final Bytes32 hkey) {
     return getFlatLeaf(hkey).map(FlattenedLeaf::leafIndex);
   }
 
-  public Optional<Bytes> get(final Hash hkey) {
+  public Optional<Bytes> get(final Bytes32 hkey) {
     return worldStateStorage
         .getFlatLeaf(hkey)
         .map(FlattenedLeaf::leafIndex)
@@ -215,7 +213,7 @@ public class ZKTrie {
     return state.getAndProve(path);
   }
 
-  public MerkleProof getProof(final Hash hkey, final PoseidonSafeBytes<? extends Bytes> key) {
+  public MerkleProof getProof(final Bytes32 hkey, final PoseidonSafeBytes<? extends Bytes> key) {
     // GET the openings HKEY-,  hash(k) , HKEY+
     final Range nearestKeys = worldStateStorage.getNearestKeys(hkey);
     // CHECK if hash(k) exist
@@ -294,7 +292,7 @@ public class ZKTrie {
     }
   }
 
-  public Trace readWithTrace(final Hash hkey, final PoseidonSafeBytes<? extends Bytes> key) {
+  public Trace readWithTrace(final Bytes32 hkey, final PoseidonSafeBytes<? extends Bytes> key) {
     // GET the openings HKEY-,  hash(k) , HKEY+
     final Range nearestKeys = worldStateStorage.getNearestKeys(hkey);
     // CHECK if hash(k) exist
@@ -347,7 +345,7 @@ public class ZKTrie {
   }
 
   public Trace putWithTrace(
-      final Hash hKey,
+      final Bytes32 hKey,
       final PoseidonSafeBytes<? extends Bytes> key,
       final PoseidonSafeBytes<? extends Bytes> newValue) {
     checkArgument(hKey.size() == Bytes32.SIZE);
@@ -453,7 +451,7 @@ public class ZKTrie {
     }
   }
 
-  public Trace removeWithTrace(final Hash hkey, final PoseidonSafeBytes<? extends Bytes> key) {
+  public Trace removeWithTrace(final Bytes32 hkey, final PoseidonSafeBytes<? extends Bytes> key) {
     checkArgument(hkey.size() == Bytes32.SIZE);
 
     // GET the openings HKEY-,  hash(k) , HKEY+

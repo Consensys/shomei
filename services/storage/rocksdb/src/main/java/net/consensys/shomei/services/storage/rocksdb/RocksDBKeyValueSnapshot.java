@@ -14,6 +14,11 @@ package net.consensys.shomei.services.storage.rocksdb;
 
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
+import net.consensys.shomei.services.storage.api.BidirectionalIterator;
+import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.services.storage.api.SnapshotKeyValueStorage;
+import net.consensys.shomei.services.storage.api.StorageException;
+
 import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
@@ -21,10 +26,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import net.consensys.shomei.services.storage.api.BidirectionalIterator;
-import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
-import net.consensys.shomei.services.storage.api.SnapshotKeyValueStorage;
-import net.consensys.shomei.services.storage.api.StorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

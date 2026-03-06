@@ -12,16 +12,16 @@
  */
 package net.consensys.shomei.trie.node;
 
-import org.hyperledger.besu.ethereum.trie.NodeFactory;
+import net.consensys.zkevm.HashProvider;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.function.Function;
 
-import net.consensys.zkevm.HashProvider;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.ethereum.trie.NodeFactory;
 
 public class LeafNode<V> extends org.hyperledger.besu.ethereum.trie.patricia.LeafNode<V> {
 

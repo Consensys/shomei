@@ -12,15 +12,8 @@
  */
 package net.consensys.shomei.storage;
 
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
-
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.rlp.RLPOutput;
-
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Optional;
 
 import net.consensys.shomei.observer.TrieLogObserver;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
@@ -28,7 +21,16 @@ import net.consensys.shomei.storage.worldstate.PersistedWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage.WorldStateUpdater;
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 import net.consensys.shomei.trie.trace.Trace;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.rlp.RLPOutput;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +60,7 @@ public class PersistedWorldStateStorageTest {
             public void writeTo(final RLPOutput out) {}
           });
 
-  private static final Hash HASH_TEST = Hash.hash(BYTES_TEST);
+  private static final Bytes32 HASH_TEST = Bytes32.wrap(Hash.hash(BYTES_TEST).getBytes());
 
   @TempDir Path tempData;
   protected PersistedWorldStateStorage storage;
@@ -128,7 +130,7 @@ public class PersistedWorldStateStorageTest {
     traceManagerTransaction.commit();
     TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction = trieLogManager.updater();
     trieLogManagerTransaction.saveTrieLog(
-        new TrieLogObserver.TrieLogIdentifier(99L, Hash.ZERO), BYTES_TEST);
+        new TrieLogObserver.TrieLogIdentifier(99L, KECCAK_HASH_ZERO), BYTES_TEST);
     trieLogManagerTransaction.commit();
   }
 

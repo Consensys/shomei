@@ -12,16 +12,16 @@
  */
 package net.consensys.shomei.storage;
 
-import org.hyperledger.besu.datatypes.Hash;
+
+import net.consensys.shomei.services.storage.api.KeyValueStorage;
+import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+import net.consensys.shomei.trie.trace.Trace;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 
 import com.google.common.primitives.Longs;
-import net.consensys.shomei.services.storage.api.KeyValueStorage;
-import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
-import net.consensys.shomei.trie.trace.Trace;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -34,7 +34,7 @@ public interface TraceManager {
 
   // TODO it's not logical to save the zkstate root hash in the trace manager, we need to change
   // that in the future. but for backward compatibility, we keep it here for now.
-  Optional<Hash> getZkStateRootHash(final long blockNumber);
+  Optional<Bytes32> getZkStateRootHash(final long blockNumber);
 
   class TraceManagerImpl implements TraceManager {
     private final KeyValueStorage traceStorage;
@@ -50,11 +50,10 @@ public interface TraceManager {
     }
 
     @Override
-    public Optional<Hash> getZkStateRootHash(final long blockNumber) {
+    public Optional<Bytes32> getZkStateRootHash(final long blockNumber) {
       return traceStorage
           .get((ZK_STATE_ROOT_PREFIX + blockNumber).getBytes(StandardCharsets.UTF_8))
-          .map(Bytes32::wrap)
-          .map(Hash::wrap);
+          .map(Bytes32::wrap);
     }
 
     @Override
@@ -80,7 +79,7 @@ public interface TraceManager {
       return this;
     }
 
-    public TraceManagerUpdater saveZkStateRootHash(final long blockNumber, final Hash stateRoot) {
+    public TraceManagerUpdater saveZkStateRootHash(final long blockNumber, final Bytes32 stateRoot) {
       transaction.put(
           (ZK_STATE_ROOT_PREFIX + blockNumber).getBytes(StandardCharsets.UTF_8),
           stateRoot.toArrayUnsafe());

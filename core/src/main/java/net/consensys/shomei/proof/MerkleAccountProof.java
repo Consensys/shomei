@@ -12,9 +12,9 @@
  */
 package net.consensys.shomei.proof;
 
-import java.util.List;
-
 import net.consensys.shomei.trie.proof.MerkleProof;
+
+import java.util.List;
 
 public class MerkleAccountProof {
 

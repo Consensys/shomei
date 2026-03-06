@@ -12,16 +12,7 @@
  */
 package net.consensys.shomei;
 
-import org.hyperledger.besu.datatypes.Hash;
 
-import java.io.IOException;
-import java.util.Optional;
-
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
-import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
-import io.vertx.core.Vertx;
 import net.consensys.shomei.cli.option.DataStorageOption;
 import net.consensys.shomei.cli.option.HashFunctionOption;
 import net.consensys.shomei.cli.option.JsonRpcOption;
@@ -31,6 +22,7 @@ import net.consensys.shomei.fullsync.FullSyncDownloader;
 import net.consensys.shomei.fullsync.rules.FullSyncRules;
 import net.consensys.shomei.metrics.MetricsService;
 import net.consensys.shomei.metrics.PrometheusMetricsService;
+import net.consensys.shomei.rpc.client.BesuSimulateClient;
 import net.consensys.shomei.rpc.client.GetRawTrieLogClient;
 import net.consensys.shomei.rpc.server.JsonRpcService;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
@@ -38,6 +30,16 @@ import net.consensys.shomei.storage.RocksDBStorageProvider;
 import net.consensys.shomei.storage.StorageProvider;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
 import net.consensys.zkevm.HashProvider;
+
+import java.io.IOException;
+import java.util.Optional;
+
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.vertx.core.Vertx;
+import org.apache.tuweni.bytes.Bytes32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +54,8 @@ public class Runner {
   private final MetricsService.VertxMetricsService metricsService;
 
   private final ZkWorldStateArchive worldStateArchive;
+  private final GetRawTrieLogClient getRawTrieLogClient;
+  private final BesuSimulateClient besuSimulateClient;
 
   public Runner(
       final DataStorageOption dataStorageOption,
@@ -72,11 +76,16 @@ public class Runner {
     worldStateArchive =
         new ZkWorldStateArchive(storageProvider, syncOption.isEnableFinalizedBlockLimit());
 
-    final GetRawTrieLogClient getRawTrieLog =
+    this.getRawTrieLogClient =
         new GetRawTrieLogClient(
+            vertx,
             worldStateArchive.getTrieLogManager(),
             jsonRpcOption.getBesuRpcHttpHost(),
             jsonRpcOption.getBesuRHttpPort());
+
+    this.besuSimulateClient =
+        new BesuSimulateClient(
+            vertx, jsonRpcOption.getBesuRpcHttpHost(), jsonRpcOption.getBesuRHttpPort());
 
     final FullSyncRules fullSyncRules =
         new FullSyncRules(
@@ -85,9 +94,9 @@ public class Runner {
             syncOption.getMinConfirmationsBeforeImporting(),
             syncOption.isEnableFinalizedBlockLimit(),
             Optional.ofNullable(syncOption.getFinalizedBlockNumberLimit()),
-            Optional.ofNullable(syncOption.getFinalizedBlockHashLimit()).map(Hash::fromHexString));
+            Optional.ofNullable(syncOption.getFinalizedBlockHashLimit()).map(Bytes32::fromHexString));
 
-    fullSyncDownloader = new FullSyncDownloader(worldStateArchive, getRawTrieLog, fullSyncRules);
+    fullSyncDownloader = new FullSyncDownloader(worldStateArchive, getRawTrieLogClient, fullSyncRules);
 
     this.jsonRpcService =
         new JsonRpcService(
@@ -95,7 +104,8 @@ public class Runner {
             jsonRpcOption.getRpcHttpPort(),
             Optional.of(jsonRpcOption.getRpcHttpHostAllowList()),
             fullSyncDownloader,
-            worldStateArchive);
+            worldStateArchive,
+            besuSimulateClient);
   }
 
   private void setupHashFunction(HashFunctionOption hashFunctionOption) {
@@ -153,6 +163,14 @@ public class Runner {
   }
 
   public void stop() throws IOException {
+    // Close RPC clients to release their Vertx instances and non-daemon threads
+    if (getRawTrieLogClient != null) {
+      getRawTrieLogClient.close();
+    }
+    if (besuSimulateClient != null) {
+      besuSimulateClient.close();
+    }
+
     worldStateArchive.close();
     vertx.close();
   }

@@ -14,13 +14,14 @@ package net.consensys.shomei.services.storage.rocksdb;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import net.consensys.shomei.services.storage.api.SegmentIdentifier;
+
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import net.consensys.shomei.services.storage.api.SegmentIdentifier;
 import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.RocksDBException;
 

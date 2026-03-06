@@ -12,6 +12,12 @@
  */
 package net.consensys.shomei.rpc.client;
 
+import net.consensys.shomei.observer.TrieLogObserver;
+import net.consensys.shomei.rpc.client.model.GetRawTrieLogRpcRequest;
+import net.consensys.shomei.rpc.client.model.GetRawTrieLogRpcResponse;
+import net.consensys.shomei.rpc.model.TrieLogElement;
+import net.consensys.shomei.storage.TrieLogManager;
+
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -23,11 +29,6 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.client.WebClientOptions;
-import net.consensys.shomei.observer.TrieLogObserver;
-import net.consensys.shomei.rpc.client.model.GetRawTrieLogRpcRequest;
-import net.consensys.shomei.rpc.client.model.GetRawTrieLogRpcResponse;
-import net.consensys.shomei.rpc.model.TrieLogElement;
-import net.consensys.shomei.storage.TrieLogManager;
 import org.apache.tuweni.bytes.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +49,7 @@ public class GetRawTrieLogClient {
     }
   }
 
+  private final Vertx vertx;
   private final WebClient webClient;
   private final String besuHttpHost;
   private final int besuHttpPort;
@@ -55,13 +57,25 @@ public class GetRawTrieLogClient {
   private final TrieLogManager trieLogManager;
 
   public GetRawTrieLogClient(
-      final TrieLogManager trieLogManager, final String besuHttpHost, final int besuHttpPort) {
-    final Vertx vertx = Vertx.vertx();
+      final Vertx vertx,
+      final TrieLogManager trieLogManager,
+      final String besuHttpHost,
+      final int besuHttpPort) {
+    this.vertx = vertx;
     final WebClientOptions options = new WebClientOptions();
     this.webClient = WebClient.create(vertx, options);
     this.trieLogManager = trieLogManager;
     this.besuHttpHost = besuHttpHost;
     this.besuHttpPort = besuHttpPort;
+  }
+
+  /**
+   * Close the client and release resources.
+   * Note: This does not close the shared Vertx instance.
+   */
+  public void close() {
+    // WebClient resources are automatically cleaned up when the Vertx instance closes
+    // We don't close the vertx instance here since it's shared with Runner
   }
 
   public CompletableFuture<List<TrieLogObserver.TrieLogIdentifier>> getTrieLog(
@@ -87,6 +101,28 @@ public class GetRawTrieLogClient {
                     .setMessage("response received for getTrieLogsByRange {}")
                     .addArgument(responseBody)
                     .log();
+
+                // Check if the response contains an error
+                if (responseBody.getError() != null) {
+                  final String errorMessage =
+                      String.format(
+                          "getTrieLogsByRange error [code=%d]: %s",
+                          responseBody.getError().getCode(),
+                          responseBody.getError().getMessage());
+                  LOG.atDebug()
+                      .setMessage("getTrieLogsByRange returned error: {}")
+                      .addArgument(errorMessage)
+                      .log();
+                  completableFuture.completeExceptionally(new RuntimeException(errorMessage));
+                  return;
+                }
+
+                // Check if result is present
+                if (responseBody.getResult() == null) {
+                  completableFuture.completeExceptionally(
+                      new RuntimeException("getTrieLogsByRange returned null result"));
+                  return;
+                }
 
                 try {
                   TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction =

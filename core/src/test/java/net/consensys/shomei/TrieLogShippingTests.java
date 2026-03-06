@@ -16,12 +16,6 @@ import static net.consensys.shomei.util.TestFixtureGenerator.getContractStorageT
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.datatypes.StorageSlotKey;
-import org.hyperledger.besu.datatypes.Wei;
-import org.hyperledger.besu.ethereum.rlp.RLP;
-import org.hyperledger.besu.ethereum.trie.common.PmtStateTrieAccountValue;
-
 import net.consensys.shomei.context.ShomeiContext;
 import net.consensys.shomei.storage.InMemoryStorageProvider;
 import net.consensys.shomei.storage.StorageProvider;
@@ -35,9 +29,16 @@ import net.consensys.shomei.trielog.TrieLogLayerConverter;
 import net.consensys.shomei.trielog.ZkTrieLogFactory;
 import net.consensys.shomei.util.TestFixtureGenerator;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.datatypes.Address;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.datatypes.StorageSlotKey;
+import org.hyperledger.besu.datatypes.Wei;
+import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.hyperledger.besu.ethereum.trie.common.PmtStateTrieAccountValue;
 import org.junit.jupiter.api.Test;
 
 public class TrieLogShippingTests {
@@ -56,38 +57,39 @@ public class TrieLogShippingTests {
 
     // Update contract storage and state trie
     contractStorageTrie.putWithTrace(slotKey.hash(), slotKey, slotValue);
-    contract.setStorageRoot(Hash.wrap(contractStorageTrie.getTopRootHash()));
+    contract.setStorageRoot(contractStorageTrie.getTopRootHash());
     accountStateTrie.putWithTrace(
         contract.getHkey(), contract.getAddress(), contract.getEncodedBytes());
 
     // Save the root hash before updating the storage
-    Hash topRootHashBeforeUpdate = Hash.wrap(accountStateTrie.getTopRootHash());
+    Bytes32 topRootHashBeforeUpdate = accountStateTrie.getTopRootHash();
 
     // Update storage with new value
     final PoseidonSafeBytes<UInt256> newStorageValue = safeUInt256(UInt256.valueOf(22));
     contractStorageTrie.putWithTrace(slotKey.hash(), slotKey, newStorageValue);
-    contract.setStorageRoot(Hash.wrap(contractStorageTrie.getTopRootHash()));
+    contract.setStorageRoot(contractStorageTrie.getTopRootHash());
     accountStateTrie.putWithTrace(
         contract.getHkey(), contract.getAddress(), contract.getEncodedBytes());
 
     // Save the root hash after updating the storage
-    Hash topRootHashAfterUpdate = Hash.wrap(accountStateTrie.getTopRootHash());
+    Bytes32 topRootHashAfterUpdate = accountStateTrie.getTopRootHash();
 
     // Simulate TrieLogLayer from Besu before the update
     org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer trieLogLayerBefore =
         new org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer();
+    Address contractAddress = Address.wrap(contract.getAddress().getOriginalUnsafeValue());
     trieLogLayerBefore.addAccountChange(
-        contract.getAddress().getOriginalUnsafeValue(),
+        contractAddress,
         null,
         new PmtStateTrieAccountValue(
             contract.nonce.getOriginalUnsafeValue().toLong(),
             Wei.of(contract.balance.getOriginalUnsafeValue()),
-            Hash.wrap(Bytes32.random()), // Simulate initial storage root
+            Hash.wrap(Bytes32.random()),
             Hash.wrap(contract.keccakCodeHash.getOriginalUnsafeValue())));
     trieLogLayerBefore.setBlockHash(Hash.wrap(Bytes32.random()));
     trieLogLayerBefore.setBlockNumber(0);
     trieLogLayerBefore.addStorageChange(
-        contract.getAddress().getOriginalUnsafeValue(),
+        contractAddress,
         new StorageSlotKey(slotKey.getOriginalUnsafeValue()),
         null,
         slotValue.getOriginalUnsafeValue());
@@ -96,21 +98,21 @@ public class TrieLogShippingTests {
     org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer trieLogLayerAfter =
         new org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer();
     trieLogLayerAfter.addAccountChange(
-        contract.getAddress().getOriginalUnsafeValue(),
+        contractAddress,
         new PmtStateTrieAccountValue(
             contract.nonce.getOriginalUnsafeValue().toLong(),
             Wei.of(contract.balance.getOriginalUnsafeValue()),
-            Hash.wrap(Bytes32.random()), // Simulate updated storage root
+            Hash.wrap(Bytes32.random()),
             Hash.wrap(contract.keccakCodeHash.getOriginalUnsafeValue())),
         new PmtStateTrieAccountValue(
             contract.nonce.getOriginalUnsafeValue().toLong(),
             Wei.of(contract.balance.getOriginalUnsafeValue()),
-            Hash.wrap(Bytes32.random()), // Simulate further storage root update
+            Hash.wrap(Bytes32.random()),
             Hash.wrap(contract.keccakCodeHash.getOriginalUnsafeValue())));
     trieLogLayerAfter.setBlockHash(Hash.wrap(Bytes32.random()));
     trieLogLayerAfter.setBlockNumber(1);
     trieLogLayerAfter.addStorageChange(
-        contract.getAddress().getOriginalUnsafeValue(),
+        contractAddress,
         new StorageSlotKey(slotKey.getOriginalUnsafeValue()),
         slotValue.getOriginalUnsafeValue(),
         newStorageValue.getOriginalUnsafeValue());
@@ -162,13 +164,15 @@ public class TrieLogShippingTests {
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
 
     contractStorageTrie.putWithTrace(slotKey.hash(), slotKey, slotValue);
-    contract.setStorageRoot(Hash.wrap(contractStorageTrie.getTopRootHash()));
+    contract.setStorageRoot(contractStorageTrie.getTopRootHash());
+
+    Address contractAddress2 = Address.wrap(contract.getAddress().getOriginalUnsafeValue());
 
     // Block 0: create the account with initial storage
     org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer block0 =
         new org.hyperledger.besu.ethereum.trie.pathbased.common.trielog.TrieLogLayer();
     block0.addAccountChange(
-        contract.getAddress().getOriginalUnsafeValue(),
+        contractAddress2,
         null,
         new PmtStateTrieAccountValue(
             contract.nonce.getOriginalUnsafeValue().toLong(),
@@ -178,7 +182,7 @@ public class TrieLogShippingTests {
     block0.setBlockHash(Hash.wrap(Bytes32.random()));
     block0.setBlockNumber(0);
     block0.addStorageChange(
-        contract.getAddress().getOriginalUnsafeValue(),
+        contractAddress2,
         new StorageSlotKey(slotKey.getOriginalUnsafeValue()),
         null,
         slotValue.getOriginalUnsafeValue());
@@ -191,7 +195,7 @@ public class TrieLogShippingTests {
     block1.setBlockHash(Hash.wrap(Bytes32.random()));
     block1.setBlockNumber(1);
     block1.addStorageChange(
-        contract.getAddress().getOriginalUnsafeValue(),
+        contractAddress2,
         new StorageSlotKey(slotKey.getOriginalUnsafeValue()),
         slotValue.getOriginalUnsafeValue(),
         slotValue.getOriginalUnsafeValue());
@@ -215,7 +219,7 @@ public class TrieLogShippingTests {
             .decodeTrieLog(RLP.input(Bytes.wrap(zkTrieLogFactory.serialize(block0))));
     worldStateArchive.applyTrieLog(0, false, decodedBlock0);
 
-    Hash stateAfterBlock0 = worldStateArchive.getHeadWorldState().getStateRootHash();
+    Bytes32 stateAfterBlock0 = worldStateArchive.getHeadWorldState().getStateRootHash();
     assertThat(stateAfterBlock0).isNotEqualTo(ZKTrie.DEFAULT_TRIE_ROOT);
 
     // Apply block 1 (storage-only, no account change) — before the fix this

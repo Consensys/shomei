@@ -12,14 +12,13 @@
  */
 package net.consensys.shomei.trie.trace;
 
+import java.util.List;
+
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
 import org.hyperledger.besu.ethereum.rlp.RLPOutput;
 import org.hyperledger.besu.ethereum.trie.Node;
 import org.hyperledger.besu.ethereum.trie.StoredNode;
-
-import java.util.List;
-
-import org.apache.tuweni.bytes.Bytes;
 
 public class TraceProof {
 

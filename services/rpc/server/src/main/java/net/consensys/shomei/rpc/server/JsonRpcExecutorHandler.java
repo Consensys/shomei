@@ -15,13 +15,12 @@ package net.consensys.shomei.rpc.server;
 import static net.consensys.shomei.rpc.server.JsonRpcObjectExecutor.handleJsonRpcError;
 import static org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType.INTERNAL_ERROR;
 
-import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcConfiguration;
-import org.hyperledger.besu.ethereum.api.jsonrpc.execution.JsonRpcExecutor;
-
 import java.io.IOException;
 
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
+import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcConfiguration;
+import org.hyperledger.besu.ethereum.api.jsonrpc.execution.JsonRpcExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

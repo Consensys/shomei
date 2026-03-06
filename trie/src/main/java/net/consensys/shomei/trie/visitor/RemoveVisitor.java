@@ -12,6 +12,13 @@
  */
 package net.consensys.shomei.trie.visitor;
 
+import net.consensys.shomei.trie.node.EmptyLeafNode;
+import net.consensys.shomei.trie.node.NextFreeNode;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
 import org.hyperledger.besu.ethereum.trie.Node;
 import org.hyperledger.besu.ethereum.trie.NullNode;
@@ -19,13 +26,6 @@ import org.hyperledger.besu.ethereum.trie.PathNodeVisitor;
 import org.hyperledger.besu.ethereum.trie.patricia.BranchNode;
 import org.hyperledger.besu.ethereum.trie.patricia.ExtensionNode;
 import org.hyperledger.besu.ethereum.trie.patricia.LeafNode;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import net.consensys.shomei.trie.node.EmptyLeafNode;
-import net.consensys.shomei.trie.node.NextFreeNode;
-import org.apache.tuweni.bytes.Bytes;
 
 /**
  * A visitor that removes a node from the trie and collects the subProof.

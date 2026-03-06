@@ -12,13 +12,12 @@
  */
 package net.consensys.shomei.trie.visitor;
 
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.trie.MerkleTrieException;
 import org.hyperledger.besu.ethereum.trie.Node;
 import org.hyperledger.besu.ethereum.trie.NodeUpdater;
 import org.hyperledger.besu.ethereum.trie.NullNode;
 import org.hyperledger.besu.ethereum.trie.patricia.ExtensionNode;
-
-import org.apache.tuweni.bytes.Bytes;
 
 /**
  * CommitVisitor is a visitor that stores nodes in the database. It is used to commit a trie to the

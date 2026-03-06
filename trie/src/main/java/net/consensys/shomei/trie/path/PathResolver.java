@@ -14,11 +14,12 @@ package net.consensys.shomei.trie.path;
 
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.convertBackFromPoseidonSafeFieldElementsForEvenSize;
 
-import java.util.Optional;
-
 import net.consensys.shomei.trie.StoredNodeFactory;
 import net.consensys.shomei.trie.StoredSparseMerkleTrie;
 import net.consensys.shomei.trie.node.LeafType;
+
+import java.util.Optional;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 

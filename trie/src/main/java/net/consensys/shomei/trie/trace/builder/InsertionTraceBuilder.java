@@ -12,12 +12,12 @@
  */
 package net.consensys.shomei.trie.trace.builder;
 
-import org.hyperledger.besu.ethereum.trie.Node;
-
 import net.consensys.shomei.trie.model.LeafOpening;
 import net.consensys.shomei.trie.trace.InsertionTrace;
 import net.consensys.shomei.trie.trace.TraceProof;
+
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.ethereum.trie.Node;
 
 public final class InsertionTraceBuilder {
   private Bytes location = Bytes.EMPTY;

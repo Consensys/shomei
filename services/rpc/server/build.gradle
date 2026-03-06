@@ -14,14 +14,14 @@ tasks.named('jar') {
 }
 
 dependencies {
-
-  implementation project(':util')
-  implementation project(':core')
-  implementation project(':crypto')
-  implementation project(':services:rpc:common')
-  implementation project(':services:metrics')
-  implementation project(':sync')
-  implementation project(':trie')
+    implementation project(':util')
+    implementation project(':core')
+    implementation project(':crypto')
+    implementation project(':services:rpc:client')
+    implementation project(':services:rpc:common')
+    implementation project(':services:metrics')
+    implementation project(':sync')
+    implementation project(':trie')
 
   // Google Guava
   implementation 'com.google.guava:guava'
@@ -61,8 +61,10 @@ dependencies {
   // Jackson
   implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8'
 
-  // Test dependencies
-  testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    // Test dependencies
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation project(':services:rpc:client')
+    testImplementation 'org.hyperledger.besu.internal:besu-crypto-algorithms'
 
   testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.mockito:mockito-core'

@@ -15,19 +15,6 @@ package net.consensys.shomei.rpc.server.method;
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
 import static net.consensys.shomei.rpc.server.ShomeiVersion.TEST_VERSION;
 
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
-import org.hyperledger.besu.ethereum.rlp.RLP;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
 import net.consensys.shomei.rpc.server.error.JsonInvalidVersionMessage;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
@@ -36,7 +23,20 @@ import net.consensys.shomei.rpc.server.model.RollupGetZkEvmStateV0Parameter;
 import net.consensys.shomei.storage.TraceManager;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.trace.Trace;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
+import org.hyperledger.besu.ethereum.rlp.RLP;
 
 public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
@@ -89,7 +89,7 @@ public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
                 .toHexString(),
             traceManager
                 .getZkStateRootHash(param.getEndBlockNumber())
-                .map(Hash::toHexString)
+                .map(Bytes32::toHexString)
                 .orElseThrow(),
             traces,
             IMPL_VERSION));

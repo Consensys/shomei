@@ -14,19 +14,19 @@ package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiRpcMethod.ROLLUP_FORK_CHOICE_UPDATED;
 
+import net.consensys.shomei.fullsync.FullSyncDownloader;
+import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
+import net.consensys.shomei.rpc.server.model.RollupForkChoiceUpdatedParameter;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
+
+import java.util.Optional;
+
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
-
-import java.util.Optional;
-
-import net.consensys.shomei.fullsync.FullSyncDownloader;
-import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
-import net.consensys.shomei.rpc.server.model.RollupForkChoiceUpdatedParameter;
-import net.consensys.shomei.storage.ZkWorldStateArchive;
 
 public class RollupForkChoiceUpdated implements JsonRpcMethod {
 

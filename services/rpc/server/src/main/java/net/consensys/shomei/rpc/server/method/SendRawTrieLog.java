@@ -12,6 +12,15 @@
  */
 package net.consensys.shomei.rpc.server.method;
 
+import net.consensys.shomei.observer.TrieLogObserver;
+import net.consensys.shomei.rpc.model.TrieLogElement;
+import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
+import net.consensys.shomei.storage.TrieLogManager;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.IntStream;
+
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.parameters.JsonRpcParameter;
@@ -19,15 +28,6 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcErrorR
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.IntStream;
-
-import net.consensys.shomei.observer.TrieLogObserver;
-import net.consensys.shomei.rpc.model.TrieLogElement;
-import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
-import net.consensys.shomei.storage.TrieLogManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

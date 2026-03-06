@@ -13,19 +13,9 @@
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
-
-import java.util.List;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupDeleteZkEvmStateByRangeParameter;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEVMStateMerkleProofV0Response;
@@ -38,7 +28,17 @@ import net.consensys.shomei.trie.json.JsonTraceParser;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
+
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -74,23 +74,23 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
     final List<Trace> traces =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.ZERO, PoseidonSafeBytesUtils.safeByte32(Hash.ZERO)));
+                    KECCAK_HASH_ZERO, PoseidonSafeBytesUtils.safeByte32(KECCAK_HASH_ZERO)));
 
     final List<Trace> traces2 =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.wrap(Bytes32.random()), PoseidonSafeBytesUtils.safeByte32(Bytes32.random())));
+                Bytes32.random(), PoseidonSafeBytesUtils.safeByte32(Bytes32.random())));
 
     final List<Trace> traces3 =
         List.of(
             accountStateTrie.readWithTrace(
-                Hash.wrap(Bytes32.random()), PoseidonSafeBytesUtils.safeByte32(Bytes32.random())));
+                Bytes32.random(), PoseidonSafeBytesUtils.safeByte32(Bytes32.random())));
 
     final TraceManager.TraceManagerUpdater updater = traceManager.updater();
-    updater.saveZkStateRootHash(0, Hash.wrap(accountStateTrie.getTopRootHash()));
-    updater.saveZkStateRootHash(1, Hash.wrap(accountStateTrie.getTopRootHash()));
-    updater.saveZkStateRootHash(2, Hash.wrap(accountStateTrie.getTopRootHash()));
-    updater.saveZkStateRootHash(3, Hash.wrap(accountStateTrie.getTopRootHash()));
+    updater.saveZkStateRootHash(0, accountStateTrie.getTopRootHash());
+    updater.saveZkStateRootHash(1, accountStateTrie.getTopRootHash());
+    updater.saveZkStateRootHash(2, accountStateTrie.getTopRootHash());
+    updater.saveZkStateRootHash(3, accountStateTrie.getTopRootHash());
     updater.saveTrace(1, traces);
     updater.saveTrace(2, traces2);
     updater.saveTrace(3, traces3);

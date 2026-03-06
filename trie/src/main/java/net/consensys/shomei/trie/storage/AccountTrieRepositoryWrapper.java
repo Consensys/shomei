@@ -12,12 +12,13 @@
  */
 package net.consensys.shomei.trie.storage;
 
+import net.consensys.shomei.trie.model.FlattenedLeaf;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
 import com.google.common.primitives.Longs;
-import net.consensys.shomei.trie.model.FlattenedLeaf;
 import org.apache.tuweni.bytes.Bytes;
 
 /**
@@ -66,6 +67,10 @@ public class AccountTrieRepositoryWrapper implements TrieStorage {
         Map.entry(
             UNWRAP_ACCOUNT.apply(nearestKeys.getRightNodeKey()), nearestKeys.getRightNodeValue());
     return new Range(left, center, right);
+  }
+
+  public TrieStorage getTrieStorage() {
+    return trieStorage;
   }
 
   @Override

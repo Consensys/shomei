@@ -12,23 +12,22 @@
  */
 package net.consensys.zkevm;
 
-import org.hyperledger.besu.datatypes.Hash;
-
 import java.util.function.Function;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 
 public enum HashFunction {
   KECCAK256(HashProvider::keccak256),
   POSEIDON_2(HashProvider::poseidon2);
 
-  final Function<Bytes, Hash> hashFunction;
+  final Function<Bytes, Bytes32> hashFunction;
 
-  HashFunction(Function<Bytes, Hash> hashFunction) {
+  HashFunction(Function<Bytes, Bytes32> hashFunction) {
     this.hashFunction = hashFunction;
   }
 
-  public Function<Bytes, Hash> getHashFunction() {
+  public Function<Bytes, Bytes32> getHashFunction() {
     return hashFunction;
   }
 }

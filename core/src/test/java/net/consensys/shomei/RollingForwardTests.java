@@ -19,15 +19,6 @@ import static net.consensys.shomei.util.TestFixtureGenerator.getContractStorageT
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.rlp.RLP;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.consensys.shomei.storage.InMemoryStorageProvider;
 import net.consensys.shomei.storage.TraceManager;
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
@@ -41,7 +32,17 @@ import net.consensys.shomei.trielog.StorageSlotKey;
 import net.consensys.shomei.trielog.TrieLogLayer;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.shomei.worldview.ZkEvmWorldState;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -75,7 +76,7 @@ public class RollingForwardTests {
         accountStateTrieOne.putWithTrace(
             account.getHkey(), account.getAddress(), account.getEncodedBytes()));
 
-    Hash topRootHash = Hash.wrap(accountStateTrieOne.getTopRootHash());
+    Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
     assertThat(topRootHash)
         .isEqualTo(
             Hash.fromHexString(
@@ -111,7 +112,7 @@ public class RollingForwardTests {
         accountStateTrieOne.putWithTrace(
             account.getHkey(), account.getAddress(), account.getEncodedBytes());
 
-    Hash topRootHash = Hash.wrap(accountStateTrieOne.getTopRootHash());
+    Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
     assertThat(topRootHash)
         .isEqualTo(
             Hash.fromHexString(
@@ -154,7 +155,7 @@ public class RollingForwardTests {
             accountUpdated.getAddress(),
             accountUpdated.getEncodedBytes());
 
-    Hash topRootHash = Hash.wrap(accountStateTrieOne.getTopRootHash());
+    Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
     assertThat(topRootHash)
         .isEqualTo(
             Hash.fromHexString(
@@ -205,7 +206,7 @@ public class RollingForwardTests {
         accountStateTrieOne.putWithTrace(
             secondAccount.getHkey(), secondAccount.getAddress(), secondAccount.getEncodedBytes()));
 
-    Hash topRootHash = Hash.wrap(accountStateTrieOne.getTopRootHash());
+    Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
 
     TrieLogLayer trieLogLayer = new TrieLogLayer();
     trieLogLayer.addAccountChange(secondAccount.getAddress(), null, secondAccount);
@@ -280,7 +281,7 @@ public class RollingForwardTests {
             contract.getAddress(),
             contractStorageTrie.putWithTrace(
                 storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue)));
-    contract.setStorageRoot(Hash.wrap(contractStorageTrie.getTopRootHash()));
+    contract.setStorageRoot(contractStorageTrie.getTopRootHash());
 
     // add contract
     expectedTraces.add(
@@ -295,7 +296,7 @@ public class RollingForwardTests {
         accountStateTrieOne.putWithTrace(
             simpleAccount.getHkey(), simpleAccount.getAddress(), simpleAccount.getEncodedBytes()));
 
-    Hash topRootHash = Hash.wrap(accountStateTrieOne.getTopRootHash());
+    Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
 
     TrieLogLayer trieLogLayer = new TrieLogLayer();
     final AccountKey contractAccountKey =
@@ -333,7 +334,7 @@ public class RollingForwardTests {
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue);
-    contract.setStorageRoot(Hash.wrap(contractStorageTrie.getTopRootHash()));
+    contract.setStorageRoot(contractStorageTrie.getTopRootHash());
 
     // add contract
     accountStateTrieOne.putWithTrace(
@@ -396,7 +397,7 @@ public class RollingForwardTests {
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue);
-    contract.setStorageRoot(Hash.wrap(contractStorageTrie.getTopRootHash()));
+    contract.setStorageRoot(contractStorageTrie.getTopRootHash());
 
     accountStateTrieOne.putWithTrace(
         contract.getHkey(), contract.getAddress(), contract.getEncodedBytes());
@@ -420,12 +421,12 @@ public class RollingForwardTests {
             contract.getAddress(),
             newContractStorageTrie.putWithTrace(
                 storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue)));
-    contract.setStorageRoot(Hash.wrap(newContractStorageTrie.getTopRootHash()));
+    contract.setStorageRoot(newContractStorageTrie.getTopRootHash());
     expectedTraces.add(
         accountStateTrieOne.putWithTrace(
             contract.getHkey(), contract.getAddress(), contract.getEncodedBytes()));
 
-    Hash topRootHash = Hash.wrap(accountStateTrieOne.getTopRootHash());
+    Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
 
     assertThat(zkEvmWorldState.getStateRootHash()).isEqualTo(DEFAULT_TRIE_ROOT);
 
@@ -475,7 +476,7 @@ public class RollingForwardTests {
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue);
-    contract.setStorageRoot(Hash.wrap(contractStorageTrie.getTopRootHash()));
+    contract.setStorageRoot(contractStorageTrie.getTopRootHash());
 
     accountStateTrieOne.putWithTrace(
         contract.getHkey(), contract.getAddress(), contract.getEncodedBytes());
@@ -500,14 +501,14 @@ public class RollingForwardTests {
             contract.getAddress(),
             newContractStorageTrie.putWithTrace(
                 storageSlotKey.slotHash(), storageSlotKey.slotKey(), newSlotValue)));
-    updatedContract.setStorageRoot(Hash.wrap(newContractStorageTrie.getTopRootHash()));
+    updatedContract.setStorageRoot(newContractStorageTrie.getTopRootHash());
     expectedTraces.add(
         accountStateTrieOne.putWithTrace(
             updatedContract.getHkey(),
             updatedContract.getAddress(),
             updatedContract.getEncodedBytes()));
 
-    Hash topRootHash = Hash.wrap(accountStateTrieOne.getTopRootHash());
+    Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
 
     assertThat(zkEvmWorldState.getStateRootHash()).isEqualTo(DEFAULT_TRIE_ROOT);
 
@@ -559,7 +560,7 @@ public class RollingForwardTests {
     ZKTrie contractStorageTrie = getContractStorageTrie(contract);
     contractStorageTrie.putWithTrace(
         storageSlotKey.slotHash(), storageSlotKey.slotKey(), slotValue);
-    contract.setStorageRoot(Hash.wrap(contractStorageTrie.getTopRootHash()));
+    contract.setStorageRoot(contractStorageTrie.getTopRootHash());
 
     accountStateTrieOne.putWithTrace(
         contract.getHkey(), contract.getAddress(), contract.getEncodedBytes());
@@ -585,14 +586,14 @@ public class RollingForwardTests {
             contract.getAddress(),
             newContractStorageTrie.putWithTrace(
                 newStorageSlotKey.slotHash(), newStorageSlotKey.slotKey(), newSlotValue)));
-    updatedContract.setStorageRoot(Hash.wrap(newContractStorageTrie.getTopRootHash()));
+    updatedContract.setStorageRoot(newContractStorageTrie.getTopRootHash());
     expectedTraces.add(
         accountStateTrieOne.putWithTrace(
             updatedContract.getHkey(),
             updatedContract.getAddress(),
             updatedContract.getEncodedBytes()));
 
-    Hash topRootHash = Hash.wrap(accountStateTrieOne.getTopRootHash());
+    Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
 
     assertThat(zkEvmWorldState.getStateRootHash()).isEqualTo(DEFAULT_TRIE_ROOT);
 
@@ -629,7 +630,7 @@ public class RollingForwardTests {
   }
 
   private Trace updateTraceStorageLocation(
-      final PoseidonSafeBytes<Address> address, final Trace trace) {
+          final PoseidonSafeBytes<Bytes> address, final Trace trace) {
     trace.setLocation(address.getOriginalUnsafeValue());
     return trace;
   }

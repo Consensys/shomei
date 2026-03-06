@@ -12,17 +12,20 @@
  */
 package net.consensys.zkevm;
 
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.nativelib.common.BesuNativeLibraryLoader;
 import org.hyperledger.besu.nativelib.gnark.LibGnark;
-
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class HashProvider {
   private static final Logger LOG = LoggerFactory.getLogger(HashProvider.class);
+
+  public static final Bytes32 KECCAK_HASH_EMPTY = Bytes32.wrap(Hash.EMPTY.getBytes());
+  public static final Bytes32 KECCAK_HASH_ZERO = Bytes32.wrap(Hash.ZERO.getBytes());
+
   private static HashFunction hashFunction = HashFunction.POSEIDON_2;
 
   @SuppressWarnings("WeakerAccess")
@@ -51,7 +54,7 @@ public class HashProvider {
     return hashFunction.equals(HashFunction.POSEIDON_2);
   }
 
-  public static Hash trieHash(final Bytes bytes) {
+  public static Bytes32 trieHash(final Bytes bytes) {
     return hashFunction.getHashFunction().apply(bytes);
   }
 
@@ -59,25 +62,13 @@ public class HashProvider {
     hashFunction = function;
   }
 
-  public static Hash keccak256(final Bytes bytes) {
-    return Hash.hash(bytes);
+  public static Bytes32 keccak256(final Bytes bytes) {
+    return Bytes32.wrap(Hash.hash(bytes).getBytes());
   }
 
-  public static Hash mimcBls12377(final Bytes bytes) {
-    final byte[] output = new byte[Bytes32.SIZE];
-    LibGnark.computeMimcBls12377(bytes.toArrayUnsafe(), bytes.size(), output);
-    return Hash.wrap(Bytes32.wrap(output));
-  }
-
-  public static Hash mimcBn254(final Bytes bytes) {
-    final byte[] output = new byte[Bytes32.SIZE];
-    LibGnark.computeMimcBn254(bytes.toArrayUnsafe(), bytes.size(), output);
-    return Hash.wrap(Bytes32.wrap(output));
-  }
-
-  public static Hash poseidon2(final Bytes bytes) {
+  public static Bytes32 poseidon2(final Bytes bytes) {
     final byte[] output = new byte[Bytes32.SIZE];
     LibGnark.computePoseidon2Koalabear(bytes.toArrayUnsafe(), bytes.size(), output);
-    return Hash.wrap(Bytes32.wrap(output));
+    return Bytes32.wrap(output);
   }
 }

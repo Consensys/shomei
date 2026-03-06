@@ -12,11 +12,12 @@
  */
 package net.consensys.shomei.storage;
 
-import java.nio.file.Path;
-
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
 import net.consensys.shomei.storage.worldstate.PersistedWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
+
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.io.TempDir;

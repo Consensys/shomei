@@ -13,6 +13,7 @@
 package net.consensys.shomei.trie.path;
 
 import net.consensys.shomei.trie.node.LeafType;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
 

@@ -12,8 +12,6 @@
  */
 package net.consensys.shomei.util.bytes;
 
-import org.hyperledger.besu.datatypes.Address;
-
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -21,6 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.datatypes.Address;
 
 public class PoseidonSafeBytesUtils {
 
@@ -114,8 +113,8 @@ public class PoseidonSafeBytesUtils {
     return new PoseidonSafeBytes<>(getStrategy().convertCode(delegate), delegate);
   }
 
-  public static PoseidonSafeBytes<Address> safeAddress(final Address delegate) {
-    return new PoseidonSafeBytes<>(getStrategy().convertAddress(delegate), delegate);
+  public static PoseidonSafeBytes<Bytes> safeAddress(final Address delegate) {
+    return new PoseidonSafeBytes<>(getStrategy().convertAddress(delegate.getBytes()), delegate.getBytes());
   }
 
   public static PoseidonSafeBytes<Bytes> unsafeFromBytes(final Bytes delegate) {

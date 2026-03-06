@@ -12,10 +12,11 @@
  */
 package net.consensys.shomei.rpc.client.model;
 
+import net.consensys.shomei.rpc.model.TrieLogElement;
+
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.consensys.shomei.rpc.model.TrieLogElement;
 
 public class GetRawTrieLogRpcResponse {
   @JsonProperty("jsonrpc")
@@ -26,6 +27,9 @@ public class GetRawTrieLogRpcResponse {
 
   @JsonProperty("result")
   private List<TrieLogElement> result;
+
+  @JsonProperty("error")
+  private JsonRpcError error;
 
   @JsonProperty("jsonrpc")
   public String getJsonrpc() {
@@ -57,6 +61,16 @@ public class GetRawTrieLogRpcResponse {
     this.result = result;
   }
 
+  @JsonProperty("error")
+  public JsonRpcError getError() {
+    return error;
+  }
+
+  @JsonProperty("error")
+  public void setError(JsonRpcError error) {
+    this.error = error;
+  }
+
   @Override
   public String toString() {
     return "GetRawTrieLogRpcResponse{"
@@ -67,6 +81,8 @@ public class GetRawTrieLogRpcResponse {
         + id
         + ", result="
         + result
+        + ", error="
+        + error
         + '}';
   }
 }

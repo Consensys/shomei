@@ -12,10 +12,10 @@
  */
 package net.consensys.shomei.util.bytes;
 
-import org.hyperledger.besu.datatypes.Hash;
-
 import net.consensys.zkevm.HashProvider;
+
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.DelegatingBytes;
 
 /**
@@ -41,7 +41,7 @@ public class PoseidonSafeBytes<T extends Bytes> extends DelegatingBytes implemen
     return originalUnsafeValue;
   }
 
-  public Hash hash() {
+  public Bytes32 hash() {
     return HashProvider.trieHash(this);
   }
 }

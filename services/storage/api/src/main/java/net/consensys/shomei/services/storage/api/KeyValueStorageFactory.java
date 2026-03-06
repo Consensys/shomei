@@ -12,9 +12,9 @@
  */
 package net.consensys.shomei.services.storage.api;
 
-import java.io.Closeable;
-
 import net.consensys.shomei.config.ShomeiConfig;
+
+import java.io.Closeable;
 
 /** Factory for creating key-value storage instances. */
 public interface KeyValueStorageFactory extends Closeable {

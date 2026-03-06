@@ -12,12 +12,8 @@
  */
 package net.consensys.shomei.storage;
 
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
-
-import org.hyperledger.besu.datatypes.Hash;
-
-import java.util.HashMap;
-import java.util.Optional;
 
 import net.consensys.shomei.context.ShomeiContext;
 import net.consensys.shomei.exception.MissingTrieLogException;
@@ -27,10 +23,17 @@ import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.trielog.PluginTrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
 import net.consensys.shomei.trielog.ZkTrieLogFactory;
+
+import java.util.HashMap;
+import java.util.Optional;
+
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.datatypes.Hash;
 import org.junit.jupiter.api.Test;
 
 public class ZkWorldStateArchiveTests {
+
   ShomeiContext testContext = ShomeiContext.ShomeiContextImpl.getOrCreate();
   ZkWorldStateArchive archive = new ZkWorldStateArchive(new InMemoryStorageProvider());
   TrieLogLayerConverter converter = new TrieLogLayerConverter(archive.getHeadWorldStateStorage());
@@ -42,7 +45,7 @@ public class ZkWorldStateArchiveTests {
     // fill the cache:
     for (long i = 0; i < ZkWorldStateArchive.MAX_CACHED_WORLDSTATES; i++) {
       archive.cacheSnapshot(
-          new TrieLogIdentifier(i, Hash.ZERO), archive.getHeadWorldStateStorage());
+          new TrieLogIdentifier(i, KECCAK_HASH_ZERO), archive.getHeadWorldStateStorage());
     }
 
     // assert cache full, start is 0 and end is 127
@@ -54,7 +57,7 @@ public class ZkWorldStateArchiveTests {
 
     // add block 128 to cache:
     archive.cacheSnapshot(
-        new TrieLogIdentifier(128L, Hash.ZERO), archive.getHeadWorldStateStorage());
+        new TrieLogIdentifier(128L, KECCAK_HASH_ZERO), archive.getHeadWorldStateStorage());
 
     // assert cache is full, start is 1 and end is 128:
     assertThat(archive.getCachedWorldStates().size())
@@ -69,22 +72,22 @@ public class ZkWorldStateArchiveTests {
 
     PluginTrieLogLayer pluginLayer =
         new PluginTrieLogLayer(
-            archive.getCurrentBlockHash(),
+            Hash.wrap(archive.getCurrentBlockHash()),
             Optional.of(0L),
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
             false);
-    TrieLogIdentifier genesis = new TrieLogIdentifier(0L, pluginLayer.getBlockHash());
+    TrieLogIdentifier genesis = new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash().getBytes()));
     TrieLogManager trieLogManager = archive.getTrieLogManager();
     TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction = trieLogManager.updater();
     trieLogManagerTransaction.saveTrieLog(genesis, Bytes.of(encoder.serialize(pluginLayer)));
     trieLogManagerTransaction.commit();
 
-    archive.importBlock(new TrieLogIdentifier(0L, pluginLayer.getBlockHash()), true, true);
+    archive.importBlock(new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash().getBytes())), true, true);
 
     assertThat(archive.getCachedWorldState(0L).isPresent()).isTrue();
-    assertThat(archive.getCachedWorldState(pluginLayer.getBlockHash()).isPresent()).isTrue();
+    assertThat(archive.getCachedWorldState(Bytes32.wrap(pluginLayer.getBlockHash().getBytes())).isPresent()).isTrue();
   }
 
   @Test
@@ -92,19 +95,19 @@ public class ZkWorldStateArchiveTests {
 
     PluginTrieLogLayer pluginLayer =
         new PluginTrieLogLayer(
-            archive.getCurrentBlockHash(),
+            Hash.wrap(archive.getCurrentBlockHash()),
             Optional.of(0L),
             new HashMap<>(),
             new HashMap<>(),
             new HashMap<>(),
             false);
-    TrieLogIdentifier genesis = new TrieLogIdentifier(0L, pluginLayer.getBlockHash());
+    TrieLogIdentifier genesis = new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash().getBytes()));
     TrieLogManager trieLogManager = archive.getTrieLogManager();
     TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction = trieLogManager.updater();
     trieLogManagerTransaction.saveTrieLog(genesis, Bytes.of(encoder.serialize(pluginLayer)));
     trieLogManagerTransaction.commit();
 
-    archive.importBlock(new TrieLogIdentifier(0L, pluginLayer.getBlockHash()), true, true);
+    archive.importBlock(new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash().getBytes())), true, true);
 
     ZkWorldStateArchive zkWorldStateArchive =
         new ZkWorldStateArchive(

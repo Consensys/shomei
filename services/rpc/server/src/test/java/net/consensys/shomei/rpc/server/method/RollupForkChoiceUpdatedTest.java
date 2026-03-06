@@ -12,26 +12,26 @@
  */
 package net.consensys.shomei.rpc.server.method;
 
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_EMPTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
-
-import java.util.Optional;
-
 import net.consensys.shomei.fullsync.FullSyncDownloader;
 import net.consensys.shomei.fullsync.rules.FullSyncRules;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupForkChoiceUpdatedParameter;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
+
+import java.util.Optional;
+
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -92,7 +92,7 @@ public class RollupForkChoiceUpdatedTest {
     when(fullSyncRules.isEnableFinalizedBlockLimit()).thenReturn(true);
     JsonRpcResponse response = method.response(request("2"));
     verify(fullSyncRules, times(1)).setFinalizedBlockNumberLimit(Optional.of(2L));
-    verify(fullSyncRules, times(1)).setFinalizedBlockHashLimit(Optional.of(Hash.EMPTY));
+    verify(fullSyncRules, times(1)).setFinalizedBlockHashLimit(Optional.of(KECCAK_HASH_EMPTY));
     assertThat(response).usingRecursiveComparison().isInstanceOf(JsonRpcSuccessResponse.class);
   }
 
@@ -101,6 +101,6 @@ public class RollupForkChoiceUpdatedTest {
         new JsonRpcRequest(
             "2.0",
             "rollup_forkChoiceUpdated",
-            new Object[] {new RollupForkChoiceUpdatedParameter(blockNumber, Hash.EMPTY)}));
+            new Object[] {new RollupForkChoiceUpdatedParameter(blockNumber, KECCAK_HASH_EMPTY)}));
   }
 }

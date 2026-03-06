@@ -12,11 +12,12 @@
  */
 package net.consensys.shomei.trie.storage;
 
+import net.consensys.shomei.trie.model.FlattenedLeaf;
+
 import java.util.Map;
 import java.util.Optional;
 
 import com.google.common.primitives.Longs;
-import net.consensys.shomei.trie.model.FlattenedLeaf;
 import org.apache.tuweni.bytes.Bytes;
 
 /**

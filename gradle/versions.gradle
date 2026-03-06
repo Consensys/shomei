@@ -6,16 +6,19 @@ dependencyManagement {
 
   dependencies {
 
-      dependency 'com.google.errorprone:error_prone_core:2.35.1'
+    // Error Prone
+    dependencySet(group: 'com.google.errorprone', version: '2.18.0') {
+      entry 'error_prone_annotation'
+      entry 'error_prone_check_api'
+      entry 'error_prone_core'
+      entry 'error_prone_test_helpers'
+    }
+    dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
-    // besu-shomei plugin:
-    dependency 'ConsenSys:besu-shomei-plugin:0.7.5'
-    dependency 'ConsenSys:besu-shomei-plugin-test-support:0.7.5'
-
-    dependency 'org.assertj:assertj-core:3.27.3'
+    dependency 'org.assertj:assertj-core:3.24.2' // or latest
 
     // micrometer Prometheus metrics
-    dependencySet(group: 'io.micrometer', version: '1.15.5') {
+    dependencySet(group: 'io.micrometer', version: '1.11.1') {
       entry 'micrometer-core'
       entry 'micrometer-registry-prometheus'
     }
@@ -26,8 +29,11 @@ dependencyManagement {
       entry 'tasks'
     }
 
+    // besu-shomei plugin:
+    dependency 'ConsenSys:besu-shomei-plugin:0.7.5'
+    dependency 'ConsenSys:besu-shomei-plugin-test-support:0.7.5'
 
-      dependency 'org.hyperledger.besu:gnark:1.4.1-SNAPSHOT'
+    dependency 'org.hyperledger.besu:gnark:1.4.1-SNAPSHOT'
 
   }
 }

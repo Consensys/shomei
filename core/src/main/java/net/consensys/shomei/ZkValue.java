@@ -12,10 +12,10 @@
  */
 package net.consensys.shomei;
 
-import org.hyperledger.besu.ethereum.rlp.RLPOutput;
-
 import java.util.Objects;
 import java.util.function.BiConsumer;
+
+import org.hyperledger.besu.ethereum.rlp.RLPOutput;
 
 public class ZkValue<T> {
 

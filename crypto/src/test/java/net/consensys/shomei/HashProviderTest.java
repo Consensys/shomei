@@ -15,6 +15,7 @@ package net.consensys.shomei;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.zkevm.HashProvider;
+
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.junit.jupiter.api.Test;

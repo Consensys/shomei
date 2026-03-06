@@ -12,10 +12,11 @@
  */
 package net.consensys.shomei.rpc.server.model;
 
+import net.consensys.shomei.trie.trace.Trace;
+
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.consensys.shomei.trie.trace.Trace;
 
 @SuppressWarnings("unused")
 public class RollupGetZkEVMStateMerkleProofV0Response {

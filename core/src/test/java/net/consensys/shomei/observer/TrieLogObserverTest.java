@@ -12,17 +12,19 @@
  */
 package net.consensys.shomei.observer;
 
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.hyperledger.besu.datatypes.Hash;
+import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 
 import java.util.Arrays;
 import java.util.List;
 
-import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.datatypes.Hash;
 import org.junit.jupiter.api.Test;
 
 public class TrieLogObserverTest {
@@ -33,26 +35,26 @@ public class TrieLogObserverTest {
         trieLogIds -> {
           assertEquals(2, trieLogIds.size());
           assertEquals((Long) 123L, trieLogIds.get(0).blockNumber());
-          assertEquals(Hash.hash(Bytes.of(0)), trieLogIds.get(0).blockHash());
+          assertEquals(Bytes32.wrap(Hash.hash(Bytes.of(0)).getBytes()), trieLogIds.get(0).blockHash());
           assertFalse(trieLogIds.get(0).isInitialSync());
           assertEquals((Long) 456L, trieLogIds.get(1).blockNumber());
-          assertEquals(Hash.hash(Bytes.of(1)), trieLogIds.get(1).blockHash());
+          assertEquals(Bytes32.wrap(Hash.hash(Bytes.of(1)).getBytes()), trieLogIds.get(1).blockHash());
           assertTrue(trieLogIds.get(1).isInitialSync());
         };
 
     List<TrieLogIdentifier> logIdentifiers =
         Arrays.asList(
-            new TrieLogIdentifier(123L, Hash.hash(Bytes.of(0)), false),
-            new TrieLogIdentifier(456L, Hash.hash(Bytes.of(1)), true));
+            new TrieLogIdentifier(123L, Bytes32.wrap(Hash.hash(Bytes.of(0)).getBytes()), false),
+            new TrieLogIdentifier(456L, Bytes32.wrap(Hash.hash(Bytes.of(1)).getBytes()), true));
 
     observer.onNewBesuHeadReceived(logIdentifiers);
   }
 
   @Test
   public void testTrieLogIdentifierCompareTo() {
-    TrieLogIdentifier logIdentifier1 = new TrieLogIdentifier(123L, Hash.ZERO, false);
-    TrieLogIdentifier logIdentifier2 = new TrieLogIdentifier(456L, Hash.ZERO, false);
-    TrieLogIdentifier logIdentifier3 = new TrieLogIdentifier(123L, Hash.ZERO, false);
+    TrieLogIdentifier logIdentifier1 = new TrieLogIdentifier(123L, KECCAK_HASH_ZERO, false);
+    TrieLogIdentifier logIdentifier2 = new TrieLogIdentifier(456L, KECCAK_HASH_ZERO, false);
+    TrieLogIdentifier logIdentifier3 = new TrieLogIdentifier(123L, KECCAK_HASH_ZERO, false);
 
     assertTrue(logIdentifier1.compareTo(logIdentifier2) < 0);
     assertTrue(logIdentifier2.compareTo(logIdentifier1) > 0);

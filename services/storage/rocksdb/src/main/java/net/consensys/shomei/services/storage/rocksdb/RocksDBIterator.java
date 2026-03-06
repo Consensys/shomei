@@ -12,6 +12,9 @@
  */
 package net.consensys.shomei.services.storage.rocksdb;
 
+import net.consensys.shomei.services.storage.api.BidirectionalIterator;
+import net.consensys.shomei.services.storage.api.KeyValueStorage.KeyValuePair;
+
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -21,8 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import net.consensys.shomei.services.storage.api.BidirectionalIterator;
-import net.consensys.shomei.services.storage.api.KeyValueStorage.KeyValuePair;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.slf4j.Logger;

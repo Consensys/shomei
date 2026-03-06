@@ -12,10 +12,10 @@
  */
 package net.consensys.shomei.rpc.client.model;
 
+import net.consensys.shomei.rpc.client.BesuRpcMethod;
+
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestId;
-
-import net.consensys.shomei.rpc.client.BesuRpcMethod;
 
 public class GetRawTrieLogRpcRequest extends JsonRpcRequest {
 

@@ -16,12 +16,11 @@ import static net.consensys.shomei.trie.DigestGenerator.createDumDigest;
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.hyperledger.besu.datatypes.Hash;
-
 import net.consensys.shomei.trie.model.LeafOpening;
 import net.consensys.shomei.trie.storage.InMemoryStorage;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.zkevm.HashProvider;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -77,7 +76,7 @@ public class ZKTrieTest {
         unsafeFromBytes(
             Bytes32.fromHexString(
                 "0x000000000000000000000000000000000000000000000000000000000000002a"));
-    final Hash hkey = key.hash();
+    final Bytes32 hkey = key.hash();
     zkTrie.putWithTrace(hkey, key, value);
     zkTrie.commit();
     assertThat(storage.getTrieNodeStorage()).isNotEmpty();
@@ -100,7 +99,7 @@ public class ZKTrieTest {
     final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
     final PoseidonSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = key.hash();
+    final Bytes32 hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, dumValue);
 
@@ -134,7 +133,7 @@ public class ZKTrieTest {
 
     final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = key.hash();
+    final Bytes32 hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, value);
 

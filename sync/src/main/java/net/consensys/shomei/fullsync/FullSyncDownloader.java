@@ -14,6 +14,14 @@ package net.consensys.shomei.fullsync;
 
 import static net.consensys.shomei.fullsync.TrieLogBlockingQueue.INITIAL_SYNC_BLOCK_NUMBER_RANGE;
 
+import net.consensys.shomei.fullsync.rules.BlockConfirmationMinRequirementValidator;
+import net.consensys.shomei.fullsync.rules.BlockImportValidator;
+import net.consensys.shomei.fullsync.rules.FinalizedBlockLimitValidator;
+import net.consensys.shomei.fullsync.rules.FullSyncRules;
+import net.consensys.shomei.observer.TrieLogObserver;
+import net.consensys.shomei.rpc.client.GetRawTrieLogClient;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -24,13 +32,6 @@ import java.util.concurrent.Executors;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.vertx.core.AbstractVerticle;
-import net.consensys.shomei.fullsync.rules.BlockConfirmationMinRequirementValidator;
-import net.consensys.shomei.fullsync.rules.BlockImportValidator;
-import net.consensys.shomei.fullsync.rules.FinalizedBlockLimitValidator;
-import net.consensys.shomei.fullsync.rules.FullSyncRules;
-import net.consensys.shomei.observer.TrieLogObserver;
-import net.consensys.shomei.rpc.client.GetRawTrieLogClient;
-import net.consensys.shomei.storage.ZkWorldStateArchive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

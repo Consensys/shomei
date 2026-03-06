@@ -12,9 +12,8 @@
  */
 package net.consensys.shomei.trie.proof;
 
-import org.hyperledger.besu.ethereum.trie.Proof;
-
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.ethereum.trie.Proof;
 
 public class MerkleNonInclusionProof extends MerkleProof {
 

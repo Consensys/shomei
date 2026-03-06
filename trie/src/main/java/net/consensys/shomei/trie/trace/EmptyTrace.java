@@ -12,9 +12,8 @@
  */
 package net.consensys.shomei.trie.trace;
 
-import org.hyperledger.besu.ethereum.rlp.RLPOutput;
-
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.ethereum.rlp.RLPOutput;
 
 public class EmptyTrace implements Trace {
   @Override

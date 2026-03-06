@@ -17,13 +17,6 @@ import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeCode;
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
 
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.rlp.RLPInput;
-
-import java.util.Objects;
-import java.util.Optional;
-
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
@@ -31,9 +24,16 @@ import net.consensys.shomei.trie.model.FlattenedLeaf;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.zkevm.HashProvider;
+
+import java.util.Objects;
+import java.util.Optional;
+
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.datatypes.Address;
+import org.hyperledger.besu.datatypes.Hash;
+import org.hyperledger.besu.ethereum.rlp.RLPInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,10 +52,12 @@ public class TrieLogLayerConverter {
     TrieLogLayer trieLogLayer = new TrieLogLayer();
 
     input.enterList();
-    trieLogLayer.setBlockHash(Hash.wrap(input.readBytes32()));
+    trieLogLayer.setBlockHash(input.readBytes32());
     trieLogLayer.setBlockNumber(input.readLongScalar());
 
-    while (!input.isEndOfCurrentList()) {
+    // Only process list items (account entries). Stop when encountering non-list items like
+    // the optional zkTraceComparisonFeature integer that may be appended by Besu's trielog format
+    while (!input.isEndOfCurrentList() && input.nextIsList()) {
       input.enterList();
 
       final Address address = Address.readFrom(input);
@@ -119,12 +121,13 @@ public class TrieLogLayerConverter {
               oldValueFound =
                   maybeAccountIndex
                       .flatMap(
-                          index ->
-                              new StorageTrieRepositoryWrapper(index, worldStateStorage, null)
+                          index -> {
+                            return new StorageTrieRepositoryWrapper(index, worldStateStorage, null)
                                   .getFlatLeaf(storageSlotKey.slotHash())
                                   .map(FlattenedLeaf::leafValue)
-                                  .map(UInt256::fromBytes))
-                      .orElse(null);
+                                  .map(UInt256::fromBytes);
+                          })
+                      .orElse(null);  // Return null for new accounts to match trielog's null representation
             }
             LOG.atTrace()
                 .setMessage(
@@ -162,13 +165,20 @@ public class TrieLogLayerConverter {
       // lenient leave list for forward compatible additions.
       input.leaveListLenient();
     }
+
+    // zkTraceComparisonFeature is optional (read as last element in container, before leaving)
+    // This is written by Besu's ZkTrieLogFactory when includeMetadata=true
+    if (!input.isEndOfCurrentList()) {
+      input.readInt(); // consume but don't use
+    }
+
     input.leaveListLenient();
     trieLogLayer.freeze();
 
     return trieLogLayer;
   }
 
-  record PriorAccount(ZkAccount account, Hash evmStorageRoot, Optional<Long> index) {}
+  record PriorAccount(ZkAccount account, Bytes32 evmStorageRoot, Optional<Long> index) {}
 
   public PriorAccount preparePriorTrieLogAccount(final AccountKey accountKey, final RLPInput in) {
 
@@ -176,6 +186,7 @@ public class TrieLogLayerConverter {
 
     final Optional<FlattenedLeaf> flatLeaf =
         worldStateStorage.getFlatLeaf(WRAP_ACCOUNT.apply(accountKey.accountHash()));
+
 
     if (in.nextIsNull() && flatLeaf.isEmpty()) {
       in.skipNext();
@@ -185,7 +196,7 @@ public class TrieLogLayerConverter {
           .addArgument(accountKey)
           .log();
 
-      return new PriorAccount(null, Hash.EMPTY_TRIE_HASH, Optional.empty());
+      return new PriorAccount(null, Bytes32.wrap(Hash.EMPTY_TRIE_HASH.getBytes()), Optional.empty());
     } else if (!in.nextIsNull() && flatLeaf.isPresent()) {
       oldAccountValue =
           flatLeaf
@@ -193,15 +204,14 @@ public class TrieLogLayerConverter {
               .orElseThrow();
 
       in.enterList();
-
       final UInt256 nonce = UInt256.valueOf(in.readLongScalar());
       final UInt256 balance = in.readUInt256Scalar();
-      final Hash evmStorageRoot;
+      final Bytes32 evmStorageRoot;
       if (in.nextIsNull()) {
-        evmStorageRoot = Hash.EMPTY_TRIE_HASH;
+        evmStorageRoot = Bytes32.wrap(Hash.EMPTY_TRIE_HASH.getBytes());
         in.skipNext();
       } else {
-        evmStorageRoot = Hash.wrap(in.readBytes32());
+        evmStorageRoot = in.readBytes32();
       }
       in.skipNext(); // skip keccak codeHash
       in.leaveList();
@@ -242,7 +252,7 @@ public class TrieLogLayerConverter {
       storageRoot = ZKTrie.DEFAULT_TRIE_ROOT;
       in.skipNext();
     } else {
-      final Hash newEvmStorageRoot = Hash.wrap(in.readBytes32());
+      final Bytes32 newEvmStorageRoot = in.readBytes32();
       if (!priorAccount.evmStorageRoot.equals(newEvmStorageRoot)) {
         storageRoot = null;
       } else {

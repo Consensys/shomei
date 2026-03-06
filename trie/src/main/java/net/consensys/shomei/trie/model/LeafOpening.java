@@ -15,15 +15,15 @@ package net.consensys.shomei.trie.model;
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.concatenateSafeElements;
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
 
-import org.hyperledger.besu.datatypes.Hash;
+import net.consensys.shomei.util.bytes.BytesBuffer;
 
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import net.consensys.shomei.util.bytes.BytesBuffer;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+
 
 public class LeafOpening {
 
@@ -39,7 +39,7 @@ public class LeafOpening {
   public static final LeafOpening TAIL =
       new LeafOpening(0, 1, getHashKeyProvider().getTailHashKey(), Bytes32.ZERO);
 
-  private final Hash hkey;
+  private final Bytes32 hkey;
 
   private Bytes hval;
 
@@ -47,14 +47,14 @@ public class LeafOpening {
 
   private long nextLeaf;
 
-  public LeafOpening(final Hash hkey, final UInt256 hval) {
+  public LeafOpening(final Bytes32 hkey, final UInt256 hval) {
     this.hkey = hkey;
     this.hval = hval;
     this.prevLeaf = 0;
     this.nextLeaf = 1;
   }
 
-  public LeafOpening(final long prevLeaf, final long nextLeaf, final Hash hkey, final Bytes hval) {
+  public LeafOpening(final long prevLeaf, final long nextLeaf, final Bytes32 hkey, final Bytes hval) {
     this.hkey = hkey;
     this.hval = hval;
     this.prevLeaf = prevLeaf;
@@ -84,7 +84,7 @@ public class LeafOpening {
     this.nextLeaf = nextLeaf;
   }
 
-  public Hash getHkey() {
+  public Bytes32 getHkey() {
     return hkey;
   }
 
@@ -123,7 +123,7 @@ public class LeafOpening {
             new LeafOpening(
                 bytesInput.readUint256FromBytes64().toLong(),
                 bytesInput.readUint256FromBytes64().toLong(),
-                Hash.wrap(bytesInput.readBytes32()),
+                bytesInput.readBytes32(),
                 bytesInput.readBytes32()));
   }
 
@@ -151,20 +151,20 @@ public class LeafOpening {
   }
 
   private interface HashKeyProvider {
-    Hash getHeadHashKey();
+    Bytes32 getHeadHashKey();
 
-    Hash getTailHashKey();
+    Bytes32 getTailHashKey();
   }
 
   private static class PoseidonHashKeyProvider implements HashKeyProvider {
     @Override
-    public Hash getHeadHashKey() {
-      return Hash.wrap(Bytes32.ZERO);
+    public Bytes32 getHeadHashKey() {
+      return Bytes32.ZERO;
     }
 
     @Override
-    public Hash getTailHashKey() {
-      return Hash.fromHexString("7f0000007f0000007f0000007f0000007f0000007f0000007f0000007f000000");
+    public Bytes32 getTailHashKey() {
+      return Bytes32.fromHexString("7f0000007f0000007f0000007f0000007f0000007f0000007f0000007f000000");
     }
   }
 }

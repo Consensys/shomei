@@ -12,18 +12,17 @@
  */
 package net.consensys.shomei.trie.node;
 
-import org.hyperledger.besu.ethereum.trie.LocationNodeVisitor;
-import org.hyperledger.besu.ethereum.trie.Node;
-import org.hyperledger.besu.ethereum.trie.NodeVisitor;
-import org.hyperledger.besu.ethereum.trie.NullNode;
-import org.hyperledger.besu.ethereum.trie.PathNodeVisitor;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.ethereum.trie.LocationNodeVisitor;
+import org.hyperledger.besu.ethereum.trie.Node;
+import org.hyperledger.besu.ethereum.trie.NodeVisitor;
+import org.hyperledger.besu.ethereum.trie.NullNode;
+import org.hyperledger.besu.ethereum.trie.PathNodeVisitor;
 
 public class EmptyLeafNode<V> extends NullNode<V> implements Node<V> {
   @SuppressWarnings("rawtypes")

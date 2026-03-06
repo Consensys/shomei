@@ -15,10 +15,10 @@ tasks.named('jar') {
 
 dependencies {
 
-  implementation project(':core')
-  implementation 'com.fasterxml.jackson.core:jackson-databind'
-  implementation 'org.hyperledger.besu:besu-datatypes'
-  implementation 'io.consensys.tuweni:tuweni-bytes'
+    implementation project(':core')
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'org.hyperledger.besu:besu-datatypes'
+    implementation 'io.consensys.tuweni:tuweni-bytes'
 }
 
 test {

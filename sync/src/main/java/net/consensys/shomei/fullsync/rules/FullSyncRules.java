@@ -12,9 +12,9 @@
  */
 package net.consensys.shomei.fullsync.rules;
 
-import org.hyperledger.besu.datatypes.Hash;
-
 import java.util.Optional;
+
+import org.apache.tuweni.bytes.Bytes32;
 
 public class FullSyncRules {
 
@@ -23,7 +23,7 @@ public class FullSyncRules {
   private long minConfirmationsBeforeImporting;
   private final boolean enableFinalizedBlockLimit;
   private Optional<Long> finalizedBlockNumberLimit;
-  private Optional<Hash> finalizedBlockHashLimit;
+  private Optional<Bytes32> finalizedBlockHashLimit;
 
   public FullSyncRules(
       final boolean isTraceGenerationEnabled,
@@ -31,7 +31,7 @@ public class FullSyncRules {
       final long minConfirmationsBeforeImporting,
       final boolean enableFinalizedBlockLimit,
       final Optional<Long> finalizedBlockNumberLimit,
-      final Optional<Hash> finalizedBlockHashLimit) {
+      final Optional<Bytes32> finalizedBlockHashLimit) {
     this.isTraceGenerationEnabled = isTraceGenerationEnabled;
     this.traceStartBlockNumber = traceStartBlockNumber;
     this.minConfirmationsBeforeImporting = minConfirmationsBeforeImporting;
@@ -72,7 +72,7 @@ public class FullSyncRules {
     return finalizedBlockNumberLimit;
   }
 
-  public Optional<Hash> getFinalizedBlockHashLimit() {
+  public Optional<Bytes32> getFinalizedBlockHashLimit() {
     return finalizedBlockHashLimit;
   }
 
@@ -88,7 +88,7 @@ public class FullSyncRules {
     this.finalizedBlockNumberLimit = finalizedBlockNumberLimit;
   }
 
-  public void setFinalizedBlockHashLimit(final Optional<Hash> finalizedBlockHashLimit) {
+  public void setFinalizedBlockHashLimit(final Optional<Bytes32> finalizedBlockHashLimit) {
     this.finalizedBlockHashLimit = finalizedBlockHashLimit;
   }
 }

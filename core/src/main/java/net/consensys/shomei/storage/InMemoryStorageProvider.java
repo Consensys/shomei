@@ -12,17 +12,18 @@
  */
 package net.consensys.shomei.storage;
 
-import org.hyperledger.besu.datatypes.Hash;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
 
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.trace.Trace;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 
 public class InMemoryStorageProvider implements StorageProvider {
   @Override
@@ -34,7 +35,7 @@ public class InMemoryStorageProvider implements StorageProvider {
   public TraceManager getTraceManager() {
     return new TraceManager() {
       private final HashMap<Long, List<Trace>> traceStorage = new HashMap<>();
-      private final HashMap<Long, Hash> zkStateRootStorage = new HashMap<>();
+      private final HashMap<Long, Bytes32> zkStateRootStorage = new HashMap<>();
 
       @Override
       public TraceManagerUpdater updater() {
@@ -47,7 +48,7 @@ public class InMemoryStorageProvider implements StorageProvider {
 
           @Override
           public TraceManagerUpdater saveZkStateRootHash(
-              final long blockNumber, final Hash stateRoot) {
+              final long blockNumber, final Bytes32 stateRoot) {
             zkStateRootStorage.put(blockNumber, stateRoot);
             return this;
           }
@@ -71,7 +72,7 @@ public class InMemoryStorageProvider implements StorageProvider {
       }
 
       @Override
-      public Optional<Hash> getZkStateRootHash(final long blockNumber) {
+      public Optional<Bytes32> getZkStateRootHash(final long blockNumber) {
         return Optional.of(zkStateRootStorage.get(blockNumber));
       }
     };

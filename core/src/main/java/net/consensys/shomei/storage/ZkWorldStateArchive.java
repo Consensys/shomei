@@ -12,25 +12,29 @@
  */
 package net.consensys.shomei.storage;
 
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.rlp.RLP;
+import net.consensys.shomei.exception.MissingTrieLogException;
+import net.consensys.shomei.metrics.MetricsService;
+import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
+import net.consensys.shomei.storage.worldstate.LayeredWorldStateStorage;
+import net.consensys.shomei.storage.worldstate.WorldStateStorage;
+import net.consensys.shomei.trie.trace.Trace;
+import net.consensys.shomei.trielog.TrieLogLayer;
+import net.consensys.shomei.trielog.TrieLogLayerConverter;
+import net.consensys.shomei.worldview.ZkEvmWorldState;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 import com.google.common.annotations.VisibleForTesting;
-import net.consensys.shomei.exception.MissingTrieLogException;
-import net.consensys.shomei.metrics.MetricsService;
-import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
-import net.consensys.shomei.storage.worldstate.WorldStateStorage;
-import net.consensys.shomei.trielog.TrieLogLayer;
-import net.consensys.shomei.trielog.TrieLogLayerConverter;
-import net.consensys.shomei.worldview.ZkEvmWorldState;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +85,7 @@ public class ZkWorldStateArchive implements Closeable {
     setupHeadMetrics(metricsService);
   }
 
-  public Optional<ZkEvmWorldState> getCachedWorldState(Hash blockHash) {
+  public Optional<ZkEvmWorldState> getCachedWorldState(Bytes32 blockHash) {
     return cachedWorldStates.entrySet().stream()
         .filter(entry -> entry.getKey().blockHash().equals(blockHash))
         .map(Map.Entry::getValue)
@@ -171,6 +175,72 @@ public class ZkWorldStateArchive implements Closeable {
     headWorldState.commit(newBlockNumber, trieLogLayer.getBlockHash(), generateTrace);
   }
 
+  /**
+   * Result of generating a virtual trace.
+   */
+  public record VirtualTraceResult(List<List<Trace>> traces, Bytes32 zkEndStateRootHash) {}
+
+  /**
+   * Generate a virtual trace from a trielog without persisting state changes.
+   * This is used for simulating transactions on a virtual block.
+   *
+   * @param parentBlockNumber the parent block number on which to base the virtual state
+   * @param trieLogLayer the trielog to apply
+   * @return the generated trace and resulting state root hash
+   * @throws IllegalStateException if the worldstate for the parent block is not cached
+   */
+  public VirtualTraceResult generateVirtualTrace(
+      final long parentBlockNumber, final TrieLogLayer trieLogLayer) {
+    // Get the cached worldstate for the parent block
+    final WorldStateStorage parentStorage = cachedWorldStates.entrySet().stream()
+        .filter(entry -> entry.getKey().blockNumber().equals(parentBlockNumber))
+        .map(Map.Entry::getValue)
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException(
+            "Worldstate for parent block " + parentBlockNumber + " is not cached"));
+
+    // Create a layered storage that overlays in-memory writes on top of the parent snapshot
+    // This ensures we don't modify the cached parent state during simulation
+    try (final WorldStateStorage virtualStorage = new LayeredWorldStateStorage(parentStorage)) {
+      // Use an in-memory trace manager that won't persist to disk
+      final TraceManager ephemeralTraceManager = new InMemoryStorageProvider().getTraceManager();
+
+      final ZkEvmWorldState virtualWorldState = new ZkEvmWorldState(virtualStorage, ephemeralTraceManager);
+
+      // Apply the trielog and generate trace for the virtual block
+      // Use the virtual block number from the trielog (parentBlockNumber + 1)
+      final long virtualBlockNumber = trieLogLayer.getBlockNumber();
+
+      virtualWorldState.getAccumulator().rollForward(trieLogLayer);
+      virtualWorldState.commit(virtualBlockNumber, trieLogLayer.getBlockHash(), true);
+
+      // Retrieve the trace for the virtual block
+      final Optional<Bytes> traceBytes = ephemeralTraceManager.getTrace(virtualBlockNumber);
+
+      if (traceBytes.isEmpty()) {
+        throw new IllegalStateException(
+            "Failed to generate trace for virtual block " + virtualBlockNumber +
+            " on parent " + parentBlockNumber);
+      }
+
+      // Get the resulting state root hash after applying the virtual block
+      final Bytes32 zkEndStateRootHash = ephemeralTraceManager
+          .getZkStateRootHash(virtualBlockNumber)
+          .orElseThrow(() -> new IllegalStateException(
+              "Failed to get state root hash for virtual block " + virtualBlockNumber));
+
+      return new VirtualTraceResult(
+          List.of(Trace.deserialize(RLP.input(traceBytes.get()))),
+          zkEndStateRootHash);
+    } catch (Exception e) {
+      if (e instanceof IllegalStateException) {
+        throw (IllegalStateException) e;
+      }
+      throw new IllegalStateException(
+          "Failed to generate virtual trace for parent block " + parentBlockNumber, e);
+    }
+  }
+
   public ZkEvmWorldState getHeadWorldState() {
     return headWorldState;
   }
@@ -179,7 +249,7 @@ public class ZkWorldStateArchive implements Closeable {
     return headWorldState.getBlockNumber();
   }
 
-  public Hash getCurrentBlockHash() {
+  public Bytes32 getCurrentBlockHash() {
     return headWorldState.getBlockHash();
   }
 

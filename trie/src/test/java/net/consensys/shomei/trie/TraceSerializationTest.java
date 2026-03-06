@@ -16,14 +16,6 @@ import static net.consensys.shomei.trie.DigestGenerator.createDumDigest;
 import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.rlp.RLP;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 import net.consensys.shomei.trie.storage.InMemoryStorage;
 import net.consensys.shomei.trie.trace.DeletionTrace;
@@ -33,7 +25,15 @@ import net.consensys.shomei.trie.trace.ReadZeroTrace;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trie.trace.UpdateTrace;
 import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -53,7 +53,7 @@ public class TraceSerializationTest {
 
     final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = key.hash();
+    final Bytes32 hkey = key.hash();
 
     final InsertionTrace expectedTrace = (InsertionTrace) zkTrie.putWithTrace(hkey, key, value);
 
@@ -74,7 +74,7 @@ public class TraceSerializationTest {
     final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
     final PoseidonSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = key.hash();
+    final Bytes32 hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, dumValue);
 
@@ -95,7 +95,7 @@ public class TraceSerializationTest {
 
     final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = key.hash();
+    final Bytes32 hkey = key.hash();
 
     zkTrie.putWithTrace(hkey, key, value);
 
@@ -117,7 +117,7 @@ public class TraceSerializationTest {
 
     final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
-    final Hash hkey = key.hash();
+    final Bytes32 hkey = key.hash();
 
     // try read zero trace before inserting the key in the trie
     final ReadZeroTrace expectedReadZeroTrace = (ReadZeroTrace) zkTrie.readWithTrace(hkey, key);
@@ -126,6 +126,7 @@ public class TraceSerializationTest {
     final ReadZeroTrace decodedReadZeroTrace =
         ReadZeroTrace.readFrom(RLP.input(RLP.encode(expectedReadZeroTrace::writeTo)));
 
+    System.out.println(JSON_OBJECT_MAPPER.writeValueAsString(decodedReadZeroTrace));
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(decodedReadZeroTrace))
         .isEqualTo(JSON_OBJECT_MAPPER.writeValueAsString(expectedReadZeroTrace));
 
@@ -150,7 +151,7 @@ public class TraceSerializationTest {
     final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(58));
     final PoseidonSafeBytes<Bytes> dumValue = unsafeFromBytes(createDumDigest(41));
     final PoseidonSafeBytes<Bytes> newDumValue = unsafeFromBytes(createDumDigest(42));
-    final Hash hkey = key.hash();
+    final Bytes32 hkey = key.hash();
 
     List<Trace> expectedTraces = new ArrayList<>();
     expectedTraces.add(zkTrie.putWithTrace(hkey, key, dumValue));

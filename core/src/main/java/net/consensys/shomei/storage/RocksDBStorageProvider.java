@@ -17,10 +17,6 @@ import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdenti
 import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames.ZK_TRIE_LOG;
 import static net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentIdentifier.SegmentNames.ZK_TRIE_NODE;
 
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
-
-import com.google.common.annotations.VisibleForTesting;
 import net.consensys.shomei.services.storage.api.KeyValueStorage;
 import net.consensys.shomei.services.storage.api.SnappableKeyValueStorage;
 import net.consensys.shomei.services.storage.rocksdb.RocksDBSegmentedStorage;
@@ -28,6 +24,11 @@ import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfig
 import net.consensys.shomei.storage.TrieLogManager.TrieLogManagerImpl;
 import net.consensys.shomei.storage.worldstate.PersistedWorldStateStorage;
 import net.consensys.shomei.storage.worldstate.WorldStateStorage;
+
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+
+import com.google.common.annotations.VisibleForTesting;
 
 public class RocksDBStorageProvider implements StorageProvider {
   private final RocksDBSegmentedStorage segmentedStorage;

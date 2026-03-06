@@ -12,14 +12,14 @@
  */
 package net.consensys.shomei.rpc.server.method;
 
+import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
+import net.consensys.shomei.storage.ZkWorldStateArchive;
+
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.methods.JsonRpcMethod;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
-
-import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
-import net.consensys.shomei.storage.ZkWorldStateArchive;
-import org.apache.tuweni.bytes.Bytes;
 
 public class RollupGetZkEVMBlockNumber implements JsonRpcMethod {
 

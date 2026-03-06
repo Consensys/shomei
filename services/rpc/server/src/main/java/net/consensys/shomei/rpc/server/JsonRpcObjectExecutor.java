@@ -14,15 +14,7 @@ package net.consensys.shomei.rpc.server;
 
 import static io.netty.handler.codec.http.HttpHeaderValues.APPLICATION_JSON;
 
-import org.hyperledger.besu.ethereum.api.jsonrpc.JsonResponseStreamer;
-import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcConfiguration;
-import org.hyperledger.besu.ethereum.api.jsonrpc.context.ContextKey;
-import org.hyperledger.besu.ethereum.api.jsonrpc.execution.JsonRpcExecutor;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcErrorResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
-import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
-import org.hyperledger.besu.plugin.services.rpc.RpcResponseType;
+import net.consensys.shomei.trie.json.JsonTraceParser;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -38,7 +30,15 @@ import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.web.RoutingContext;
-import net.consensys.shomei.trie.json.JsonTraceParser;
+import org.hyperledger.besu.ethereum.api.jsonrpc.JsonResponseStreamer;
+import org.hyperledger.besu.ethereum.api.jsonrpc.JsonRpcConfiguration;
+import org.hyperledger.besu.ethereum.api.jsonrpc.context.ContextKey;
+import org.hyperledger.besu.ethereum.api.jsonrpc.execution.JsonRpcExecutor;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequest;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcErrorResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcResponse;
+import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
+import org.hyperledger.besu.plugin.services.rpc.RpcResponseType;
 
 public class JsonRpcObjectExecutor {
   private static final ObjectWriter JSON_OBJECT_WRITER = createObjectWriter();

@@ -12,14 +12,13 @@
  */
 package net.consensys.shomei.trie.trace;
 
-import org.hyperledger.besu.datatypes.Hash;
+import net.consensys.shomei.trie.model.LeafOpening;
+
+import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
 import org.hyperledger.besu.ethereum.rlp.RLPOutput;
 import org.hyperledger.besu.ethereum.trie.Node;
 import org.hyperledger.besu.ethereum.trie.StoredNode;
-
-import net.consensys.shomei.trie.model.LeafOpening;
-import org.apache.tuweni.bytes.Bytes;
 
 public class ReadTrace implements Trace {
 
@@ -101,7 +100,7 @@ public class ReadTrace implements Trace {
       location = in.readBytes();
     }
     final long newNextFreeNode = in.readLongScalar();
-    final Node<Bytes> subRoot = new StoredNode<>(null, null, Hash.wrap(in.readBytes32()));
+    final Node<Bytes> subRoot = new StoredNode<>(null, null, in.readBytes32());
     final LeafOpening leaf = LeafOpening.readFrom(in.readBytes());
     final TraceProof proof = TraceProof.readFrom(in);
     final Bytes key = in.readBytes();

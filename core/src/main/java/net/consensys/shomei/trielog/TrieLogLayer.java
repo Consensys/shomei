@@ -14,9 +14,9 @@ package net.consensys.shomei.trielog;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
-import org.hyperledger.besu.ethereum.rlp.RLPInput;
+import net.consensys.shomei.ZkAccount;
+import net.consensys.shomei.ZkValue;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,10 +26,10 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import net.consensys.shomei.ZkAccount;
-import net.consensys.shomei.ZkValue;
-import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.ethereum.rlp.RLPInput;
 
 /**
  * This class encapsulates the changes that are done to transition one block to the next. This
@@ -40,7 +40,7 @@ import org.apache.tuweni.units.bigints.UInt256;
  */
 public class TrieLogLayer {
 
-  private Hash blockHash;
+  private Bytes32 blockHash;
 
   private long blockNumber;
   private final Map<AccountKey, ZkValue<ZkAccount>> accounts;
@@ -58,11 +58,11 @@ public class TrieLogLayer {
     frozen = true; // The code never bothered me anyway
   }
 
-  public Hash getBlockHash() {
+  public Bytes32 getBlockHash() {
     return blockHash;
   }
 
-  public TrieLogLayer setBlockHash(final Hash blockHash) {
+  public TrieLogLayer setBlockHash(final Bytes32 blockHash) {
     checkState(!frozen, "Layer is Frozen");
     this.blockHash = blockHash;
     return this;
@@ -88,7 +88,7 @@ public class TrieLogLayer {
   }
 
   public AccountKey addAccountChange(
-      final PoseidonSafeBytes<Address> address,
+      final PoseidonSafeBytes<Bytes> address,
       final ZkAccount oldValue,
       final ZkAccount newValue,
       final boolean isCleared) {
@@ -98,7 +98,7 @@ public class TrieLogLayer {
   }
 
   public AccountKey addAccountChange(
-      final PoseidonSafeBytes<Address> address,
+      final PoseidonSafeBytes<Bytes> address,
       final ZkAccount oldValue,
       final ZkAccount newValue) {
     return addAccountChange(address, oldValue, newValue, false);

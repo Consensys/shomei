@@ -12,28 +12,31 @@
  */
 package net.consensys.shomei.trielog;
 
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 
 import java.util.Objects;
 
-import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
-import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.datatypes.Address;
 import org.jetbrains.annotations.NotNull;
 
-public record AccountKey(Hash accountHash, PoseidonSafeBytes<Address> address)
+public record AccountKey(Bytes32 accountHash, PoseidonSafeBytes<Bytes> address)
     implements Comparable<AccountKey> {
 
-  public AccountKey(final Hash accountHash, final Address address) {
+  public AccountKey(final Bytes32 accountHash, final Address address) {
     this(accountHash, PoseidonSafeBytesUtils.safeAddress(address));
+
   }
 
   public AccountKey(final Address address) {
     this(PoseidonSafeBytesUtils.safeAddress(address));
   }
 
-  public AccountKey(final PoseidonSafeBytes<Address> address) {
+  public AccountKey(final PoseidonSafeBytes<Bytes> address) {
     this(address.hash(), address);
+
   }
 
   @Override

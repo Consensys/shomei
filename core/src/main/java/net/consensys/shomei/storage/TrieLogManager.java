@@ -12,12 +12,13 @@
  */
 package net.consensys.shomei.storage;
 
-import java.util.Optional;
-
-import com.google.common.primitives.Longs;
 import net.consensys.shomei.observer.TrieLogObserver;
 import net.consensys.shomei.services.storage.api.KeyValueStorage;
 import net.consensys.shomei.services.storage.api.KeyValueStorageTransaction;
+
+import java.util.Optional;
+
+import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
 
 public interface TrieLogManager {

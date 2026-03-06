@@ -13,6 +13,7 @@
 package net.consensys.shomei.cli.option;
 
 import net.consensys.zkevm.HashFunction;
+
 import picocli.CommandLine;
 
 public class HashFunctionOption {

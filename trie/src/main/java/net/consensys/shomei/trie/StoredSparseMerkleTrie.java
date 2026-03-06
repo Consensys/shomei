@@ -14,22 +14,22 @@ package net.consensys.shomei.trie;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.hyperledger.besu.ethereum.trie.Node;
-import org.hyperledger.besu.ethereum.trie.NodeFactory;
-import org.hyperledger.besu.ethereum.trie.NodeLoader;
-import org.hyperledger.besu.ethereum.trie.NodeUpdater;
-import org.hyperledger.besu.ethereum.trie.StoredNode;
+import net.consensys.shomei.trie.visitor.CommitVisitor;
+import net.consensys.shomei.trie.visitor.GetVisitor;
+import net.consensys.shomei.trie.visitor.PutVisitor;
+import net.consensys.shomei.trie.visitor.RemoveVisitor;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import net.consensys.shomei.trie.visitor.CommitVisitor;
-import net.consensys.shomei.trie.visitor.GetVisitor;
-import net.consensys.shomei.trie.visitor.PutVisitor;
-import net.consensys.shomei.trie.visitor.RemoveVisitor;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.ethereum.trie.Node;
+import org.hyperledger.besu.ethereum.trie.NodeFactory;
+import org.hyperledger.besu.ethereum.trie.NodeLoader;
+import org.hyperledger.besu.ethereum.trie.NodeUpdater;
+import org.hyperledger.besu.ethereum.trie.StoredNode;
 
 /**
  * The StoredSparseMerkleTrie class represents a stored sparse Merkle trie. It provides methods for

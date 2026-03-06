@@ -12,29 +12,51 @@
  */
 package net.consensys.shomei.rpc.model;
 
-import org.hyperledger.besu.datatypes.Hash;
+
+import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
+import org.apache.tuweni.bytes.Bytes32;
 
-public record TrieLogElement(
-    Long blockNumber, Hash blockHash, boolean isInitialSync, String trieLog) {
+public class TrieLogElement {
 
-  public TrieLogIdentifier getTrieLogIdentifier() {
-    return new TrieLogIdentifier(blockNumber, blockHash, isInitialSync);
-  }
+  private Long blockNumber;
+  private Bytes32 blockHash;
+  private boolean isInitialSync;
+  private String trieLog;
+
+  public TrieLogElement() {}
 
   @JsonCreator
   public TrieLogElement(
       @JsonProperty("blockNumber") final Long blockNumber,
-      @JsonProperty("blockHash") final Hash blockHash,
-      @JsonProperty("syncing") final boolean isInitialSync,
+      @JsonProperty("blockHash") final Bytes32 blockHash,
       @JsonProperty("trieLog") final String trieLog) {
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;
-    this.isInitialSync = isInitialSync;
+    this.isInitialSync = false;
     this.trieLog = trieLog;
+  }
+
+  public Long blockNumber() {
+    return blockNumber;
+  }
+
+  public Bytes32 blockHash() {
+    return blockHash;
+  }
+
+  public boolean isInitialSync() {
+    return isInitialSync;
+  }
+
+  public String trieLog() {
+    return trieLog;
+  }
+
+  public TrieLogIdentifier getTrieLogIdentifier() {
+    return new TrieLogIdentifier(blockNumber, blockHash, isInitialSync);
   }
 
   @Override

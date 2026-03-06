@@ -12,9 +12,9 @@
  */
 package net.consensys.shomei.rpc.server;
 
-import org.hyperledger.besu.util.platform.PlatformDetector;
-
 import java.util.Optional;
+
+import org.hyperledger.besu.util.platform.PlatformDetector;
 
 public class ShomeiVersion {
 
