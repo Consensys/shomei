@@ -178,7 +178,6 @@ public class WorldstateTraceTest {
     final MutableZkAccount zkAccount2 =
         new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
-
             safeByte32(createDumFullBytes(15)),
             createDumDigest(75),
             safeUInt256(UInt256.valueOf(7L)),

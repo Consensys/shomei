@@ -375,8 +375,9 @@ public class LayeredWorldStateTraceTest {
     final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
-
+    trace3.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
     zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
+
     AccountTrieRepositoryWrapper layeredRepo = new AccountTrieRepositoryWrapper(layeredStorage);
     ZKTrie layeredTrie = loadAccountTrie(parentRoot, layeredRepo);
     final Trace trace4 =
@@ -416,6 +417,7 @@ public class LayeredWorldStateTraceTest {
     final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
+    trace3.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
     zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     final Trace trace4 =
@@ -459,8 +461,9 @@ public class LayeredWorldStateTraceTest {
     final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
-
+    trace3.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
     zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
+
     final Trace trace4 =
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());

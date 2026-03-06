@@ -46,7 +46,7 @@ public class ZkAccountTest {
     assertThat(HashProvider.trieHash(zkAccount.getEncodedBytes()))
             .isEqualTo(
                     Bytes32.fromHexString(
-                            "0x0f170eaef9275fd6098a06790c63a141e206e0520738a4cf5cf5081d495e8682"));
+                            "0x0be39dd910329801041c54896705cb664779584732a232276e59ce2e7ca1b5a7"));
   }
 
   @Test

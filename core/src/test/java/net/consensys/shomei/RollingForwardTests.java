@@ -41,7 +41,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,7 +78,7 @@ public class RollingForwardTests {
     Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
     assertThat(topRootHash)
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x6b5d2e111a55e55826396df03ac3d0055dc4a88671edbcc8274db3f0117e0f97"));
 
     TrieLogLayer trieLogLayer = new TrieLogLayer();
@@ -115,7 +114,7 @@ public class RollingForwardTests {
     Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
     assertThat(topRootHash)
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x6b5d2e111a55e55826396df03ac3d0055dc4a88671edbcc8274db3f0117e0f97"));
 
     TrieLogLayer trieLogLayer = new TrieLogLayer();
@@ -158,7 +157,7 @@ public class RollingForwardTests {
     Bytes32 topRootHash = accountStateTrieOne.getTopRootHash();
     assertThat(topRootHash)
         .isEqualTo(
-            Hash.fromHexString(
+            Bytes32.fromHexString(
                 "0x2272f54e6eaac537629f136b4c6080c635db2b1135c4f94f4c34fff146c58471"));
 
     TrieLogLayer trieLogLayer = new TrieLogLayer();
@@ -172,7 +171,7 @@ public class RollingForwardTests {
     zkEvmWorldState.commit(0L, null, true);
     assertThat(zkEvmWorldState.getStateRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x6b5d2e111a55e55826396df03ac3d0055dc4a88671edbcc8274db3f0117e0f97"));
 
     zkEvmWorldState.getAccumulator().rollForward(trieLogLayer2);
