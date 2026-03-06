@@ -77,6 +77,10 @@ public class TrieLogLayerConverter {
 
       if (input.nextIsNull()) {
         input.skipNext();
+        maybeAccountIndex =
+            worldStateStorage
+                .getFlatLeaf(WRAP_ACCOUNT.apply(accountKey.accountHash()))
+                .map(FlattenedLeaf::leafIndex);
       } else {
         input.enterList();
         final PriorAccount priorAccount = preparePriorTrieLogAccount(accountKey, input);
