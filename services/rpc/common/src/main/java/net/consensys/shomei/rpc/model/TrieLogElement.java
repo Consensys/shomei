@@ -14,9 +14,11 @@ package net.consensys.shomei.rpc.model;
 
 
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
+import net.consensys.shomei.trie.json.JsonTraceParser;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class TrieLogElement {
@@ -31,7 +33,9 @@ public class TrieLogElement {
   @JsonCreator
   public TrieLogElement(
       @JsonProperty("blockNumber") final Long blockNumber,
-      @JsonProperty("blockHash") final Bytes32 blockHash,
+      @JsonProperty("blockHash")
+          @JsonDeserialize(using = JsonTraceParser.Bytes32Deserializer.class)
+          final Bytes32 blockHash,
       @JsonProperty("trieLog") final String trieLog) {
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;
