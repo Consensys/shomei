@@ -291,7 +291,7 @@ jreleaser {
                     verifyPom = false
                 }
             }
-        
+
             nexus2 {
                 'snapshot' {
                     active = 'SNAPSHOT'
@@ -311,23 +311,23 @@ jreleaser {
 
 // Create a task to prepare the jreleaser directory.
 task prepareJreleaserDirectory {
-  doLast {
-    file(rootProject.layout.buildDirectory.dir("jreleaser")).mkdirs()
-  }
+    doLast {
+        file(rootProject.layout.buildDirectory.dir("jreleaser")).mkdirs()
+    }
 }
 
 // Make every task whose name starts with "jreleaser" depend on the preparation task.
 // jreleaserFullRelease must also wait for all subproject artifacts to be published
 // to the staging directory before signing and deploying.
 tasks.all { t ->
-  if (t.name.startsWith("jreleaser")) {
-    t.dependsOn prepareJreleaserDirectory
-    if (t.name == 'jreleaserFullRelease') {
-      subprojects.each { sp ->
-        t.dependsOn("${sp.path}:publish")
-      }
+    if (t.name.startsWith("jreleaser")) {
+        t.dependsOn prepareJreleaserDirectory
+        if (t.name == 'jreleaserFullRelease') {
+            subprojects.each { sp ->
+                t.dependsOn("${sp.path}:publish")
+            }
+        }
     }
-  }
 }
 
 jar { enabled = false }
@@ -382,10 +382,10 @@ def getCheckedOutGitCommitHash(length = 8) {
 }
 
 task printVersion() {
-  doFirst {
-    println "specific-version=${calculateVersion()}"
-    println "publish-version=${project.version}"
-  }
+    doFirst {
+        println "specific-version=${calculateVersion()}"
+        println "publish-version=${project.version}"
+    }
 }
 
 distTar {

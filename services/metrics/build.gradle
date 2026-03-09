@@ -2,33 +2,33 @@
 apply plugin: 'java-library'
 
 jar {
-    archiveBaseName = 'shomei-metrics-vertx'
-    manifest {
-        attributes(
-                'Specification-Title': archiveBaseName,
-                'Specification-Version': project.version,
-                'Implementation-Title': archiveBaseName,
-                'Implementation-Version': calculateVersion()
-        )
-    }
+  archiveBaseName = 'shomei-metrics-vertx'
+  manifest {
+    attributes(
+      'Specification-Title': archiveBaseName,
+      'Specification-Version': project.version,
+      'Implementation-Title': archiveBaseName,
+      'Implementation-Version': calculateVersion()
+      )
+  }
 }
 
 dependencies {
 
-    implementation project(':config')
-    implementation 'org.slf4j:slf4j-api'
-    implementation 'io.vertx:vertx-core'
-    implementation 'io.vertx:vertx-web'
-    implementation 'io.vertx:vertx-micrometer-metrics'
-    implementation 'io.micrometer:micrometer-registry-prometheus'
-    api 'io.micrometer:micrometer-core'
+  implementation project(':config')
+  implementation 'org.slf4j:slf4j-api'
+  implementation 'io.vertx:vertx-core'
+  implementation 'io.vertx:vertx-web'
+  implementation 'io.vertx:vertx-micrometer-metrics'
+  implementation 'io.micrometer:micrometer-registry-prometheus'
+  api 'io.micrometer:micrometer-core'
 
 
-    testImplementation 'org.junit.jupiter:junit-jupiter-api'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-    testImplementation 'org.assertj:assertj-core'
+  testImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+  testImplementation 'org.assertj:assertj-core'
 }
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }
