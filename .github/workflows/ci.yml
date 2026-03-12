@@ -327,7 +327,7 @@ jobs:
       # Create release tag and attach the distribution
       - name: Shomei Release
         id: release
-        uses: softprops/action-gh-release@v2.2.1
+        uses: softprops/action-gh-release@v2.5.0
         with:
           files: |
             build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
