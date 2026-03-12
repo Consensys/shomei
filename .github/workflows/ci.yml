@@ -45,6 +45,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
       - name: Setup Java and Gradle
         id: setup-java-gradle
@@ -81,6 +82,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
       - name: Setup Java and Gradle
         id: setup-java-gradle
@@ -119,7 +121,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
+        with:
+          persist-credentials: false
+
       - name: Setup Java and Gradle
         id: setup-java-gradle
         uses: ConsenSys/github-actions/java-setup-gradle@main
@@ -154,6 +158,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -235,6 +240,7 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
