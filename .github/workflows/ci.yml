@@ -10,9 +10,11 @@ on:
     branches:
       - main
 
+permissions: {} # lock everything by default (least-privilege)
+
 jobs:
   validate:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       TAG_VERSION: "${{ inputs.tag }}"
     steps:
@@ -38,8 +40,8 @@ jobs:
     outputs:
       publish-version: ${{ steps.project-version.outputs.publish-version }}      
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -74,8 +76,8 @@ jobs:
       architecture: amd64
       GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=2
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -114,8 +116,8 @@ jobs:
       id-token: write
       packages: write    
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v6
         
       - name: Setup Java and Gradle
         id: setup-java-gradle
@@ -148,8 +150,8 @@ jobs:
     runs-on: ubuntu-24.04
     environment: docker
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -230,8 +232,8 @@ jobs:
     runs-on: ubuntu-24.04
     environment: docker
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
