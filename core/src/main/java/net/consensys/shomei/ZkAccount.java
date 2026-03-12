@@ -27,8 +27,6 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 
 /** A ZkAccount is a representation of an Ethereum account in the ZkEvm world. */
@@ -36,23 +34,23 @@ public class ZkAccount {
 
   public static final MimcSafeBytes<Bytes32> EMPTY_KECCAK_CODE_HASH =
       safeByte32(keccak256(Bytes.EMPTY));
-  public static final Hash EMPTY_CODE_HASH = trieHash(Bytes32.ZERO);
+  public static final Bytes32 EMPTY_CODE_HASH = trieHash(Bytes32.ZERO);
 
   protected AccountKey accountKey;
   protected MimcSafeBytes<Bytes32> keccakCodeHash;
-  protected Hash mimcCodeHash;
+  protected Bytes32 mimcCodeHash;
 
   protected UInt256 codeSize;
   protected UInt256 nonce;
   protected Wei balance;
-  protected Hash storageRoot;
+  protected Bytes32 storageRoot;
 
   public ZkAccount(
       final AccountKey accountKey,
       final UInt256 nonce,
       final Wei balance,
-      final Hash storageRoot,
-      final Hash mimcCodeHash,
+      final Bytes32 storageRoot,
+      final Bytes32 mimcCodeHash,
       final MimcSafeBytes<Bytes32> keccakCodeHash,
       final UInt256 codeSize) {
     this.accountKey = accountKey;
@@ -68,8 +66,8 @@ public class ZkAccount {
       final AccountKey accountKey,
       final long nonce,
       final Wei balance,
-      final Hash storageRoot,
-      final Hash mimcCodeHash,
+      final Bytes32 storageRoot,
+      final Bytes32 mimcCodeHash,
       final MimcSafeBytes<Bytes32> keccakCodeHash,
       final long codeSize) {
     this(
@@ -112,8 +110,8 @@ public class ZkAccount {
                 accountKey,
                 UInt256.fromBytes(bytesInput.readBytes32()),
                 Wei.wrap(UInt256.fromBytes(bytesInput.readBytes32())),
-                Hash.wrap(bytesInput.readBytes32()),
-                Hash.wrap(bytesInput.readBytes32()),
+                bytesInput.readBytes32(),
+                bytesInput.readBytes32(),
                 safeByte32(bytesInput.readBytes32()),
                 UInt256.fromBytes(bytesInput.readBytes32())));
   }
@@ -123,7 +121,7 @@ public class ZkAccount {
    *
    * @return the account key
    */
-  public Hash getHkey() {
+  public Bytes32 getHkey() {
     return accountKey.accountHash();
   }
 
@@ -132,7 +130,7 @@ public class ZkAccount {
    *
    * @return the account address
    */
-  public MimcSafeBytes<Address> getAddress() {
+  public MimcSafeBytes<Bytes> getAddress() {
     return accountKey.address();
   }
 
@@ -159,8 +157,8 @@ public class ZkAccount {
    *
    * @return the keccak code hash
    */
-  public Hash getCodeHash() {
-    return Hash.wrap(keccakCodeHash.getOriginalUnsafeValue());
+  public Bytes32 getCodeHash() {
+    return keccakCodeHash.getOriginalUnsafeValue();
   }
 
   /**
@@ -168,7 +166,7 @@ public class ZkAccount {
    *
    * @return the mimc code hash
    */
-  public Hash getMimcCodeHash() {
+  public Bytes32 getMimcCodeHash() {
     return mimcCodeHash;
   }
 
@@ -186,7 +184,7 @@ public class ZkAccount {
    *
    * @return the zkevm storage root
    */
-  public Hash getStorageRoot() {
+  public Bytes32 getStorageRoot() {
     return storageRoot;
   }
 

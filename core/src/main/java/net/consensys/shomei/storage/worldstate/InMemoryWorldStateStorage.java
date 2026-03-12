@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.hyperledger.besu.datatypes.Hash;
+import org.apache.tuweni.bytes.Bytes32;
 
 /** In memory implementation of {@link WorldStateStorage}. */
 public class InMemoryWorldStateStorage extends InMemoryStorage
@@ -27,28 +27,28 @@ public class InMemoryWorldStateStorage extends InMemoryStorage
 
   private Optional<Long> currentBlockNumber = Optional.empty();
 
-  private Optional<Hash> currentBlockHash = Optional.empty();
+  private Optional<Bytes32> currentBlockHash = Optional.empty();
 
-  private final Map<Long, Hash> zkStateRootHash = new ConcurrentHashMap<>();
+  private final Map<Long, Bytes32> zkStateRootHash = new ConcurrentHashMap<>();
 
   public InMemoryWorldStateStorage() {}
 
   private InMemoryWorldStateStorage(
       Optional<Long> currentBlockNumber,
-      Optional<Hash> currentBlockHash,
-      Map<Long, Hash> zkStateRootHash) {
+      Optional<Bytes32> currentBlockHash,
+      Map<Long, Bytes32> zkStateRootHash) {
     this.currentBlockHash = currentBlockHash;
     this.currentBlockNumber = currentBlockNumber;
     this.zkStateRootHash.putAll(zkStateRootHash);
   }
 
   @Override
-  public Optional<Hash> getZkStateRootHash(final long blockNumber) {
+  public Optional<Bytes32> getZkStateRootHash(final long blockNumber) {
     return Optional.ofNullable(zkStateRootHash.get(blockNumber));
   }
 
   @Override
-  public Optional<Hash> getWorldStateRootHash() {
+  public Optional<Bytes32> getWorldStateRootHash() {
     return currentBlockNumber.flatMap(this::getZkStateRootHash);
   }
 
@@ -63,7 +63,7 @@ public class InMemoryWorldStateStorage extends InMemoryStorage
   }
 
   @Override
-  public Optional<Hash> getWorldStateBlockHash() {
+  public Optional<Bytes32> getWorldStateBlockHash() {
     return currentBlockHash;
   }
 
@@ -73,7 +73,7 @@ public class InMemoryWorldStateStorage extends InMemoryStorage
   }
 
   @Override
-  public void setBlockHash(final Hash blockHash) {
+  public void setBlockHash(final Bytes32 blockHash) {
     this.currentBlockHash = Optional.ofNullable(blockHash);
   }
 

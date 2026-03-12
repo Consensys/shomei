@@ -28,9 +28,9 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Address;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.rlp.RLPInput;
 
 /**
@@ -42,7 +42,7 @@ import org.hyperledger.besu.ethereum.rlp.RLPInput;
  */
 public class TrieLogLayer {
 
-  private Hash blockHash;
+  private Bytes32 blockHash;
 
   private long blockNumber;
   private final Map<AccountKey, ZkValue<ZkAccount>> accounts;
@@ -60,11 +60,11 @@ public class TrieLogLayer {
     frozen = true; // The code never bothered me anyway
   }
 
-  public Hash getBlockHash() {
+  public Bytes32 getBlockHash() {
     return blockHash;
   }
 
-  public TrieLogLayer setBlockHash(final Hash blockHash) {
+  public TrieLogLayer setBlockHash(final Bytes32 blockHash) {
     checkState(!frozen, "Layer is Frozen");
     this.blockHash = blockHash;
     return this;
@@ -90,7 +90,7 @@ public class TrieLogLayer {
   }
 
   public AccountKey addAccountChange(
-      final MimcSafeBytes<Address> address,
+      final MimcSafeBytes<Bytes> address,
       final ZkAccount oldValue,
       final ZkAccount newValue,
       final boolean isCleared) {
@@ -100,7 +100,7 @@ public class TrieLogLayer {
   }
 
   public AccountKey addAccountChange(
-      final MimcSafeBytes<Address> address, final ZkAccount oldValue, final ZkAccount newValue) {
+          final MimcSafeBytes<Bytes> address, final ZkAccount oldValue, final ZkAccount newValue) {
     return addAccountChange(address, oldValue, newValue, false);
   }
 

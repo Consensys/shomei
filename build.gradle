@@ -13,6 +13,7 @@ buildscript {
     dependencies {
         classpath 'tech.pegasys.internal.license.reporter:license-reporter:1.1.1'
     }
+
 }
 
 plugins {
@@ -58,7 +59,6 @@ allprojects {
         withSourcesJar()
         withJavadocJar()
     }
-
     test {
         // set a runtime shomei version for tests not executing from a jar
         systemProperty "shomei.version", project.version
@@ -101,11 +101,12 @@ allprojects {
             }
 
             content {
-                includeGroup "ConsenSys"
-                includeModule "ConsenSys", "besu-shomei-plugin"
-                includeModule "ConsenSys", "besu-shomei-plugin-test-support"
+                includeGroup "Consensys"
+                includeModule "Consensys", "besu-shomei-plugin"
+                includeModule "Consensys", "besu-shomei-plugin-test-support"
             }
         }
+
     }
 
     dependencies {
@@ -287,6 +288,7 @@ jreleaser {
                     stagingRepository('build/staging-deploy')
                     retryDelay = 60
                     maxRetries = 100
+                    verifyPom = false
                 }
             }
         
@@ -315,9 +317,16 @@ task prepareJreleaserDirectory {
 }
 
 // Make every task whose name starts with "jreleaser" depend on the preparation task.
+// jreleaserFullRelease must also wait for all subproject artifacts to be published
+// to the staging directory before signing and deploying.
 tasks.all { t ->
   if (t.name.startsWith("jreleaser")) {
     t.dependsOn prepareJreleaserDirectory
+    if (t.name == 'jreleaserFullRelease') {
+      subprojects.each { sp ->
+        t.dependsOn("${sp.path}:publish")
+      }
+    }
   }
 }
 

@@ -31,7 +31,6 @@ import net.consensys.shomei.util.bytes.MimcSafeBytes;
 import net.consensys.zkevm.HashProvider;
 
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 import org.junit.jupiter.api.Test;
 
@@ -53,7 +52,7 @@ public class WorldStateStateRootTest {
 
     assertThat(HashProvider.trieHash(zkAccount.getEncodedBytes()))
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x11314cf80cdd63a376e468ea9e6c672109bcfe516f0349382df82e1a876ca8b2"));
 
     final ZKTrie accountStateTrie =
@@ -63,12 +62,12 @@ public class WorldStateStateRootTest {
 
     assertThat(accountStateTrie.getSubRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x0e963ac1c981840721b20ccd7f5f2392697a8c9e1211dc67397a4a02e36ac23e"));
 
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x04c3c6de7195a187bc89fb4f8b68e93c7d675f1eed585b00d0e1e6241a321f86"));
   }
 
@@ -89,7 +88,7 @@ public class WorldStateStateRootTest {
 
     assertThat(HashProvider.trieHash(account.getEncodedBytes()))
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x11314cf80cdd63a376e468ea9e6c672109bcfe516f0349382df82e1a876ca8b2"));
 
     final ZKTrie accountStateTrie =
@@ -101,7 +100,7 @@ public class WorldStateStateRootTest {
 
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x020e2a836e973eebd3c6367ef432ff21bb35102bc2ae3258b385e8cfbf4d46d4"));
   }
 
@@ -114,7 +113,7 @@ public class WorldStateStateRootTest {
             41,
             Wei.of(15353),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             createDumFullBytes(15),
             7L);
 
@@ -129,7 +128,7 @@ public class WorldStateStateRootTest {
 
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x0bc47df364adaecf61a5024f2b39603341077be453d88d21e627aee59ef7a6db"));
   }
 
@@ -140,7 +139,7 @@ public class WorldStateStateRootTest {
         new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
             createDumFullBytes(15),
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             7L,
             41,
             Wei.of(15353),
@@ -161,20 +160,20 @@ public class WorldStateStateRootTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
+    final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     account2Storage.putWithTrace(
         slotKeyHash,
         slotKey,
         slotValue); // for this test we don't really need to add the address location
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
 
     accountStateTrie.putWithTrace(
         zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x069b45f6f789581a3402103cd35168bf8d1de77eb5db9f79390ad29472e0846d"));
   }
 
@@ -185,7 +184,7 @@ public class WorldStateStateRootTest {
         new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
             createDumFullBytes(15),
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             7L,
             41,
             Wei.of(15353),
@@ -206,10 +205,10 @@ public class WorldStateStateRootTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
+    final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     accountStateTrie.putWithTrace(
         zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
@@ -217,30 +216,30 @@ public class WorldStateStateRootTest {
     accountStateTrie.removeWithTrace(account.getHkey(), account.getAddress());
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x0b6a3290b85cf230ce33cec4438aa907373c8a471c47346ad32fc170b8644ec3"));
 
     // clean storage B
     account2Storage.removeWithTrace(slotKeyHash, slotKey);
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     accountStateTrie.putWithTrace(
         zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x0f11405ba708b9aeb8de0a341d80682b3a59c628e0694af97e357e86bb9567cf"));
 
     // Write again, somewhere else
     final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
-    final Hash newSlotKeyHash = HashProvider.trieHash(newSlotKey);
+    final Bytes32 newSlotKeyHash = HashProvider.trieHash(newSlotKey);
     final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
     account2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     accountStateTrie.putWithTrace(
         zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x06825644ff9ddf7d87b8a6f5d813254d535eae9d1bc2d2336b27211b1006f58c"));
   }
 
@@ -253,7 +252,7 @@ public class WorldStateStateRootTest {
             41,
             Wei.of(15353),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             createDumFullBytes(15),
             7L);
 
@@ -263,7 +262,7 @@ public class WorldStateStateRootTest {
             48,
             Wei.of(9835),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(54)),
+            createDumDigest(54),
             createDumFullBytes(85),
             19L);
 
@@ -281,7 +280,7 @@ public class WorldStateStateRootTest {
 
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x00b43fd65348b5a492ebcbd7ce3933fc963809ca4897d4fcd00d8661e45d9d55"));
   }
 
@@ -293,7 +292,7 @@ public class WorldStateStateRootTest {
             41,
             Wei.of(15353),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             createDumFullBytes(15),
             7L);
 
@@ -308,7 +307,7 @@ public class WorldStateStateRootTest {
         zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x0bc47df364adaecf61a5024f2b39603341077be453d88d21e627aee59ef7a6db"));
     accountStateTrie.commit();
     // revert all addition
@@ -318,7 +317,7 @@ public class WorldStateStateRootTest {
     accountStateTrie.decrementNextFreeNode();
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x07977874126658098c066972282d4c85f230520af3847e297fe7524f976873e5"));
     accountStateTrie.commit();
     // add account again
@@ -328,7 +327,7 @@ public class WorldStateStateRootTest {
         zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
     assertThat(accountStateTrie.getTopRootHash())
         .isEqualTo(
-            Hash.fromHexString(
+                Bytes32.fromHexString(
                 "0x0bc47df364adaecf61a5024f2b39603341077be453d88d21e627aee59ef7a6db"));
   }
 }

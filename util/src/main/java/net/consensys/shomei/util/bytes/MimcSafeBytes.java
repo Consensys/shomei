@@ -44,8 +44,8 @@ public class MimcSafeBytes<T extends Bytes> extends DelegatingBytes implements B
     return new MimcSafeBytes<>(convertToSafeFieldElementsSize(delegate), delegate);
   }
 
-  public static MimcSafeBytes<Address> safeAddress(final Address delegate) {
-    return new MimcSafeBytes<>(Bytes32.leftPad(delegate), delegate);
+  public static MimcSafeBytes<Bytes> safeAddress(final Address delegate) {
+    return new MimcSafeBytes<>(Bytes32.leftPad(delegate.getBytes()), delegate.getBytes());
   }
 
   public static MimcSafeBytes<Bytes> unsafeFromBytes(final Bytes delegate) {

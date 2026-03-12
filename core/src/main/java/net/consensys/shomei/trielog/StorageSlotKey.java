@@ -20,14 +20,14 @@ import net.consensys.zkevm.HashProvider;
 
 import java.util.Objects;
 
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.hyperledger.besu.datatypes.Hash;
 import org.jetbrains.annotations.NotNull;
 
-public record StorageSlotKey(Hash slotHash, MimcSafeBytes<UInt256> slotKey)
+public record StorageSlotKey(Bytes32 slotHash, MimcSafeBytes<UInt256> slotKey)
     implements Comparable<StorageSlotKey> {
 
-  public StorageSlotKey(final Hash slotHash, final UInt256 slotKey) {
+  public StorageSlotKey(final Bytes32 slotHash, final UInt256 slotKey) {
     this(slotHash, safeUInt256(slotKey));
   }
 

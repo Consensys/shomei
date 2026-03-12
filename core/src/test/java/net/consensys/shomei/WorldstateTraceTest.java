@@ -40,7 +40,6 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.datatypes.Wei;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +57,7 @@ public class WorldstateTraceTest {
   public void testTraceReadZero() throws IOException {
 
     final Bytes32 key = createDumDigest(36);
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -74,7 +73,7 @@ public class WorldstateTraceTest {
 
     final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
     final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
-    final Hash hkey = HashProvider.trieHash(key);
+    final Bytes32 hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -155,7 +154,7 @@ public class WorldstateTraceTest {
             41,
             Wei.of(15353),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             createDumFullBytes(15),
             7L);
 
@@ -180,7 +179,7 @@ public class WorldstateTraceTest {
         new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
             createDumFullBytes(15),
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             7L,
             41,
             Wei.of(15353),
@@ -207,11 +206,11 @@ public class WorldstateTraceTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
+    final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
 
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     final Trace trace4 =
         accountStateTrie.putWithTrace(
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
@@ -227,7 +226,7 @@ public class WorldstateTraceTest {
         new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
             createDumFullBytes(15),
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             7L,
             41,
             Wei.of(15353),
@@ -252,10 +251,10 @@ public class WorldstateTraceTest {
             new StorageTrieRepositoryWrapper(
                 zkAccount2.hashCode(), new InMemoryWorldStateStorage()));
     final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
-    final Hash slotKeyHash = HashProvider.trieHash(slotKey);
+    final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
     final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
     account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     accountStateTrie.putWithTrace(
         zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
@@ -266,19 +265,19 @@ public class WorldstateTraceTest {
     Trace trace2 = account2Storage.removeWithTrace(slotKeyHash, slotKey);
     trace2.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     Trace trace3 =
         accountStateTrie.putWithTrace(
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
     // Write again, somewhere else
     final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
-    final Hash newSlotKeyHash = HashProvider.trieHash(newSlotKey);
+    final Bytes32 newSlotKeyHash = HashProvider.trieHash(newSlotKey);
     final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
     Trace trace4 = account2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
-    zkAccount2.setStorageRoot(Hash.wrap(account2Storage.getTopRootHash()));
+    zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     Trace trace5 =
         accountStateTrie.putWithTrace(
             zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
@@ -298,7 +297,7 @@ public class WorldstateTraceTest {
             41,
             Wei.of(15353),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(75)),
+            createDumDigest(75),
             createDumFullBytes(15),
             7L);
 
@@ -308,7 +307,7 @@ public class WorldstateTraceTest {
             48,
             Wei.of(9835),
             DEFAULT_TRIE_ROOT,
-            Hash.wrap(createDumDigest(54)),
+            createDumDigest(54),
             createDumFullBytes(85),
             19L);
 

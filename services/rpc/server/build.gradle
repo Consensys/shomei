@@ -18,6 +18,7 @@ dependencies {
     implementation project(':util')
     implementation project(':core')
     implementation project(':crypto')
+    implementation project(':services:rpc:client')
     implementation project(':services:rpc:common')
     implementation project(':services:metrics')
     implementation project(':sync')
@@ -62,6 +63,8 @@ dependencies {
 
     // Test dependencies
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation project(':services:rpc:client')
+    testImplementation 'org.hyperledger.besu.internal:besu-crypto-algorithms'
 
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.mockito:mockito-core'

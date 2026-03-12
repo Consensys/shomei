@@ -13,6 +13,7 @@
 
 package net.consensys.shomei.storage;
 
+import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.observer.TrieLogObserver;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.datatypes.Hash;
 import org.hyperledger.besu.ethereum.rlp.RLPOutput;
 import org.junit.jupiter.api.AfterEach;
@@ -59,7 +61,7 @@ public class PersistedWorldStateStorageTest {
             public void writeTo(final RLPOutput out) {}
           });
 
-  private static final Hash HASH_TEST = Hash.hash(BYTES_TEST);
+  private static final Bytes32 HASH_TEST = Bytes32.wrap(Hash.hash(BYTES_TEST).getBytes());
 
 
   @TempDir
@@ -132,7 +134,7 @@ public class PersistedWorldStateStorageTest {
     traceManagerTransaction.commit();
     TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction = trieLogManager.updater();
     trieLogManagerTransaction.saveTrieLog(
-        new TrieLogObserver.TrieLogIdentifier(99L, Hash.ZERO), BYTES_TEST);
+        new TrieLogObserver.TrieLogIdentifier(99L, KECCAK_HASH_ZERO), BYTES_TEST);
     trieLogManagerTransaction.commit();
   }
 

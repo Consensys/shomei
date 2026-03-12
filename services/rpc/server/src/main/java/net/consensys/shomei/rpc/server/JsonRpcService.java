@@ -17,10 +17,12 @@ import static com.google.common.collect.Streams.stream;
 
 import net.consensys.shomei.fullsync.FullSyncDownloader;
 import net.consensys.shomei.metrics.MetricsService;
+import net.consensys.shomei.rpc.client.BesuSimulateClient;
 import net.consensys.shomei.rpc.server.method.LineaGetProof;
 import net.consensys.shomei.rpc.server.method.LineaGetTrielogProof;
 import net.consensys.shomei.rpc.server.method.RollupDeleteZkEVMStateMerkleProofByRange;
 import net.consensys.shomei.rpc.server.method.RollupForkChoiceUpdated;
+import net.consensys.shomei.rpc.server.method.RollupGetVirtualZkEVMStateMerkleProofV0;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMBlockNumber;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMStateMerkleProofV0;
 import net.consensys.shomei.rpc.server.method.SendRawTrieLog;
@@ -96,7 +98,8 @@ public class JsonRpcService extends AbstractVerticle {
       final Integer rpcHttpPort,
       final Optional<List<String>> hostAllowList,
       final FullSyncDownloader fullSyncDownloader,
-      final ZkWorldStateArchive worldStateArchive) {
+      final ZkWorldStateArchive worldStateArchive,
+      final BesuSimulateClient besuSimulateClient) {
     this.config = JsonRpcConfiguration.createDefault();
     config.setHost(rpcHttpHost);
     config.setPort(rpcHttpPort);
@@ -111,7 +114,8 @@ public class JsonRpcService extends AbstractVerticle {
             new RollupGetZkEVMBlockNumber(worldStateArchive),
             new RollupDeleteZkEVMStateMerkleProofByRange(worldStateArchive.getTraceManager()),
             new RollupForkChoiceUpdated(worldStateArchive, fullSyncDownloader),
-            new RollupGetZkEVMStateMerkleProofV0(worldStateArchive.getTraceManager())));
+            new RollupGetZkEVMStateMerkleProofV0(worldStateArchive.getTraceManager()),
+            new RollupGetVirtualZkEVMStateMerkleProofV0(worldStateArchive, besuSimulateClient)));
     this.maxActiveConnections = config.getMaxActiveConnections();
     this.livenessService = new HealthService(new LivenessCheck());
   }
