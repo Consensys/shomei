@@ -63,7 +63,7 @@ jobs:
         run: ./gradlew --no-daemon clean compileJava compileTestJava assemble
 
       - name: Upload workspace
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: workspace
           retention-days: 1
@@ -103,7 +103,7 @@ jobs:
         run: ./gradlew --no-daemon build
 
       - name: Store distribution artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: distribution
           path: build/distributions/
