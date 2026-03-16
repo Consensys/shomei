@@ -22,7 +22,7 @@ jobs:
         id: validate_release_tag
         run: |
           # strip all whitespace
-          TAG_VERSION="${CI_TAG_VERSION//[[:space:]]/}"
+          TAG_VERSION="${TAG_VERSION//[[:space:]]/}"
           if [[ "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?(-.*)?$ ]]; then
             echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT  # Set as output using the new syntax
           fi
@@ -126,6 +126,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
+          fetch-depth: 0
+          fetch-tags: true
           persist-credentials: false
 
       - name: Setup Java and Gradle
@@ -133,7 +135,7 @@ jobs:
         uses: Consensys/github-actions/java-setup-gradle@main
         with:
           DISTRIBUTION: 'adopt'
-           
+
       - name: Publish on maven central
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -149,7 +151,7 @@ jobs:
           BUILD_RELEASE: true
           TAG_VERSION: ${{ needs.assemble.outputs.publish-version }}
         run: |
-          ./gradlew clean build assemble publish jreleaserFullRelease
+          ./gradlew clean assemble publish jreleaserFullRelease
   dockerTests:
     needs:
       - assemble
@@ -196,7 +198,7 @@ jobs:
             TAR_FILE=./build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
             BUILD_DATE=${{ steps.docker-metadata.outputs.build-date }}
             VCS_REF=${{ steps.docker-metadata.outputs.vcs-ref }}
-            VERSION=${{ needs.build.outputs.publish-version }}
+            VERSION=${{ needs.assemble.outputs.publish-version }}
           no-cache: true
           load: true
           tags: consensys/linea-shomei:test
@@ -287,7 +289,7 @@ jobs:
             TAR_FILE=./build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
             BUILD_DATE=${{ steps.docker-metadata.outputs.build-date }}
             VCS_REF=${{ steps.docker-metadata.outputs.vcs-ref }}
-            VERSION=${{ needs.build.outputs.publish-version }}
+            VERSION=${{ needs.assemble.outputs.publish-version }}
           push: ${{ steps.docker-metadata.outputs.push }}
           tags: ${{ steps.docker-metadata.outputs.tags }}
 
@@ -318,7 +320,7 @@ jobs:
       - name: Determine Prerelease
         id: determine-prerelease
         run: |
-          if [[ "${{ needs.build.outputs.publish-version }}" == *-RC* ]]; then
+          if [[ "${{ needs.assemble.outputs.publish-version }}" == *-RC* ]]; then
             echo "prerelease=true" >> $GITHUB_OUTPUT
           else
             echo "prerelease=false" >> $GITHUB_OUTPUT
@@ -335,7 +337,7 @@ jobs:
             build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.zip
             build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.zip.sha256
 
-          tag_name: ${{ needs.build.outputs.publish-version }}
+          tag_name: ${{ needs.assemble.outputs.publish-version }}
           body: |
             # Shomei Release
             ### Additions and Improvements
