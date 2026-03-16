@@ -112,3 +112,4 @@ The release process is automated via github actions, but requires a few steps.  
   * Once the PR merges, github actions will trigger a build and publish of the `develop` image to dockerhub
 
 Finally, notify the team that the release is complete.
+
