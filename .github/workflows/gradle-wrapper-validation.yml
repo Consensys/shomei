@@ -1,5 +1,4 @@
 name: "Validate Gradle Wrapper"
-
 on: [push, pull_request]
 
 permissions: {} # lock everything by default (least-privilege)
@@ -16,4 +15,4 @@ jobs:
         with:
           persist-credentials: false
       - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v5
+        uses: gradle/wrapper-validation-action@v1

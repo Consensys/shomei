@@ -15,7 +15,7 @@ permissions: {} # lock everything by default (least-privilege)
 
 jobs:
   validate:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       TAG_VERSION: "${{ inputs.tag }}"
     steps:
@@ -23,7 +23,7 @@ jobs:
         id: validate_release_tag
         run: |
           # strip all whitespace
-          TAG_VERSION="${CI_TAG_VERSION//[[:space:]]/}"
+          TAG_VERSION="${TAG_VERSION//[[:space:]]/}"
           if [[ "$TAG_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?(-.*)?$ ]]; then
             echo "tag_version=$TAG_VERSION" >> $GITHUB_OUTPUT  # Set as output using the new syntax
           fi
@@ -48,16 +48,17 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
       - name: Setup Java and Gradle
         id: setup-java-gradle
-        uses: ConsenSys/github-actions/java-setup-gradle@main
+        uses: Consensys/github-actions/java-setup-gradle@main
         with:
           DISTRIBUTION: 'adopt'
 
       - name: Determine Shomei version
         id: project-version
-        uses: ConsenSys/github-actions/java-get-project-version@main
+        uses: Consensys/github-actions/java-get-project-version@main
 
       - name: Assemble
         run: ./gradlew --no-daemon clean compileJava compileTestJava assemble
@@ -86,10 +87,11 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
       - name: Setup Java and Gradle
         id: setup-java-gradle
-        uses: ConsenSys/github-actions/java-setup-gradle@main
+        uses: Consensys/github-actions/java-setup-gradle@main
         with:
           DISTRIBUTION: 'adopt'
 
@@ -124,13 +126,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
       - name: Setup Java and Gradle
         id: setup-java-gradle
-        uses: ConsenSys/github-actions/java-setup-gradle@main
+        uses: Consensys/github-actions/java-setup-gradle@main
         with:
           DISTRIBUTION: 'adopt'
-           
+
       - name: Publish on maven central
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -146,7 +152,7 @@ jobs:
           BUILD_RELEASE: true
           TAG_VERSION: ${{ needs.assemble.outputs.publish-version }}
         run: |
-          ./gradlew clean build assemble publish jreleaserFullRelease
+          ./gradlew clean assemble publish jreleaserFullRelease
   dockerTests:
     needs:
       - assemble
@@ -156,13 +162,13 @@ jobs:
     permissions:
       contents: read
       security-events: write  # required for Trivy SARIF upload
-    environment: docker
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -177,7 +183,7 @@ jobs:
 
       - name: Docker Metadata
         id: docker-metadata
-        uses: ConsenSys/github-actions/java-docker-metadata@main
+        uses: Consensys/github-actions/java-docker-metadata@main
         with:
           publish-version: ${{ needs.assemble.outputs.publish-version }}
           docker-repo: "consensys/linea-shomei"
@@ -193,7 +199,7 @@ jobs:
             TAR_FILE=./build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
             BUILD_DATE=${{ steps.docker-metadata.outputs.build-date }}
             VCS_REF=${{ steps.docker-metadata.outputs.vcs-ref }}
-            VERSION=${{ needs.build.outputs.publish-version }}
+            VERSION=${{ needs.assemble.outputs.publish-version }}
           no-cache: true
           load: true
           tags: consensys/linea-shomei:test
@@ -216,7 +222,7 @@ jobs:
           echo -e "$SUMMARY_CONTENT" >> $GITHUB_STEP_SUMMARY  
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@97e0b3872f55f89b95b2f65b3dbab56962816478 # v0.34.2
+        uses: aquasecurity/trivy-action@0.29.0
         with:
           image-ref: 'consensys/linea-shomei:test'
           format: 'sarif'
@@ -225,7 +231,7 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
@@ -240,13 +246,13 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-    environment: docker
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -261,13 +267,13 @@ jobs:
 
       - name: Docker Metadata
         id: docker-metadata
-        uses: ConsenSys/github-actions/java-docker-metadata@main
+        uses: Consensys/github-actions/java-docker-metadata@main
         with:
           publish-version: ${{ needs.assemble.outputs.publish-version }}
           docker-repo: "consensys/linea-shomei"
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         # if: steps.docker-metadata.outputs.push == 'true'
         with:
           username: ${{ secrets.DOCKER_USER_RW }}
@@ -284,7 +290,7 @@ jobs:
             TAR_FILE=./build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
             BUILD_DATE=${{ steps.docker-metadata.outputs.build-date }}
             VCS_REF=${{ steps.docker-metadata.outputs.vcs-ref }}
-            VERSION=${{ needs.build.outputs.publish-version }}
+            VERSION=${{ needs.assemble.outputs.publish-version }}
           # push: ${{ steps.docker-metadata.outputs.push }}
           push: true
           tags: ${{ steps.docker-metadata.outputs.tags }}
@@ -316,7 +322,7 @@ jobs:
       - name: Determine Prerelease
         id: determine-prerelease
         run: |
-          if [[ "${{ needs.build.outputs.publish-version }}" == *-RC* ]]; then
+          if [[ "${{ needs.assemble.outputs.publish-version }}" == *-RC* ]]; then
             echo "prerelease=true" >> $GITHUB_OUTPUT
           else
             echo "prerelease=false" >> $GITHUB_OUTPUT
@@ -333,7 +339,7 @@ jobs:
             build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.zip
             build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.zip.sha256
 
-          tag_name: ${{ needs.build.outputs.publish-version }}
+          tag_name: ${{ needs.assemble.outputs.publish-version }}
           body: |
             # Shomei Release
             ### Additions and Improvements
