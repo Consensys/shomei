@@ -16,11 +16,16 @@ tasks.named('jar') {
 dependencies {
 
     implementation project(':core')
+    implementation project(':trie')
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'org.hyperledger.besu:besu-datatypes'
     implementation 'io.consensys.tuweni:tuweni-bytes'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testImplementation 'org.assertj:assertj-core'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }
