@@ -17,6 +17,9 @@ import java.io.IOException;
 import java.util.Optional;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -29,6 +32,13 @@ import org.hyperledger.besu.ethereum.trie.Node;
 
 @SuppressWarnings("rawtypes")
 public class JsonTraceParser {
+
+  public static class Bytes32Deserializer extends JsonDeserializer<Bytes32> {
+    @Override
+    public Bytes32 deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      return Bytes32.fromHexString(p.getText());
+    }
+  }
 
   public static Module[] modules =
       new Module[] {
@@ -65,17 +75,18 @@ public class JsonTraceParser {
                     jsonGen.writeString(node.toHexString());
                   }
                 }),
-              new SimpleModule()
-                      .addSerializer(
-                      Bytes32.class,
-                      new JsonSerializer<>() {
-                          @Override
-                          public void serialize(
-                                  Bytes32 node, JsonGenerator jsonGen, SerializerProvider serProv)
-                                  throws IOException {
-                              jsonGen.writeString(node.toHexString());
-                          }
-                      }),
+        new SimpleModule()
+            .addSerializer(
+                Bytes32.class,
+                new JsonSerializer<>() {
+                  @Override
+                  public void serialize(
+                      Bytes32 node, JsonGenerator jsonGen, SerializerProvider serProv)
+                      throws IOException {
+                    jsonGen.writeString(node.toHexString());
+                  }
+                })
+            .addDeserializer(Bytes32.class, new Bytes32Deserializer()),
         new SimpleModule()
             .addSerializer(
                 Optional.class,
