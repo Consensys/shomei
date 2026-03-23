@@ -63,19 +63,46 @@ class TrieLogElementTest {
   }
 
   @Test
-  void trieLogIdentifierHasCorrectValues() throws Exception {
+  void syncingFieldMapsToInitialSync() throws Exception {
+    Map<String, Object> map = new LinkedHashMap<>();
+    map.put("blockNumber", 0);
+    map.put(
+        "blockHash",
+        "0xe534c5c55dddaac9ae23a939aa52a877f1f78b9fffbee6f313244ff35228996b");
+    map.put("trieLog", "0xdeadbeef");
+    map.put("syncing", true);
+
+    TrieLogElement element = MAPPER.convertValue(map, TrieLogElement.class);
+
+    assertThat(element.blockNumber()).isEqualTo(0L);
+    assertThat(element.isInitialSync()).isTrue();
+  }
+
+  @Test
+  void syncingAbsentDefaultsToFalse() throws Exception {
     String json =
         "{\"blockNumber\":100,"
             + "\"blockHash\":\"0x0000000000000000000000000000000000000000000000000000000000000001\","
             + "\"trieLog\":\"0x\"}";
 
     TrieLogElement element = MAPPER.readValue(json, TrieLogElement.class);
-    var identifier = element.getTrieLogIdentifier();
 
-    assertThat(identifier.blockNumber()).isEqualTo(100L);
-    assertThat(identifier.blockHash())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0x0000000000000000000000000000000000000000000000000000000000000001"));
+    assertThat(element.isInitialSync()).isFalse();
+    assertThat(element.getTrieLogIdentifier().blockNumber()).isEqualTo(100L);
+  }
+
+  @Test
+  void unknownFieldsAreIgnored() throws Exception {
+    Map<String, Object> map = new LinkedHashMap<>();
+    map.put("blockNumber", 1);
+    map.put(
+        "blockHash",
+        "0x0000000000000000000000000000000000000000000000000000000000000001");
+    map.put("trieLog", "0x");
+    map.put("someUnknownField", "value");
+
+    TrieLogElement element = MAPPER.convertValue(map, TrieLogElement.class);
+
+    assertThat(element.blockNumber()).isEqualTo(1L);
   }
 }
