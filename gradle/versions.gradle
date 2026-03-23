@@ -33,7 +33,7 @@ dependencyManagement {
     dependency 'ConsenSys:besu-shomei-plugin:0.7.5'
     dependency 'ConsenSys:besu-shomei-plugin-test-support:0.7.5'
 
-    dependency 'org.hyperledger.besu:gnark:1.4.1-SNAPSHOT'
+    dependency 'org.hyperledger.besu:gnark:1.4.1'
 
   }
 }
