@@ -17,10 +17,12 @@ import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.apache.tuweni.bytes.Bytes32;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TrieLogElement {
 
   private Long blockNumber;
@@ -36,10 +38,11 @@ public class TrieLogElement {
       @JsonProperty("blockHash")
           @JsonDeserialize(using = JsonTraceParser.Bytes32Deserializer.class)
           final Bytes32 blockHash,
-      @JsonProperty("trieLog") final String trieLog) {
+      @JsonProperty("trieLog") final String trieLog,
+      @JsonProperty("syncing") final Boolean syncing) {
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;
-    this.isInitialSync = false;
+    this.isInitialSync = syncing != null && syncing;
     this.trieLog = trieLog;
   }
 
