@@ -221,6 +221,7 @@ jobs:
           echo -e "$SUMMARY_CONTENT" >> $GITHUB_STEP_SUMMARY  
 
       - name: Run Trivy vulnerability scanner
+        if: false  # TEMPORARY: Disabled due to Aqua Security breach — re-enable once resolved
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           image-ref: 'consensys/linea-shomei:test'
