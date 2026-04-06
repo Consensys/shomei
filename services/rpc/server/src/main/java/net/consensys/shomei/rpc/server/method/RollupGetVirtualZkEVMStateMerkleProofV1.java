@@ -33,12 +33,12 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSucces
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 
-public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
+public class RollupGetVirtualZkEVMStateMerkleProofV1 implements JsonRpcMethod {
 
   final ZkWorldStateArchive worldStateArchive;
   final BesuSimulateClient besuSimulateClient;
 
-  public RollupGetVirtualZkEVMStateMerkleProofV0(
+  public RollupGetVirtualZkEVMStateMerkleProofV1(
       final ZkWorldStateArchive worldStateArchive, final BesuSimulateClient besuSimulateClient) {
     this.worldStateArchive = worldStateArchive;
     this.besuSimulateClient = besuSimulateClient;
@@ -46,7 +46,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
   @Override
   public String getName() {
-    return ShomeiRpcMethod.ROLLUP_GET_VIRTUAL_ZKEVM_STATE_MERKLE_PROOF_V0.getMethodName();
+    return ShomeiRpcMethod.ROLLUP_GET_VIRTUAL_ZKEVM_STATE_MERKLE_PROOF_V1.getMethodName();
   }
 
   @Override
