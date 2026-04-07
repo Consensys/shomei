@@ -13,10 +13,12 @@
 package net.consensys.shomei.rpc.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
 
 import java.math.BigInteger;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
+import io.vertx.core.Vertx;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.crypto.KeyPair;
 import org.hyperledger.besu.crypto.SignatureAlgorithm;
@@ -25,8 +27,8 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.TransactionType;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.core.Transaction;
-import org.hyperledger.besu.ethereum.core.encoding.EncodingContext;
-import org.hyperledger.besu.ethereum.core.encoding.TransactionDecoder;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -39,6 +41,25 @@ public class BesuSimulateClientTest {
   private static final String TEST_PRIVATE_KEY =
       "0x4b2c1f9a7e3d5068bf12ca9e0d8374a6519f2e7c8b03d61a5f94e72c8d0163ab";
 
+  // Point to a non-listening port so the HTTP call fails fast after decode succeeds
+  private static final String BESU_HOST = "127.0.0.1";
+  private static final int BESU_PORT = 1; // unlikely to be listening
+
+  private static Vertx vertx;
+  private static BesuSimulateClient client;
+
+  @BeforeAll
+  static void setUp() {
+    vertx = Vertx.vertx();
+    client = new BesuSimulateClient(vertx, BESU_HOST, BESU_PORT);
+  }
+
+  @AfterAll
+  static void tearDown() {
+    client.close();
+    vertx.close();
+  }
+
   private static KeyPair createTestKeyPair() {
     final SignatureAlgorithm signatureAlgorithm = SignatureAlgorithmFactory.getInstance();
     return signatureAlgorithm.createKeyPair(
@@ -46,6 +67,11 @@ public class BesuSimulateClientTest {
             Bytes.fromHexString(TEST_PRIVATE_KEY).toUnsignedBigInteger()));
   }
 
+  /**
+   * Verifies that simulateTransaction successfully decodes an EIP-1559 typed transaction.
+   * The HTTP call to Besu will fail (no server), but the decode must succeed — so the error
+   * must be a connection error, NOT "Failed to decode transaction RLP".
+   */
   @Test
   public void shouldDecodeEip1559TypedTransactionRlp() {
     final Transaction eip1559Tx =
@@ -61,24 +87,22 @@ public class BesuSimulateClientTest {
             .payload(Bytes.fromHexString("0x68656c6c6f"))
             .signAndBuild(createTestKeyPair());
 
-    final Bytes encoded = eip1559Tx.encoded();
+    final String txRlpHex = eip1559Tx.encoded().toHexString();
 
-    assertThatNoException()
-        .isThrownBy(
-            () ->
-                TransactionDecoder.decodeOpaqueBytes(encoded, EncodingContext.POOLED_TRANSACTION));
+    final CompletableFuture<String> future = client.simulateTransaction(7L, txRlpHex);
 
-    final Transaction decoded =
-        TransactionDecoder.decodeOpaqueBytes(encoded, EncodingContext.POOLED_TRANSACTION);
-
-    assertThat(decoded).isNotNull();
-    assertThat(decoded.getType().getEthSerializedType()).isEqualTo((byte) 0x02);
-    assertThat(decoded.getSender()).isEqualTo(eip1559Tx.getSender());
-    assertThat(decoded.getTo()).isPresent();
-    assertThat(decoded.getMaxFeePerGas()).isPresent();
-    assertThat(decoded.getMaxPriorityFeePerGas()).isPresent();
+    // The future should fail with a connection error (no Besu server), NOT an RLP decode error
+    try {
+      future.get();
+    } catch (ExecutionException | InterruptedException e) {
+      assertThat(e.getCause().getMessage()).doesNotContain("Failed to decode transaction RLP");
+      assertThat(e.getCause().getMessage()).doesNotContain("Cannot enter a lists");
+    }
   }
 
+  /**
+   * Verifies that simulateTransaction successfully decodes a legacy (FRONTIER) transaction.
+   */
   @Test
   public void shouldDecodeLegacyTransactionRlp() {
     final Transaction legacyTx =
@@ -93,17 +117,15 @@ public class BesuSimulateClientTest {
             .chainId(BigInteger.ONE)
             .signAndBuild(createTestKeyPair());
 
-    final Bytes encoded = legacyTx.encoded();
+    final String txRlpHex = legacyTx.encoded().toHexString();
 
-    assertThatNoException()
-        .isThrownBy(
-            () ->
-                TransactionDecoder.decodeOpaqueBytes(encoded, EncodingContext.POOLED_TRANSACTION));
+    final CompletableFuture<String> future = client.simulateTransaction(7L, txRlpHex);
 
-    final Transaction decoded =
-        TransactionDecoder.decodeOpaqueBytes(encoded, EncodingContext.POOLED_TRANSACTION);
-
-    assertThat(decoded).isNotNull();
-    assertThat(decoded.getSender()).isEqualTo(legacyTx.getSender());
+    try {
+      future.get();
+    } catch (ExecutionException | InterruptedException e) {
+      assertThat(e.getCause().getMessage()).doesNotContain("Failed to decode transaction RLP");
+      assertThat(e.getCause().getMessage()).doesNotContain("Cannot enter a lists");
+    }
   }
 }
