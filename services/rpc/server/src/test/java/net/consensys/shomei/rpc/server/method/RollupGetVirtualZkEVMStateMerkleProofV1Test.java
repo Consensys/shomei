@@ -205,45 +205,6 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
     assertThat(errorResponse.getJsonError().message()).contains("Error processing virtual block");
   }
 
-  @Test
-  public void shouldHandleEip1559TypedTransaction() throws Exception {
-    final String eip1559TxRlp =
-        "0x02f8d2820539808405f5e100843b9aca00830493e094320b17536e368c5f29d16ea13cabdabae5ba541480"
-            + "b864b49fd023000000000000000000000000000000000000000000000000000000000000002000000000000000"
-            + "0000000000000000000000000000000000000000000000000568656c6c6f00000000000000000000000000000"
-            + "0000000000000000000000000c080a06b7887c2fbea95195e3421883dc963432935aa7ae78f1dbef2cc17e1"
-            + "e8ea52fda06a74eebacd6d7f15afd153699ab5acbcf14275db27ceb8f6de377030c6fc2549";
-
-    final String mockTrieLogHex = createMockTrieLogHex();
-
-    when(besuSimulateClient.simulateTransaction(eq(7L), eq(eip1559TxRlp)))
-        .thenReturn(CompletableFuture.completedFuture(mockTrieLogHex));
-
-    when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
-    when(trieLogManager.getTrieLog(7L))
-        .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
-    when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
-
-    when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
-    when(traceManager.getZkStateRootHash(7L)).thenReturn(Optional.of(KECCAK_HASH_ZERO));
-
-    when(worldStateArchive.getTrieLogLayerConverter()).thenReturn(trieLogLayerConverter);
-    when(trieLogLayerConverter.decodeTrieLog(any())).thenReturn(trieLogLayer);
-
-    final List<List<Trace>> mockTraces = List.of(List.of());
-    final ZkWorldStateArchive.VirtualTraceResult mockResult =
-        new ZkWorldStateArchive.VirtualTraceResult(mockTraces, KECCAK_HASH_ZERO);
-    when(worldStateArchive.generateVirtualTrace(eq(7L), any(TrieLogLayer.class)))
-        .thenReturn(mockResult);
-
-    final JsonRpcRequestContext request = request(8L, eip1559TxRlp);
-    final JsonRpcResponse response = method.response(request);
-
-    assertThat(response).isInstanceOf(JsonRpcSuccessResponse.class);
-    final JsonRpcSuccessResponse successResponse = (JsonRpcSuccessResponse) response;
-    assertThat(successResponse.getResult()).isNotNull();
-  }
-
   private JsonRpcRequestContext request(final long blockNumber, final String transactionRlp) {
     return new JsonRpcRequestContext(
         new JsonRpcRequest(

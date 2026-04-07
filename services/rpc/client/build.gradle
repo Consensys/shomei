@@ -40,6 +40,12 @@ dependencies {
   api 'org.slf4j:slf4j-api'
   implementation 'org.apache.logging.log4j:log4j-core'
   implementation 'org.apache.logging.log4j:log4j-slf4j2-impl'
+
+  // Test dependencies
+  testImplementation 'org.junit.jupiter:junit-jupiter-api'
+  testImplementation 'org.assertj:assertj-core'
+  testImplementation 'org.hyperledger.besu.internal:besu-crypto-algorithms'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
 test {
