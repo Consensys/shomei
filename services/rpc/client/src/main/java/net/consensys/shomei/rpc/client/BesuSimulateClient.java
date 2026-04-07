@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.BytesHolder;
 import org.hyperledger.besu.ethereum.core.Transaction;
@@ -58,10 +57,12 @@ public class BesuSimulateClient {
   private final int besuHttpPort;
 
   public BesuSimulateClient(
-      final Vertx vertx, final String besuHttpHost, final int besuHttpPort) {
+      final Vertx vertx,
+      final WebClient webClient,
+      final String besuHttpHost,
+      final int besuHttpPort) {
     this.vertx = vertx;
-    final WebClientOptions options = new WebClientOptions();
-    this.webClient = WebClient.create(vertx, options);
+    this.webClient = webClient;
     this.besuHttpHost = besuHttpHost;
     this.besuHttpPort = besuHttpPort;
   }

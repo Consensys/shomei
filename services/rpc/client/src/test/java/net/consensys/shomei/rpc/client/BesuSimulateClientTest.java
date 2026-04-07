@@ -13,12 +13,29 @@
 package net.consensys.shomei.rpc.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import net.consensys.shomei.rpc.client.model.SimulateV1Response;
 
 import java.math.BigInteger;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.Json;
+import io.vertx.ext.web.client.HttpRequest;
+import io.vertx.ext.web.client.HttpResponse;
+import io.vertx.ext.web.client.WebClient;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.crypto.KeyPair;
 import org.hyperledger.besu.crypto.SignatureAlgorithm;
@@ -27,37 +44,34 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.TransactionType;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.core.Transaction;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * Tests that BesuSimulateClient can decode typed (EIP-1559) transaction RLP. Previously, the client
  * used Transaction.readFrom(BytesValueRLPInput) which does not handle the type prefix byte,
  * causing: "Cannot enter a lists, input is fully consumed (at bytes 0-0: [])"
  */
+@ExtendWith(MockitoExtension.class)
 public class BesuSimulateClientTest {
 
   private static final String TEST_PRIVATE_KEY =
       "0x4b2c1f9a7e3d5068bf12ca9e0d8374a6519f2e7c8b03d61a5f94e72c8d0163ab";
+  private static final String MOCK_TRIELOG = "0xdeadbeef";
 
-  // Point to a non-listening port so the HTTP call fails fast after decode succeeds
-  private static final String BESU_HOST = "127.0.0.1";
-  private static final int BESU_PORT = 1; // unlikely to be listening
+  @Mock private Vertx vertx;
+  @Mock private WebClient webClient;
+  @Mock private HttpRequest<Buffer> httpRequest;
+  @Mock private HttpResponse<Buffer> httpResponse;
 
-  private static Vertx vertx;
-  private static BesuSimulateClient client;
+  private BesuSimulateClient client;
 
-  @BeforeAll
-  static void setUp() {
-    vertx = Vertx.vertx();
-    client = new BesuSimulateClient(vertx, BESU_HOST, BESU_PORT);
-  }
-
-  @AfterAll
-  static void tearDown() {
-    client.close();
-    vertx.close();
+  @BeforeEach
+  void setUp() {
+    client = new BesuSimulateClient(vertx, webClient, "127.0.0.1", 8545);
   }
 
   private static KeyPair createTestKeyPair() {
@@ -67,13 +81,58 @@ public class BesuSimulateClientTest {
             Bytes.fromHexString(TEST_PRIVATE_KEY).toUnsignedBigInteger()));
   }
 
-  /**
-   * Verifies that simulateTransaction successfully decodes an EIP-1559 typed transaction.
-   * The HTTP call to Besu will fail (no server), but the decode must succeed — so the error
-   * must be a connection error, NOT "Failed to decode transaction RLP".
-   */
+  @SuppressWarnings("unchecked")
+  private void stubSuccessfulBesuResponse() {
+    when(webClient.request(eq(HttpMethod.POST), anyInt(), anyString(), anyString()))
+        .thenReturn(httpRequest);
+    when(httpRequest.putHeader(anyString(), anyString())).thenReturn(httpRequest);
+    when(httpRequest.timeout(anyLong())).thenReturn(httpRequest);
+
+    // Build a valid SimulateV1Response JSON with a trielog
+    final String responseJson =
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":[{\"trieLog\":\""
+            + MOCK_TRIELOG
+            + "\",\"calls\":[{\"status\":\"0x1\"}]}]}";
+
+    when(httpResponse.bodyAsJson(SimulateV1Response.class))
+        .thenReturn(Json.decodeValue(responseJson, SimulateV1Response.class));
+
+    doAnswer(
+            invocation -> {
+              final Handler<AsyncResult<HttpResponse<Buffer>>> handler =
+                  invocation.getArgument(1);
+              handler.handle(
+                  new AsyncResult<>() {
+                    @Override
+                    public HttpResponse<Buffer> result() {
+                      return httpResponse;
+                    }
+
+                    @Override
+                    public Throwable cause() {
+                      return null;
+                    }
+
+                    @Override
+                    public boolean succeeded() {
+                      return true;
+                    }
+
+                    @Override
+                    public boolean failed() {
+                      return false;
+                    }
+                  });
+              return null;
+            })
+        .when(httpRequest)
+        .sendJson(any(), any(Handler.class));
+  }
+
   @Test
-  public void shouldDecodeEip1559TypedTransactionRlp() {
+  public void shouldDecodeEip1559TypedTransactionAndReturnTrielog() throws Exception {
+    stubSuccessfulBesuResponse();
+
     final Transaction eip1559Tx =
         Transaction.builder()
             .type(TransactionType.EIP1559)
@@ -87,24 +146,18 @@ public class BesuSimulateClientTest {
             .payload(Bytes.fromHexString("0x68656c6c6f"))
             .signAndBuild(createTestKeyPair());
 
-    final String txRlpHex = eip1559Tx.encoded().toHexString();
+    final CompletableFuture<String> future =
+        client.simulateTransaction(7L, eip1559Tx.encoded().toHexString());
 
-    final CompletableFuture<String> future = client.simulateTransaction(7L, txRlpHex);
-
-    // The future should fail with a connection error (no Besu server), NOT an RLP decode error
-    try {
-      future.get();
-    } catch (ExecutionException | InterruptedException e) {
-      assertThat(e.getCause().getMessage()).doesNotContain("Failed to decode transaction RLP");
-      assertThat(e.getCause().getMessage()).doesNotContain("Cannot enter a lists");
-    }
+    final String trieLog = future.get();
+    assertThat(trieLog).isEqualTo(MOCK_TRIELOG);
+    verify(httpRequest).sendJson(any(), any());
   }
 
-  /**
-   * Verifies that simulateTransaction successfully decodes a legacy (FRONTIER) transaction.
-   */
   @Test
-  public void shouldDecodeLegacyTransactionRlp() {
+  public void shouldDecodeLegacyTransactionAndReturnTrielog() throws Exception {
+    stubSuccessfulBesuResponse();
+
     final Transaction legacyTx =
         Transaction.builder()
             .type(TransactionType.FRONTIER)
@@ -117,15 +170,11 @@ public class BesuSimulateClientTest {
             .chainId(BigInteger.ONE)
             .signAndBuild(createTestKeyPair());
 
-    final String txRlpHex = legacyTx.encoded().toHexString();
+    final CompletableFuture<String> future =
+        client.simulateTransaction(7L, legacyTx.encoded().toHexString());
 
-    final CompletableFuture<String> future = client.simulateTransaction(7L, txRlpHex);
-
-    try {
-      future.get();
-    } catch (ExecutionException | InterruptedException e) {
-      assertThat(e.getCause().getMessage()).doesNotContain("Failed to decode transaction RLP");
-      assertThat(e.getCause().getMessage()).doesNotContain("Cannot enter a lists");
-    }
+    final String trieLog = future.get();
+    assertThat(trieLog).isEqualTo(MOCK_TRIELOG);
+    verify(httpRequest).sendJson(any(), any());
   }
 }

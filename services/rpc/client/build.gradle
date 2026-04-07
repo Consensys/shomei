@@ -45,6 +45,8 @@ dependencies {
   testImplementation 'org.junit.jupiter:junit-jupiter-api'
   testImplementation 'org.assertj:assertj-core'
   testImplementation 'org.hyperledger.besu.internal:besu-crypto-algorithms'
+  testImplementation 'org.mockito:mockito-core'
+  testImplementation 'org.mockito:mockito-junit-jupiter'
   testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
