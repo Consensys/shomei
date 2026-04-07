@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei;
 
 import static net.consensys.shomei.ZkAccount.EMPTY_CODE_HASH;
@@ -20,7 +19,9 @@ import static net.consensys.shomei.util.TestFixtureGenerator.createDumAddress;
 import static net.consensys.shomei.util.TestFixtureGenerator.createDumDigest;
 import static net.consensys.shomei.util.TestFixtureGenerator.createDumFullBytes;
 import static net.consensys.shomei.util.TestFixtureGenerator.getAccountOne;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeByte32;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.safeUInt256;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
@@ -32,7 +33,7 @@ import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 import net.consensys.shomei.trie.storage.TrieStorage;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.AccountKey;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 import net.consensys.zkevm.HashProvider;
 
 import java.io.IOException;
@@ -42,7 +43,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.datatypes.Wei;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -111,45 +112,45 @@ public class LayeredWorldStateTraceTest {
   private ZkAccount makeAccount2Simple() {
     return new ZkAccount(
             new AccountKey(createDumAddress(41)),
-            42,
-            Wei.of(354),
+            safeUInt256(UInt256.valueOf(42)),
+            safeUInt256(UInt256.valueOf(354)),
             DEFAULT_TRIE_ROOT,
             EMPTY_CODE_HASH,
             EMPTY_KECCAK_CODE_HASH,
-            0L);
+            safeUInt256(UInt256.ZERO));
   }
 
   private ZkAccount makeAccount2Contract() {
     return new ZkAccount(
             new AccountKey(createDumAddress(47)),
-            41,
-            Wei.of(15353),
+            safeUInt256(UInt256.valueOf(41)),
+            safeUInt256(UInt256.valueOf(15353)),
             DEFAULT_TRIE_ROOT,
             createDumDigest(75),
-            createDumFullBytes(15),
-            7L);
+            safeByte32(createDumFullBytes(15)),
+            safeUInt256(UInt256.valueOf(7)));
   }
 
   private MutableZkAccount makeMutableAccount2Contract() {
     return new MutableZkAccount(
             new AccountKey(createDumAddress(47)),
-            createDumFullBytes(15),
+            safeByte32(createDumFullBytes(15)),
             createDumDigest(75),
-            7L,
-            41,
-            Wei.of(15353),
+            safeUInt256(UInt256.valueOf(7)),
+            safeUInt256(UInt256.valueOf(41)),
+            safeUInt256(UInt256.valueOf(15353)),
             DEFAULT_TRIE_ROOT);
   }
 
   private ZkAccount makeAccount3() {
     return new ZkAccount(
             new AccountKey(createDumAddress(120)),
-            48,
-            Wei.of(9835),
+            safeUInt256(UInt256.valueOf(48)),
+            safeUInt256(UInt256.valueOf(9835)),
             DEFAULT_TRIE_ROOT,
             createDumDigest(54),
-            createDumFullBytes(85),
-            19L);
+            safeByte32(createDumFullBytes(85)),
+            safeUInt256(UInt256.valueOf(19)));
   }
 
   // ===========================================================================
@@ -172,7 +173,7 @@ public class LayeredWorldStateTraceTest {
     AccountTrieRepositoryWrapper layeredRepo = new AccountTrieRepositoryWrapper(layeredStorage);
     ZKTrie layeredTrie = loadAccountTrie(parentRoot, layeredRepo);
 
-    Trace trace = layeredTrie.readWithTrace(hkey, MimcSafeBytes.safeByte32(key));
+    Trace trace = layeredTrie.readWithTrace(hkey, safeByte32(key));
 
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(trace))
             .isEqualToIgnoringWhitespace(getResources("testTraceReadZero.json"));
@@ -185,8 +186,8 @@ public class LayeredWorldStateTraceTest {
   /** Original: write in parent, read from overlay. */
   @Test
   public void testTraceReadSimpleValueFromParent() throws IOException {
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
+    final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
     final Bytes32 hkey = HashProvider.trieHash(key);
 
     InMemoryWorldStateStorage parentStorage = new InMemoryWorldStateStorage();
@@ -370,12 +371,13 @@ public class LayeredWorldStateTraceTest {
             new StorageTrieRepositoryWrapper(zkAccount2.hashCode(), layeredStorage);
     ZKTrie account2Storage = loadStorageTrie(zkAccount2.getStorageRoot(), storageRepo);
 
-    final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
     final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
-    final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
-
+    trace3.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
     zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
+
     AccountTrieRepositoryWrapper layeredRepo = new AccountTrieRepositoryWrapper(layeredStorage);
     ZKTrie layeredTrie = loadAccountTrie(parentRoot, layeredRepo);
     final Trace trace4 =
@@ -411,10 +413,11 @@ public class LayeredWorldStateTraceTest {
             new StorageTrieRepositoryWrapper(zkAccount2.hashCode(), layeredStorage);
     ZKTrie account2Storage = loadStorageTrie(zkAccount2.getStorageRoot(), storageRepo);
 
-    final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
     final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
-    final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
+    trace3.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
 
     zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
     final Trace trace4 =
@@ -454,12 +457,13 @@ public class LayeredWorldStateTraceTest {
             new StorageTrieRepositoryWrapper(zkAccount2.hashCode(), layeredStorage);
     ZKTrie account2Storage = loadStorageTrie(zkAccount2.getStorageRoot(), storageRepo);
 
-    final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
     final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
-    final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     final Trace trace3 = account2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
-
+    trace3.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
     zkAccount2.setStorageRoot(account2Storage.getTopRootHash());
+
     final Trace trace4 =
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
@@ -496,9 +500,9 @@ public class LayeredWorldStateTraceTest {
     ZKTrie parentAccount2Storage =
             loadStorageTrie(zkAccount2.getStorageRoot(), parentStorageRepo);
 
-    final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
     final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
-    final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     parentAccount2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     parentAccount2Storage.commit();
     final Bytes32 parentStorageRoot = parentAccount2Storage.getTopRootHash();
@@ -531,9 +535,9 @@ public class LayeredWorldStateTraceTest {
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
-    final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
+    final PoseidonSafeBytes<Bytes32> newSlotKey = safeByte32(createDumFullBytes(11));
     final Bytes32 newSlotKeyHash = HashProvider.trieHash(newSlotKey);
-    final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
+    final PoseidonSafeBytes<Bytes32> newSlotValue = safeByte32(createDumFullBytes(78));
     Trace trace4 =
             layeredAccount2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
@@ -573,9 +577,9 @@ public class LayeredWorldStateTraceTest {
     ZKTrie parentAccount2Storage =
             loadStorageTrie(zkAccount2.getStorageRoot(), parentStorageRepo);
 
-    final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
     final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
-    final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     parentAccount2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
     parentAccount2Storage.commit();
     final Bytes32 parentStorageRoot = parentAccount2Storage.getTopRootHash();
@@ -608,9 +612,9 @@ public class LayeredWorldStateTraceTest {
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
-    final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
+    final PoseidonSafeBytes<Bytes32> newSlotKey = safeByte32(createDumFullBytes(11));
     final Bytes32 newSlotKeyHash = HashProvider.trieHash(newSlotKey);
-    final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
+    final PoseidonSafeBytes<Bytes32> newSlotValue = safeByte32(createDumFullBytes(78));
     Trace trace4 =
             layeredAccount2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());
@@ -655,9 +659,9 @@ public class LayeredWorldStateTraceTest {
     ZKTrie layeredAccount2Storage =
             loadStorageTrie(zkAccount2.getStorageRoot(), layeredStorageRepo);
 
-    final MimcSafeBytes<Bytes32> slotKey = createDumFullBytes(14);
+    final PoseidonSafeBytes<Bytes32> slotKey = safeByte32(createDumFullBytes(14));
     final Bytes32 slotKeyHash = HashProvider.trieHash(slotKey);
-    final MimcSafeBytes<Bytes32> slotValue = createDumFullBytes(18);
+    final PoseidonSafeBytes<Bytes32> slotValue = safeByte32(createDumFullBytes(18));
     layeredAccount2Storage.putWithTrace(slotKeyHash, slotKey, slotValue);
 
     zkAccount2.setStorageRoot(layeredAccount2Storage.getTopRootHash());
@@ -675,9 +679,9 @@ public class LayeredWorldStateTraceTest {
             layeredTrie.putWithTrace(
                     zkAccount2.getHkey(), zkAccount2.getAddress(), zkAccount2.getEncodedBytes());
 
-    final MimcSafeBytes<Bytes32> newSlotKey = createDumFullBytes(11);
+    final PoseidonSafeBytes<Bytes32> newSlotKey = safeByte32(createDumFullBytes(11));
     final Bytes32 newSlotKeyHash = HashProvider.trieHash(newSlotKey);
-    final MimcSafeBytes<Bytes32> newSlotValue = createDumFullBytes(78);
+    final PoseidonSafeBytes<Bytes32> newSlotValue = safeByte32(createDumFullBytes(78));
     Trace trace4 =
             layeredAccount2Storage.putWithTrace(newSlotKeyHash, newSlotKey, newSlotValue);
     trace4.setLocation(zkAccount2.getAddress().getOriginalUnsafeValue());

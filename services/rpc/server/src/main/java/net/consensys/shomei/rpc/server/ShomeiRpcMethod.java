@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server;
 
 public enum ShomeiRpcMethod {
@@ -23,7 +22,7 @@ public enum ShomeiRpcMethod {
   LINEA_GET_TRIELOG_PROOF("linea_getTrielogProof"),
 
   ROLLUP_GET_ZKEVM_STATE_MERKLE_PROOF_V0("rollup_getZkEVMStateMerkleProofV0"),
-  ROLLUP_GET_VIRTUAL_ZKEVM_STATE_MERKLE_PROOF_V0("rollup_getVirtualZkEVMStateMerkleProofV0"),
+  ROLLUP_GET_VIRTUAL_ZKEVM_STATE_MERKLE_PROOF_V1("rollup_getVirtualZkEVMStateMerkleProofV1"),
   ROLLUP_DELETE_ZKEVM_STATE_MERKLE_PROOF_BY_RANGE("rollup_deleteZkEVMStateMerkleProofByRange"),
 
   ROLLUP_FORK_CHOICE_UPDATED("rollup_forkChoiceUpdated");

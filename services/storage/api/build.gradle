@@ -2,21 +2,21 @@
 apply plugin: 'java-library'
 
 jar {
-    archiveBaseName = 'shomei-storage-api'
-    manifest {
-        attributes(
-                'Specification-Title': archiveBaseName,
-                'Specification-Version': project.version,
-                'Implementation-Title': archiveBaseName,
-                'Implementation-Version': calculateVersion()
-        )
-    }
+  archiveBaseName = 'shomei-storage-api'
+  manifest {
+    attributes(
+      'Specification-Title': archiveBaseName,
+      'Specification-Version': project.version,
+      'Implementation-Title': archiveBaseName,
+      'Implementation-Version': calculateVersion()
+      )
+  }
 }
 dependencies {
-    implementation project(':config')
-    testImplementation 'org.assertj:assertj-core'
+  implementation project(':config')
+  testImplementation 'org.assertj:assertj-core'
 }
 
 test {
-    useJUnitPlatform()
+  useJUnitPlatform()
 }

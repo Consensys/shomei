@@ -20,4 +20,3 @@ include 'services:rpc:server'
 findProject(':services:rpc:server')?.name = 'server'
 include 'services:rpc:client'
 findProject(':services:rpc:client')?.name = 'client'
-

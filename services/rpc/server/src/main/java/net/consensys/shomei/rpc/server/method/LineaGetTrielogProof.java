@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server.method;
 
 import net.consensys.shomei.proof.MerkleAccountProof;
@@ -59,17 +58,16 @@ public class LineaGetTrielogProof extends BlockParameterJsonRpcMethod {
   @Override
   public JsonRpcResponse response(final JsonRpcRequestContext requestContext) {
 
-
     try {
       final String serializedTrieLogLayer = getSerializedTrieLogLayer(requestContext);
       final var blockParameter = getBlockParameterOrBlockHash(1, requestContext);
 
       final Bytes trieLogBytes = Bytes.fromHexString(serializedTrieLogLayer);
-      final TrieLogLayer trieLogLayer = trieLogLayerConverter.decodeTrieLog(RLP.input(trieLogBytes));
+      final TrieLogLayer trieLogLayer =
+          trieLogLayerConverter.decodeTrieLog(RLP.input(trieLogBytes));
 
-      Optional<ZkEvmWorldState> worldState = resolveBlockParameterToWorldState(
-          blockParameter, worldStateArchive);
-
+      Optional<ZkEvmWorldState> worldState =
+          resolveBlockParameterToWorldState(blockParameter, worldStateArchive);
 
       if (worldState.isPresent()) {
         final WorldStateProofProvider worldStateProofProvider =
@@ -80,15 +78,14 @@ public class LineaGetTrielogProof extends BlockParameterJsonRpcMethod {
 
         final List<MerkleAccountProof> accountProofs = new ArrayList<>();
 
-        for (final Map.Entry<AccountKey, List<StorageSlotKey>> entry : accountsWithStorageKeys.entrySet()) {
+        for (final Map.Entry<AccountKey, List<StorageSlotKey>> entry :
+            accountsWithStorageKeys.entrySet()) {
           final MerkleAccountProof accountProof =
               worldStateProofProvider.getAccountProof(entry.getKey(), entry.getValue());
           accountProofs.add(accountProof);
         }
 
-        return new JsonRpcSuccessResponse(
-            requestContext.getRequest().getId(),
-            accountProofs);
+        return new JsonRpcSuccessResponse(requestContext.getRequest().getId(), accountProofs);
       } else {
         return new ShomeiJsonRpcErrorResponse(
             requestContext.getRequest().getId(),
@@ -108,21 +105,30 @@ public class LineaGetTrielogProof extends BlockParameterJsonRpcMethod {
 
     final Map<AccountKey, List<StorageSlotKey>> result = new HashMap<>();
 
-    trieLogLayer.streamAccountChanges().forEach(accountEntry -> {
-      final AccountKey accountKey = accountEntry.getKey();
-      result.putIfAbsent(accountKey, new ArrayList<>());
-    });
+    trieLogLayer
+        .streamAccountChanges()
+        .forEach(
+            accountEntry -> {
+              final AccountKey accountKey = accountEntry.getKey();
+              result.putIfAbsent(accountKey, new ArrayList<>());
+            });
 
-    trieLogLayer.streamStorageChanges().forEach(storageEntry -> {
-      final AccountKey accountKey = storageEntry.getKey();
-      final List<StorageSlotKey> storageKeys = storageEntry.getValue().keySet()
-          .stream().collect(Collectors.toList());
+    trieLogLayer
+        .streamStorageChanges()
+        .forEach(
+            storageEntry -> {
+              final AccountKey accountKey = storageEntry.getKey();
+              final List<StorageSlotKey> storageKeys =
+                  storageEntry.getValue().keySet().stream().collect(Collectors.toList());
 
-      result.merge(accountKey, storageKeys, (existing, newKeys) -> {
-        existing.addAll(newKeys);
-        return existing;
-      });
-    });
+              result.merge(
+                  accountKey,
+                  storageKeys,
+                  (existing, newKeys) -> {
+                    existing.addAll(newKeys);
+                    return existing;
+                  });
+            });
 
     return result;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
@@ -28,7 +27,7 @@ import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.trace.Trace;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 
 import java.util.List;
 
@@ -73,17 +72,19 @@ public class RollupDeleteZkEVMStateMerkleProofByRangeTest {
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
     final List<Trace> traces =
-        List.of(accountStateTrie.readWithTrace(KECCAK_HASH_ZERO, MimcSafeBytes.safeByte32(KECCAK_HASH_ZERO)));
+        List.of(
+            accountStateTrie.readWithTrace(
+                    KECCAK_HASH_ZERO, PoseidonSafeBytesUtils.safeByte32(KECCAK_HASH_ZERO)));
 
     final List<Trace> traces2 =
         List.of(
             accountStateTrie.readWithTrace(
-                Bytes32.random(), MimcSafeBytes.safeByte32(Bytes32.random())));
+                Bytes32.random(), PoseidonSafeBytesUtils.safeByte32(Bytes32.random())));
 
     final List<Trace> traces3 =
         List.of(
             accountStateTrie.readWithTrace(
-                Bytes32.random(), MimcSafeBytes.safeByte32(Bytes32.random())));
+                Bytes32.random(), PoseidonSafeBytesUtils.safeByte32(Bytes32.random())));
 
     final TraceManager.TraceManagerUpdater updater = traceManager.updater();
     updater.saveZkStateRootHash(0, accountStateTrie.getTopRootHash());
