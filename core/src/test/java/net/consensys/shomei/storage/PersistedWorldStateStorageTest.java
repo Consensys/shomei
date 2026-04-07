@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.storage;
 
 import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
@@ -63,9 +62,7 @@ public class PersistedWorldStateStorageTest {
 
   private static final Bytes32 HASH_TEST = Bytes32.wrap(Hash.hash(BYTES_TEST).getBytes());
 
-
-  @TempDir
-  Path tempData;
+  @TempDir Path tempData;
   protected PersistedWorldStateStorage storage;
   protected TrieLogManager trieLogManager;
   protected TraceManager traceManager;
@@ -74,8 +71,7 @@ public class PersistedWorldStateStorageTest {
   @BeforeEach
   public void setup() {
     var provider =
-        new RocksDBStorageProvider(
-            new RocksDBConfigurationBuilder().databaseDir(tempData).build());
+        new RocksDBStorageProvider(new RocksDBConfigurationBuilder().databaseDir(tempData).build());
     storage =
         new PersistedWorldStateStorage(
             provider.getFlatLeafStorage(),
