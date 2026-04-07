@@ -114,7 +114,7 @@ public class PoseidonSafeBytesUtils {
   }
 
   public static PoseidonSafeBytes<Bytes> safeAddress(final Address delegate) {
-    return new PoseidonSafeBytes<>(getStrategy().convertAddress(delegate.getBytes()), delegate.getBytes());
+    return new PoseidonSafeBytes<>(getStrategy().convertAddress(delegate), delegate);
   }
 
   public static PoseidonSafeBytes<Bytes> unsafeFromBytes(final Bytes delegate) {

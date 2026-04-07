@@ -35,17 +35,17 @@ public class TrieLogObserverTest {
         trieLogIds -> {
           assertEquals(2, trieLogIds.size());
           assertEquals((Long) 123L, trieLogIds.get(0).blockNumber());
-          assertEquals(Bytes32.wrap(Hash.hash(Bytes.of(0)).getBytes()), trieLogIds.get(0).blockHash());
+          assertEquals(Bytes32.wrap(Hash.hash(Bytes.of(0))), trieLogIds.get(0).blockHash());
           assertFalse(trieLogIds.get(0).isInitialSync());
           assertEquals((Long) 456L, trieLogIds.get(1).blockNumber());
-          assertEquals(Bytes32.wrap(Hash.hash(Bytes.of(1)).getBytes()), trieLogIds.get(1).blockHash());
+          assertEquals(Bytes32.wrap(Hash.hash(Bytes.of(1))), trieLogIds.get(1).blockHash());
           assertTrue(trieLogIds.get(1).isInitialSync());
         };
 
     List<TrieLogIdentifier> logIdentifiers =
         Arrays.asList(
-            new TrieLogIdentifier(123L, Bytes32.wrap(Hash.hash(Bytes.of(0)).getBytes()), false),
-            new TrieLogIdentifier(456L, Bytes32.wrap(Hash.hash(Bytes.of(1)).getBytes()), true));
+            new TrieLogIdentifier(123L, Bytes32.wrap(Hash.hash(Bytes.of(0))), false),
+            new TrieLogIdentifier(456L, Bytes32.wrap(Hash.hash(Bytes.of(1))), true));
 
     observer.onNewBesuHeadReceived(logIdentifiers);
   }

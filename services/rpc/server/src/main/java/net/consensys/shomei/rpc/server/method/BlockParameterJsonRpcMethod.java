@@ -43,7 +43,7 @@ public abstract class BlockParameterJsonRpcMethod implements JsonRpcMethod {
           worldStateArchive.getCachedWorldState(blockParameterOrBlockHash.getNumber().getAsLong());
     } else if (blockParameterOrBlockHash.getBlockHash()) {
       worldState =
-          worldStateArchive.getCachedWorldState(blockParameterOrBlockHash.getHash().map(hash -> Bytes32.wrap(hash.getBytes())).orElseThrow());
+          worldStateArchive.getCachedWorldState(blockParameterOrBlockHash.getHash().map(hash -> Bytes32.wrap(hash)).orElseThrow());
     } else if (blockParameterOrBlockHash.isLatest()) {
       worldState = worldStateArchive.getCachedWorldState(worldStateArchive.getCurrentBlockHash());
     }

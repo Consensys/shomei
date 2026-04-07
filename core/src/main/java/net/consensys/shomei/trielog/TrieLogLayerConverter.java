@@ -196,7 +196,7 @@ public class TrieLogLayerConverter {
           .addArgument(accountKey)
           .log();
 
-      return new PriorAccount(null, Bytes32.wrap(Hash.EMPTY_TRIE_HASH.getBytes()), Optional.empty());
+      return new PriorAccount(null, Bytes32.wrap(Hash.EMPTY_TRIE_HASH), Optional.empty());
     } else if (!in.nextIsNull() && flatLeaf.isPresent()) {
       oldAccountValue =
           flatLeaf
@@ -208,7 +208,7 @@ public class TrieLogLayerConverter {
       final UInt256 balance = in.readUInt256Scalar();
       final Bytes32 evmStorageRoot;
       if (in.nextIsNull()) {
-        evmStorageRoot = Bytes32.wrap(Hash.EMPTY_TRIE_HASH.getBytes());
+        evmStorageRoot = Bytes32.wrap(Hash.EMPTY_TRIE_HASH);
         in.skipNext();
       } else {
         evmStorageRoot = in.readBytes32();

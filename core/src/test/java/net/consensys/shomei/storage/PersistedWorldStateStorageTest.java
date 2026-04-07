@@ -60,7 +60,7 @@ public class PersistedWorldStateStorageTest {
             public void writeTo(final RLPOutput out) {}
           });
 
-  private static final Bytes32 HASH_TEST = Bytes32.wrap(Hash.hash(BYTES_TEST).getBytes());
+  private static final Bytes32 HASH_TEST = Bytes32.wrap(Hash.hash(BYTES_TEST));
 
   @TempDir Path tempData;
   protected PersistedWorldStateStorage storage;

@@ -392,11 +392,11 @@ public class LineaGetTrielogProofTest {
     // Find proofs for each account (using address as key, not account hash)
     Optional<MerkleAccountProof> proof1 =
         accountProofs.stream()
-            .filter(p -> p.getAccountProof().getKey().equals(testAddress.getBytes()))
+            .filter(p -> p.getAccountProof().getKey().equals(testAddress))
             .findFirst();
     Optional<MerkleAccountProof> proof2 =
         accountProofs.stream()
-            .filter(p -> p.getAccountProof().getKey().equals(address2.getBytes()))
+            .filter(p -> p.getAccountProof().getKey().equals(address2))
             .findFirst();
 
     assertThat(proof1).isPresent();

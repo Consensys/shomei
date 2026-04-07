@@ -78,16 +78,16 @@ public class ZkWorldStateArchiveTests {
             new HashMap<>(),
             new HashMap<>(),
             false);
-    TrieLogIdentifier genesis = new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash().getBytes()));
+    TrieLogIdentifier genesis = new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash()));
     TrieLogManager trieLogManager = archive.getTrieLogManager();
     TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction = trieLogManager.updater();
     trieLogManagerTransaction.saveTrieLog(genesis, Bytes.of(encoder.serialize(pluginLayer)));
     trieLogManagerTransaction.commit();
 
-    archive.importBlock(new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash().getBytes())), true, true);
+    archive.importBlock(new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash())), true, true);
 
     assertThat(archive.getCachedWorldState(0L).isPresent()).isTrue();
-    assertThat(archive.getCachedWorldState(Bytes32.wrap(pluginLayer.getBlockHash().getBytes())).isPresent()).isTrue();
+    assertThat(archive.getCachedWorldState(Bytes32.wrap(pluginLayer.getBlockHash())).isPresent()).isTrue();
   }
 
   @Test
@@ -101,13 +101,13 @@ public class ZkWorldStateArchiveTests {
             new HashMap<>(),
             new HashMap<>(),
             false);
-    TrieLogIdentifier genesis = new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash().getBytes()));
+    TrieLogIdentifier genesis = new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash()));
     TrieLogManager trieLogManager = archive.getTrieLogManager();
     TrieLogManager.TrieLogManagerUpdater trieLogManagerTransaction = trieLogManager.updater();
     trieLogManagerTransaction.saveTrieLog(genesis, Bytes.of(encoder.serialize(pluginLayer)));
     trieLogManagerTransaction.commit();
 
-    archive.importBlock(new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash().getBytes())), true, true);
+    archive.importBlock(new TrieLogIdentifier(0L, Bytes32.wrap(pluginLayer.getBlockHash())), true, true);
 
     ZkWorldStateArchive zkWorldStateArchive =
         new ZkWorldStateArchive(

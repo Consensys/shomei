@@ -23,8 +23,8 @@ import org.slf4j.LoggerFactory;
 public class HashProvider {
   private static final Logger LOG = LoggerFactory.getLogger(HashProvider.class);
 
-  public static final Bytes32 KECCAK_HASH_EMPTY = Bytes32.wrap(Hash.EMPTY.getBytes());
-  public static final Bytes32 KECCAK_HASH_ZERO = Bytes32.wrap(Hash.ZERO.getBytes());
+  public static final Bytes32 KECCAK_HASH_EMPTY = Bytes32.wrap(Hash.EMPTY);
+  public static final Bytes32 KECCAK_HASH_ZERO = Bytes32.wrap(Hash.ZERO);
 
   private static HashFunction hashFunction = HashFunction.POSEIDON_2;
 
@@ -63,7 +63,7 @@ public class HashProvider {
   }
 
   public static Bytes32 keccak256(final Bytes bytes) {
-    return Bytes32.wrap(Hash.hash(bytes).getBytes());
+    return Bytes32.wrap(Hash.hash(bytes));
   }
 
   public static Bytes32 poseidon2(final Bytes bytes) {
