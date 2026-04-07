@@ -21,7 +21,7 @@ import net.consensys.shomei.rpc.server.method.LineaGetProof;
 import net.consensys.shomei.rpc.server.method.LineaGetTrielogProof;
 import net.consensys.shomei.rpc.server.method.RollupDeleteZkEVMStateMerkleProofByRange;
 import net.consensys.shomei.rpc.server.method.RollupForkChoiceUpdated;
-import net.consensys.shomei.rpc.server.method.RollupGetVirtualZkEVMStateMerkleProofV0;
+import net.consensys.shomei.rpc.server.method.RollupGetVirtualZkEVMStateMerkleProofV1;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMBlockNumber;
 import net.consensys.shomei.rpc.server.method.RollupGetZkEVMStateMerkleProofV0;
 import net.consensys.shomei.rpc.server.method.SendRawTrieLog;
@@ -115,7 +115,7 @@ public class JsonRpcService extends AbstractVerticle {
             new RollupDeleteZkEVMStateMerkleProofByRange(worldStateArchive.getTraceManager()),
             new RollupForkChoiceUpdated(worldStateArchive, fullSyncDownloader),
             new RollupGetZkEVMStateMerkleProofV0(worldStateArchive.getTraceManager()),
-            new RollupGetVirtualZkEVMStateMerkleProofV0(worldStateArchive, besuSimulateClient)));
+            new RollupGetVirtualZkEVMStateMerkleProofV1(worldStateArchive, besuSimulateClient)));
     this.maxActiveConnections = config.getMaxActiveConnections();
     this.livenessService = new HealthService(new LivenessCheck());
   }

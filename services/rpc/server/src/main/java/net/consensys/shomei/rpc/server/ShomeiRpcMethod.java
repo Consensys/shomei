@@ -22,7 +22,7 @@ public enum ShomeiRpcMethod {
   LINEA_GET_TRIELOG_PROOF("linea_getTrielogProof"),
 
   ROLLUP_GET_ZKEVM_STATE_MERKLE_PROOF_V0("rollup_getZkEVMStateMerkleProofV0"),
-  ROLLUP_GET_VIRTUAL_ZKEVM_STATE_MERKLE_PROOF_V0("rollup_getVirtualZkEVMStateMerkleProofV0"),
+  ROLLUP_GET_VIRTUAL_ZKEVM_STATE_MERKLE_PROOF_V1("rollup_getVirtualZkEVMStateMerkleProofV1"),
   ROLLUP_DELETE_ZKEVM_STATE_MERKLE_PROOF_BY_RANGE("rollup_deleteZkEVMStateMerkleProofByRange"),
 
   ROLLUP_FORK_CHOICE_UPDATED("rollup_forkChoiceUpdated");
