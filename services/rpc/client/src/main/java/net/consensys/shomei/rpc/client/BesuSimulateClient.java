@@ -33,7 +33,8 @@ import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.datatypes.BytesHolder;
 import org.hyperledger.besu.ethereum.core.Transaction;
-import org.hyperledger.besu.ethereum.rlp.BytesValueRLPInput;
+import org.hyperledger.besu.ethereum.core.encoding.EncodingContext;
+import org.hyperledger.besu.ethereum.core.encoding.TransactionDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,10 +83,9 @@ public class BesuSimulateClient {
     final int requestId = RANDOM.nextInt();
 
     try {
-      // Decode the RLP transaction to extract fields
       final Bytes transactionBytes = Bytes.fromHexString(transactionRlp);
       final Transaction transaction =
-          Transaction.readFrom(new BytesValueRLPInput(transactionBytes, false));
+          TransactionDecoder.decodeOpaqueBytes(transactionBytes, EncodingContext.POOLED_TRANSACTION);
 
       // Create block overrides with parent block number
       final Map<String, String> blockOverrides =
