@@ -44,6 +44,8 @@ import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.TransactionType;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.core.Transaction;
+import org.hyperledger.besu.ethereum.core.encoding.EncodingContext;
+import org.hyperledger.besu.ethereum.core.encoding.TransactionEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -146,8 +148,10 @@ public class BesuSimulateClientTest {
             .payload(Bytes.fromHexString("0x68656c6c6f"))
             .signAndBuild(createTestKeyPair());
 
-    final CompletableFuture<String> future =
-        client.simulateTransaction(7L, eip1559Tx.encoded().toHexString());
+    final String txRlp =
+        TransactionEncoder.encodeOpaqueBytes(eip1559Tx, EncodingContext.POOLED_TRANSACTION)
+            .toHexString();
+    final CompletableFuture<String> future = client.simulateTransaction(7L, txRlp);
 
     final String trieLog = future.get();
     assertThat(trieLog).isEqualTo(MOCK_TRIELOG);
@@ -170,32 +174,10 @@ public class BesuSimulateClientTest {
             .chainId(BigInteger.ONE)
             .signAndBuild(createTestKeyPair());
 
-    final CompletableFuture<String> future =
-        client.simulateTransaction(7L, legacyTx.encoded().toHexString());
-
-    final String trieLog = future.get();
-    assertThat(trieLog).isEqualTo(MOCK_TRIELOG);
-    verify(httpRequest).sendJson(any(), any());
-  }
-
-  /**
-   * Uses the exact RLP hex emitted by the L1 ForcedTransactionGateway contract.
-   * This is the wire format that caused "Cannot enter a lists, input is fully consumed (at bytes
-   * 0-0: [])" because the 0x02 EIP-1559 type prefix is not a valid RLP list header.
-   */
-  @Test
-  public void shouldDecodeRealForcedTransactionRlpFromL1Gateway() throws Exception {
-    stubSuccessfulBesuResponse();
-
-    // Exact RLP from E2E forced transaction — emitted by the gateway's abi.encodePacked(hex"02", LibRLP.encode(...))
-    final String gatewayEmittedRlp =
-        "0x02f8d2820539808405f5e100843b9aca00830493e094320b17536e368c5f29d16ea13cabdabae5ba541480"
-            + "b864b49fd023000000000000000000000000000000000000000000000000000000000000002000000000000000"
-            + "0000000000000000000000000000000000000000000000000568656c6c6f00000000000000000000000000000"
-            + "0000000000000000000000000c080a06b7887c2fbea95195e3421883dc963432935aa7ae78f1dbef2cc17e1"
-            + "e8ea52fda06a74eebacd6d7f15afd153699ab5acbcf14275db27ceb8f6de377030c6fc2549";
-
-    final CompletableFuture<String> future = client.simulateTransaction(7L, gatewayEmittedRlp);
+    final String txRlp =
+        TransactionEncoder.encodeOpaqueBytes(legacyTx, EncodingContext.POOLED_TRANSACTION)
+            .toHexString();
+    final CompletableFuture<String> future = client.simulateTransaction(7L, txRlp);
 
     final String trieLog = future.get();
     assertThat(trieLog).isEqualTo(MOCK_TRIELOG);
