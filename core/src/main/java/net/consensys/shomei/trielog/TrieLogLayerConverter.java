@@ -43,8 +43,8 @@ public class TrieLogLayerConverter {
 
   final WorldStateStorage headWorldStateStorage;
 
-  public TrieLogLayerConverter(final WorldStateStorage worldStateStorage) {
-    this.headWorldStateStorage = worldStateStorage;
+  public TrieLogLayerConverter(final WorldStateStorage headWorldStateStorage) {
+    this.headWorldStateStorage = headWorldStateStorage;
   }
 
   public TrieLogLayer decodeTrieLog(final RLPInput input) {
@@ -89,7 +89,7 @@ public class TrieLogLayerConverter {
                 .map(FlattenedLeaf::leafIndex);
       } else {
         input.enterList();
-        final PriorAccount priorAccount = preparePriorTrieLogAccount(accountKey, input);
+        final PriorAccount priorAccount = preparePriorTrieLogAccount(accountKey, input, wss);
         maybeAccountIndex = priorAccount.index;
         final ZkAccount newAccountValue =
             TrieLogLayer.nullOrValue(
@@ -183,10 +183,6 @@ public class TrieLogLayerConverter {
   }
 
   record PriorAccount(ZkAccount account, Bytes32 evmStorageRoot, Optional<Long> index) {}
-
-  public PriorAccount preparePriorTrieLogAccount(final AccountKey accountKey, final RLPInput in) {
-    return preparePriorTrieLogAccount(accountKey, in , headWorldStateStorage);
-  }
 
   public PriorAccount preparePriorTrieLogAccount(final AccountKey accountKey, final RLPInput in, final WorldStateStorage wss) {
 
