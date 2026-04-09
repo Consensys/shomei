@@ -30,6 +30,7 @@ dependencies {
   implementation 'io.vertx:vertx-core'
   implementation 'io.vertx:vertx-unit'
   implementation 'io.vertx:vertx-web'
+  implementation 'io.vertx:vertx-web-client'
   implementation 'io.vertx:vertx-codegen'
   implementation 'io.micrometer:micrometer-core'
 
