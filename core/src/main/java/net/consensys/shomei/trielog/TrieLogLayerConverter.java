@@ -41,13 +41,17 @@ public class TrieLogLayerConverter {
 
   private static final Logger LOG = LoggerFactory.getLogger(TrieLogLayerConverter.class);
 
-  final WorldStateStorage worldStateStorage;
+  final WorldStateStorage headWorldStateStorage;
 
   public TrieLogLayerConverter(final WorldStateStorage worldStateStorage) {
-    this.worldStateStorage = worldStateStorage;
+    this.headWorldStateStorage = worldStateStorage;
   }
 
   public TrieLogLayer decodeTrieLog(final RLPInput input) {
+    return decodeTrieLog(input, headWorldStateStorage);
+  }
+
+  public TrieLogLayer decodeTrieLog(final RLPInput input, WorldStateStorage wss) {
 
     TrieLogLayer trieLogLayer = new TrieLogLayer();
 
@@ -80,7 +84,7 @@ public class TrieLogLayerConverter {
       if (input.nextIsNull()) {
         input.skipNext();
         maybeAccountIndex =
-            worldStateStorage
+            wss
                 .getFlatLeaf(WRAP_ACCOUNT.apply(accountKey.accountHash()))
                 .map(FlattenedLeaf::leafIndex);
       } else {
@@ -122,7 +126,7 @@ public class TrieLogLayerConverter {
                   maybeAccountIndex
                       .flatMap(
                           index -> {
-                            return new StorageTrieRepositoryWrapper(index, worldStateStorage, null)
+                            return new StorageTrieRepositoryWrapper(index, wss, null)
                                   .getFlatLeaf(storageSlotKey.slotHash())
                                   .map(FlattenedLeaf::leafValue)
                                   .map(UInt256::fromBytes);
@@ -181,11 +185,15 @@ public class TrieLogLayerConverter {
   record PriorAccount(ZkAccount account, Bytes32 evmStorageRoot, Optional<Long> index) {}
 
   public PriorAccount preparePriorTrieLogAccount(final AccountKey accountKey, final RLPInput in) {
+    return preparePriorTrieLogAccount(accountKey, in , headWorldStateStorage);
+  }
+
+  public PriorAccount preparePriorTrieLogAccount(final AccountKey accountKey, final RLPInput in, final WorldStateStorage wss) {
 
     final ZkAccount oldAccountValue;
 
     final Optional<FlattenedLeaf> flatLeaf =
-        worldStateStorage.getFlatLeaf(WRAP_ACCOUNT.apply(accountKey.accountHash()));
+        wss.getFlatLeaf(WRAP_ACCOUNT.apply(accountKey.accountHash()));
 
 
     if (in.nextIsNull() && flatLeaf.isEmpty()) {
