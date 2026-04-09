@@ -112,6 +112,8 @@ allprojects {
     dependencies {
         errorprone("com.google.errorprone:error_prone_core")
         errorprone("tech.pegasys.tools.epchecks:errorprone-checks")
+        // Aligns with junit-jupiter-engine from the BOM (Gradle’s embedded launcher is too old for 8.14).
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     }
 
     apply plugin: 'com.diffplug.spotless'
