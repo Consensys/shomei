@@ -216,6 +216,16 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
     public void setBlockNumber(final long blockNumber) {
       delegate.setBlockNumber(blockNumber);
     }
+
+    @Override
+    public void removeStorageForAccount(final long leafIndex) {
+      // Delegates to InMemoryWorldStateStorage.removeStorageForAccount(), which:
+      // - soft-deletes flat leaf entries in the overlay (Optional.empty() tombstones)
+      // - soft-deletes trie node entries in the overlay
+      // - explicitly tombstones the storage-trie root key so that getTrieNode() does
+      //   not fall back to the parent's root, ensuring createTrie() is used for fresh state
+      delegate.removeStorageForAccount(leafIndex);
+    }
   }
 
   @Override

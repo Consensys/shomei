@@ -174,6 +174,18 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
       }
 
       @Override
+      public void removeStorageForAccount(final long leafIndex) {
+        final byte[] prefix = Longs.toByteArray(leafIndex);
+        // Read committed storage to find all keys for this account, then delete via transaction.
+        // This is correct because removeStorageForAccount is only called when prior != null,
+        // meaning the account's storage was committed in a previous block.
+        flatLeafStorage.getAllKeysThat(key -> hasStoragePrefix(key, prefix))
+            .forEach(key -> flatLeafTx.get().remove(key));
+        trieNodeStorage.getAllKeysThat(key -> hasStoragePrefix(key, prefix))
+            .forEach(key -> trieNodeTx.get().remove(key));
+      }
+
+      @Override
       public synchronized void commit() {
         flatLeafTx.getAndUpdate(
             flatTx -> {
@@ -187,6 +199,18 @@ public class PersistedWorldStateStorage implements WorldStateStorage {
             });
       }
     };
+  }
+
+  private static boolean hasStoragePrefix(final byte[] key, final byte[] prefix) {
+    if (key.length < prefix.length) {
+      return false;
+    }
+    for (int i = 0; i < prefix.length; i++) {
+      if (key[i] != prefix[i]) {
+        return false;
+      }
+    }
+    return true;
   }
 
   @Override

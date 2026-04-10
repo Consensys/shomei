@@ -24,6 +24,7 @@ import net.consensys.shomei.worldview.ZkEvmWorldState;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -239,6 +240,104 @@ public class ZkWorldStateArchive implements Closeable {
       throw new IllegalStateException(
           "Failed to generate virtual trace for parent block " + parentBlockNumber, e);
     }
+  }
+
+  /**
+   * Returns an ephemeral {@link ZkEvmWorldState} representing the state at {@code
+   * targetBlockNumber} by rolling back from the nearest available forward snapshot.
+   *
+   * <p>The rollback is performed on a {@link LayeredWorldStateStorage} overlay so the head state
+   * and all cached snapshots remain unmodified.
+   *
+   * <p>The caller is responsible for not holding a reference to the returned state past the point
+   * where its parent snapshot may be evicted from the LRU cache.
+   *
+   * @param targetBlockNumber the block number to roll back to
+   * @return ephemeral world state at {@code targetBlockNumber}
+   * @throws MissingTrieLogException if any required trie log is absent
+   * @throws IllegalStateException if {@code targetBlockNumber} &ge; the current head block
+   */
+  public ZkEvmWorldState rollBackToBlock(final long targetBlockNumber)
+      throws MissingTrieLogException {
+
+    // 1. Direct cache hit: return an ephemeral wrapper around the cached snapshot
+    final Optional<ZkEvmWorldState> cached = getCachedWorldState(targetBlockNumber);
+    if (cached.isPresent()) {
+      return cached.get();
+    }
+
+    // 2. Locate the nearest forward snapshot (smallest cached block > targetBlockNumber).
+    //    Fall back to a live snapshot of the head state if nothing is cached ahead.
+    final WorldStateStorage baseStorage;
+    final long startBlockNumber;
+
+    final TrieLogIdentifier searchKey =
+        new TrieLogIdentifier(targetBlockNumber, Bytes32.ZERO);
+    final Map.Entry<TrieLogIdentifier, WorldStateStorage> forwardEntry =
+        cachedWorldStates.higherEntry(searchKey);
+
+    if (forwardEntry != null) {
+      baseStorage = forwardEntry.getValue(); // already a read-only snapshot
+      startBlockNumber = forwardEntry.getKey().blockNumber();
+    } else if (headWorldState.getBlockNumber() > targetBlockNumber) {
+      // No cached snapshot ahead of target; take a live snapshot of the head state.
+      baseStorage = headWorldStateStorage.snapshot();
+      startBlockNumber = headWorldState.getBlockNumber();
+    } else {
+      throw new IllegalStateException(
+          "Cannot roll back to block "
+              + targetBlockNumber
+              + ": target is >= current head "
+              + headWorldState.getBlockNumber());
+    }
+
+    // 3. Load trie logs from startBlockNumber down to targetBlockNumber+1 (inclusive).
+    //    Also load the trie log for targetBlockNumber itself to obtain its block hash.
+    final List<TrieLogLayer> trieLogsToUndo = new ArrayList<>();
+    for (long blockNum = startBlockNumber; blockNum > targetBlockNumber; blockNum--) {
+      final Optional<Bytes> rawLog = trieLogManager.getTrieLog(blockNum);
+      if (rawLog.isEmpty()) {
+        throw new MissingTrieLogException(blockNum);
+      }
+      trieLogsToUndo.add(trieLogLayerConverter.decodeTrieLog(RLP.input(rawLog.get())));
+    }
+    // Load the target block's trie log to obtain its block hash for the final commit.
+    final Bytes32 targetBlockHash =
+        trieLogManager
+            .getTrieLog(targetBlockNumber)
+            .map(RLP::input)
+            .map(trieLogLayerConverter::decodeTrieLog)
+            .map(TrieLogLayer::getBlockHash)
+            .orElse(Bytes32.ZERO);
+
+    // 4. Create an ephemeral layered world state on top of the base snapshot.
+    final LayeredWorldStateStorage layeredStorage = new LayeredWorldStateStorage(baseStorage);
+    final TraceManager ephemeralTraceManager = new InMemoryStorageProvider().getTraceManager();
+    final ZkEvmWorldState rollingState =
+        new ZkEvmWorldState(layeredStorage, ephemeralTraceManager);
+
+    // 5. Apply rollbacks in descending block order.
+    //    trieLogsToUndo[0] = startBlockNumber, trieLogsToUndo[last] = targetBlockNumber+1
+    for (int i = 0; i < trieLogsToUndo.size(); i++) {
+      final TrieLogLayer layer = trieLogsToUndo.get(i);
+      rollingState.getAccumulator().rollBack(layer);
+      final long priorBlockNumber = layer.getBlockNumber() - 1;
+      // Block hash: use the next layer's hash, or the preloaded target hash for the final step.
+      final Bytes32 priorBlockHash =
+          (i + 1 < trieLogsToUndo.size())
+              ? trieLogsToUndo.get(i + 1).getBlockHash()
+              : targetBlockHash;
+      rollingState.commit(priorBlockNumber, priorBlockHash, false);
+    }
+
+    LOG.atDebug()
+        .setMessage("Rolled back from block {} to block {} in {} steps")
+        .addArgument(startBlockNumber)
+        .addArgument(targetBlockNumber)
+        .addArgument(trieLogsToUndo.size())
+        .log();
+
+    return rollingState;
   }
 
   public ZkEvmWorldState getHeadWorldState() {
