@@ -74,25 +74,17 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1 implements JsonRpcMethod {
             "BLOCK_MISSING_IN_CHAIN - block %d is missing".formatted(parentBlockNumber));
       }
 
-      // do not have it in cache
-      final var optWorldState = worldStateArchive.getCachedWorldState(parentBlockNumber);
-      if (optWorldState.isEmpty()) {
-        return new ShomeiJsonRpcErrorResponse(
-            requestContext.getRequest().getId(),
-            RpcErrorType.INVALID_PARAMS,
-            "Worldstate for parent block %d is not cached".formatted(parentBlockNumber));
-      }
-
       // Call eth_simulateV1 to get the trielog for the virtual block
       // Simulate on top of parentBlockNumber state to build virtual block at blockNumber
       final String trieLogHex =
           besuSimulateClient.simulateTransaction(parentBlockNumber, transactionRlp).join();
       final Bytes trieLogBytes = Bytes.fromHexString(trieLogHex);
 
-      // Decode the trielog
+      // Decode the trielog using the parent worldstate (loaded from cache or reconstructed)
       final TrieLogLayer trieLogLayer =
           worldStateArchive.getTrieLogLayerConverter().decodeTrieLog(
-              RLP.input(trieLogBytes), optWorldState.get().getZkEvmWorldStateStorage());
+              RLP.input(trieLogBytes),
+              worldStateArchive.getOrLoadWorldState(parentBlockNumber).getZkEvmWorldStateStorage());
 
       // Apply the virtual trielog and generate the trace
       // This generates a trace without persisting the state

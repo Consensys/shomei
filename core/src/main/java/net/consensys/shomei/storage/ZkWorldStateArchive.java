@@ -182,26 +182,48 @@ public class ZkWorldStateArchive implements Closeable {
   public record VirtualTraceResult(List<List<Trace>> traces, Bytes32 zkEndStateRootHash) {}
 
   /**
+   * Returns a {@link ZkEvmWorldState} for the given block number, loading it via rollback if it is
+   * not cached. Cache hits are returned immediately; uncached blocks are reconstructed by rolling
+   * back from the nearest available forward snapshot.
+   *
+   * @param blockNumber the target block number
+   * @return world state at {@code blockNumber}
+   * @throws MissingTrieLogException if any required trie log is absent during rollback
+   * @throws IllegalStateException if {@code blockNumber} exceeds the current head
+   */
+  public ZkEvmWorldState getOrLoadWorldState(final long blockNumber)
+      throws MissingTrieLogException {
+    // 1. Cache hit
+    final Optional<ZkEvmWorldState> cached = getCachedWorldState(blockNumber);
+    if (cached.isPresent()) {
+      return cached.get();
+    }
+    // 2. Head state
+    if (blockNumber == getCurrentBlockNumber()) {
+      return headWorldState;
+    }
+    // 3. Reconstruct via rollback from the nearest forward snapshot
+    return rollBackToBlock(blockNumber);
+  }
+
+  /**
    * Generate a virtual trace from a trielog without persisting state changes.
    * This is used for simulating transactions on a virtual block.
    *
    * @param parentBlockNumber the parent block number on which to base the virtual state
    * @param trieLogLayer the trielog to apply
    * @return the generated trace and resulting state root hash
-   * @throws IllegalStateException if the worldstate for the parent block is not cached
+   * @throws MissingTrieLogException if the worldstate for the parent block cannot be reconstructed
    */
   public VirtualTraceResult generateVirtualTrace(
-      final long parentBlockNumber, final TrieLogLayer trieLogLayer) {
-    // Get the cached worldstate for the parent block
-    final WorldStateStorage parentStorage = cachedWorldStates.entrySet().stream()
-        .filter(entry -> entry.getKey().blockNumber().equals(parentBlockNumber))
-        .map(Map.Entry::getValue)
-        .findFirst()
-        .orElseThrow(() -> new IllegalStateException(
-            "Worldstate for parent block " + parentBlockNumber + " is not cached"));
+      final long parentBlockNumber, final TrieLogLayer trieLogLayer)
+      throws MissingTrieLogException {
+    // Get or reconstruct the worldstate for the parent block
+    final WorldStateStorage parentStorage =
+        getOrLoadWorldState(parentBlockNumber).getZkEvmWorldStateStorage();
 
     // Create a layered storage that overlays in-memory writes on top of the parent snapshot
-    // This ensures we don't modify the cached parent state during simulation
+    // This ensures we don't modify the parent state during simulation
     try (final WorldStateStorage virtualStorage = new LayeredWorldStateStorage(parentStorage)) {
       // Use an in-memory trace manager that won't persist to disk
       final TraceManager ephemeralTraceManager = new InMemoryStorageProvider().getTraceManager();
@@ -233,10 +255,11 @@ public class ZkWorldStateArchive implements Closeable {
       return new VirtualTraceResult(
           List.of(Trace.deserialize(RLP.input(traceBytes.get()))),
           zkEndStateRootHash);
+    } catch (MissingTrieLogException e) {
+      throw e;
+    } catch (IllegalStateException e) {
+      throw e;
     } catch (Exception e) {
-      if (e instanceof IllegalStateException) {
-        throw (IllegalStateException) e;
-      }
       throw new IllegalStateException(
           "Failed to generate virtual trace for parent block " + parentBlockNumber, e);
     }

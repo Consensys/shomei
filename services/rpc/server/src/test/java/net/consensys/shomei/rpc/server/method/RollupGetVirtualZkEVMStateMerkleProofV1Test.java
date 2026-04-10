@@ -18,14 +18,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
+import net.consensys.shomei.exception.MissingTrieLogException;
 import net.consensys.shomei.rpc.client.BesuSimulateClient;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEvmStateMerkleProofV0Parameter;
 import net.consensys.shomei.storage.TraceManager;
 import net.consensys.shomei.storage.TrieLogManager;
 import net.consensys.shomei.storage.ZkWorldStateArchive;
+import net.consensys.shomei.storage.worldstate.WorldStateStorage;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.TrieLogLayer;
 import net.consensys.shomei.trielog.TrieLogLayerConverter;
@@ -68,6 +72,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
   @Mock public TrieLogLayerConverter trieLogLayerConverter;
   @Mock public TrieLogLayer trieLogLayer;
   @Mock public ZkEvmWorldState mockZkWorldState;
+  @Mock public WorldStateStorage mockWorldStateStorage;
 
   public RollupGetVirtualZkEVMStateMerkleProofV1 method;
 
@@ -141,7 +146,8 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
     when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01"))); // Parent block exists
-    when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
+    when(mockZkWorldState.getZkEvmWorldStateStorage()).thenReturn(mockWorldStateStorage);
+    doReturn(mockZkWorldState).when(worldStateArchive).getOrLoadWorldState(7L);
 
     when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
     when(traceManager.getZkStateRootHash(7L)).thenReturn(Optional.of(KECCAK_HASH_ZERO));
@@ -166,11 +172,34 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
   }
 
   @Test
+  public void shouldReturnErrorWhenParentWorldstateCannotBeReconstructed() throws Exception {
+    when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(7L))
+        .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
+
+    // Simulate eth_simulateV1 returning successfully before the worldstate lookup
+    when(besuSimulateClient.simulateTransaction(eq(7L), anyString()))
+        .thenReturn(CompletableFuture.completedFuture(createMockTrieLogHex()));
+    when(worldStateArchive.getTrieLogLayerConverter()).thenReturn(trieLogLayerConverter);
+    when(trieLogLayerConverter.decodeTrieLog(any(), any())).thenReturn(trieLogLayer);
+
+    // getOrLoadWorldState throws MissingTrieLogException for an uncacheable block
+    doThrow(new MissingTrieLogException(7L)).when(worldStateArchive).getOrLoadWorldState(7L);
+
+    final JsonRpcRequestContext request = request(8L, createTestTransactionRlp());
+    final JsonRpcResponse response = method.response(request);
+
+    assertThat(response).isInstanceOf(ShomeiJsonRpcErrorResponse.class);
+    final ShomeiJsonRpcErrorResponse errorResponse = (ShomeiJsonRpcErrorResponse) response;
+    assertThat(errorResponse.getError().getCode()).isEqualTo(RpcErrorType.INTERNAL_ERROR.getCode());
+    assertThat(errorResponse.getJsonError().message()).contains("Error processing virtual block");
+  }
+
+  @Test
   public void shouldReturnErrorWhenSimulationFails() {
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
     when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
-    when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
 
     // Mock simulation failure
     when(besuSimulateClient.simulateTransaction(anyLong(), anyString()))
@@ -191,7 +220,6 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
     when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
-    when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
 
     // Mock simulation returning a detailed error from eth_simulateV1
     final String detailedErrorMessage = "eth_simulateV1 error [code=-32000]: insufficient funds";
