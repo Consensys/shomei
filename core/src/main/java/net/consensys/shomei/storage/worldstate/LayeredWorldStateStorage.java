@@ -92,11 +92,19 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
   @Override
   public Optional<Bytes> getTrieNode(final Bytes location, final Bytes nodeHash) {
+    // Check overlay first — entries written after removeStorageForAccount must remain visible.
+    // The trie root key ({leafIndex}, 8 bytes) is explicitly tombstoned by removeStorageForAccount
+    // so it is always found here and never falls through.  Internal node keys ({leafIndex}{path})
+    // are not individually tombstoned, so they need the deleted-prefix guard below.
     final Optional<Bytes> overlayValue = getTrieNodeStorage().get(location);
-    if (overlayValue == null) {
-      return parent.getTrieNode(location, nodeHash);
+    if (overlayValue != null) {
+      return overlayValue;
     }
-    return overlayValue;
+    // Block parent fallback for storage namespaces fully removed on this overlay.
+    if (isInDeletedStoragePrefix(location)) {
+      return Optional.empty();
+    }
+    return parent.getTrieNode(location, nodeHash);
   }
 
   @Override
