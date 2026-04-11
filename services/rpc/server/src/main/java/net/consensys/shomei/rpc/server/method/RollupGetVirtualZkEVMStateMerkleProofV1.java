@@ -22,6 +22,7 @@ import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEvmStateMerklePro
 import net.consensys.shomei.storage.ZkWorldStateArchive;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trielog.TrieLogLayer;
+import net.consensys.shomei.worldview.ZkEvmWorldState;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
@@ -80,11 +81,12 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1 implements JsonRpcMethod {
           besuSimulateClient.simulateTransaction(parentBlockNumber, transactionRlp).join();
       final Bytes trieLogBytes = Bytes.fromHexString(trieLogHex);
 
+      final ZkEvmWorldState parentWss = worldStateArchive.getOrLoadWorldState(parentBlockNumber);
+
       // Decode the trielog using the parent worldstate (loaded from cache or reconstructed)
       final TrieLogLayer trieLogLayer =
           worldStateArchive.getTrieLogLayerConverter().decodeTrieLog(
-              RLP.input(trieLogBytes),
-              worldStateArchive.getOrLoadWorldState(parentBlockNumber).getZkEvmWorldStateStorage());
+              RLP.input(trieLogBytes), parentWss.getZkEvmWorldStateStorage());
 
       // Apply the virtual trielog and generate the trace
       // This generates a trace without persisting the state

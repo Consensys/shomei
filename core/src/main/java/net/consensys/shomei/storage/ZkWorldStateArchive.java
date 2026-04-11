@@ -217,11 +217,30 @@ public class ZkWorldStateArchive implements Closeable {
    * @throws MissingTrieLogException if the worldstate for the parent block cannot be reconstructed
    */
   public VirtualTraceResult generateVirtualTrace(
-      final long parentBlockNumber, final TrieLogLayer trieLogLayer)
-      throws MissingTrieLogException {
+      final long parentBlockNumber,
+      final TrieLogLayer trieLogLayer) throws MissingTrieLogException {
+
     // Get or reconstruct the worldstate for the parent block
     final WorldStateStorage parentStorage =
         getOrLoadWorldState(parentBlockNumber).getZkEvmWorldStateStorage();
+
+    return generateVirtualTrace(parentBlockNumber, trieLogLayer, parentStorage);
+  }
+
+  /**
+   * Generate a virtual trace from a trielog without persisting state changes.
+   * This is used for simulating transactions on a virtual block.  Overload
+   * using a passed worldstate storage to prevent double lookup / rollback.
+   *
+   * @param parentBlockNumber the parent block number on which to base the virtual state
+   * @param trieLogLayer the trielog to apply
+   * @param parentStorage parent worlstate storage to use, useful to prevent double rolling of state
+   * @return the generated trace and resulting state root hash
+   */
+  public VirtualTraceResult generateVirtualTrace(
+      final long parentBlockNumber,
+      final TrieLogLayer trieLogLayer,
+      final WorldStateStorage parentStorage) {
 
     // Create a layered storage that overlays in-memory writes on top of the parent snapshot
     // This ensures we don't modify the parent state during simulation
@@ -256,8 +275,6 @@ public class ZkWorldStateArchive implements Closeable {
       return new VirtualTraceResult(
           List.of(Trace.deserialize(RLP.input(traceBytes.get()))),
           zkEndStateRootHash);
-    } catch (MissingTrieLogException e) {
-      throw e;
     } catch (IllegalStateException e) {
       throw e;
     } catch (Exception e) {

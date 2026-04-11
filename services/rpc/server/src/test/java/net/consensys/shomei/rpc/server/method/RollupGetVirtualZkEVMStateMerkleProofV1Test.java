@@ -180,7 +180,6 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
     // Simulate eth_simulateV1 returning successfully before the worldstate lookup
     when(besuSimulateClient.simulateTransaction(eq(7L), anyString()))
         .thenReturn(CompletableFuture.completedFuture(createMockTrieLogHex()));
-    when(worldStateArchive.getTrieLogLayerConverter()).thenReturn(trieLogLayerConverter);
     // getOrLoadWorldState throws before decodeTrieLog is called (it's an argument expression),
     // so no decodeTrieLog stub is needed here.
     doThrow(new MissingTrieLogException(7L)).when(worldStateArchive).getOrLoadWorldState(7L);
