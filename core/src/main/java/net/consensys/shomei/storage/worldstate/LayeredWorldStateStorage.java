@@ -112,16 +112,10 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
     // When the queried key belongs to a deleted storage namespace, the parent's entries for that
     // prefix must not appear as neighbors — they belong to storage that was fully removed on this
-    // overlay.  Use only overlay entries (HEAD/TAIL sentinels from createTrie(), plus any new
-    // slots written in the current block).  Check the overlay for the center key explicitly so
-    // that entries written after removeStorageForAccount are correctly reflected.
+    // overlay.  Scan only overlay entries, and constrain left/right to the same 8-byte storage
+    // prefix so that neighbours from other accounts' namespaces cannot bleed through.
     if (isInDeletedStoragePrefix(hkey)) {
-      final Optional<FlattenedLeaf> overlayCenter = getFlatLeafStorage().get(hkey);
-      final Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode =
-          (overlayCenter != null && overlayCenter.isPresent())
-              ? Optional.of(Map.entry(hkey, overlayCenter.get()))
-              : Optional.empty();
-      return buildOverlayOnlyRange(hkey, centerNode);
+      return buildPrefixScopedOverlayRange(hkey);
     }
 
     // --- Center: check overlay ---
@@ -158,6 +152,59 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
     final Map.Entry<Bytes, FlattenedLeaf> rightNode = resolveRightNode(hkey, parentRange);
 
     return new Range(leftNode, centerNode, rightNode);
+  }
+
+  /**
+   * Build a Range using only overlay entries scoped to the same 8-byte storage prefix as
+   * {@code hkey}.
+   *
+   * <p>Called when {@code hkey} belongs to a deleted storage namespace.  Constraining the search
+   * to the same prefix prevents left/right neighbours from a different account's storage namespace
+   * (or from the account trie) from bleeding through as bounds.
+   */
+  private Range buildPrefixScopedOverlayRange(final Bytes hkey) {
+    final Bytes prefix = hkey.slice(0, Long.BYTES);
+
+    final Optional<FlattenedLeaf> overlayCenter = getFlatLeafStorage().get(hkey);
+    final Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode =
+        (overlayCenter != null && overlayCenter.isPresent())
+            ? Optional.of(Map.entry(hkey, overlayCenter.get()))
+            : Optional.empty();
+
+    Map.Entry<Bytes, Optional<FlattenedLeaf>> rawLeft = getFlatLeafStorage().lowerEntry(hkey);
+    while (rawLeft != null) {
+      final Bytes k = rawLeft.getKey();
+      if (k.size() < prefix.size() || !k.slice(0, prefix.size()).equals(prefix)) {
+        rawLeft = null;
+        break;
+      }
+      if (rawLeft.getValue().isPresent()) {
+        break;
+      }
+      rawLeft = getFlatLeafStorage().lowerEntry(k);
+    }
+
+    Map.Entry<Bytes, Optional<FlattenedLeaf>> rawRight = getFlatLeafStorage().higherEntry(hkey);
+    while (rawRight != null) {
+      final Bytes k = rawRight.getKey();
+      if (k.size() < prefix.size() || !k.slice(0, prefix.size()).equals(prefix)) {
+        rawRight = null;
+        break;
+      }
+      if (rawRight.getValue().isPresent()) {
+        break;
+      }
+      rawRight = getFlatLeafStorage().higherEntry(k);
+    }
+
+    if (rawLeft == null || rawRight == null) {
+      throw new RuntimeException("not found leaf index");
+    }
+
+    return new Range(
+        Map.entry(rawLeft.getKey(), rawLeft.getValue().get()),
+        centerNode,
+        Map.entry(rawRight.getKey(), rawRight.getValue().get()));
   }
 
   /**

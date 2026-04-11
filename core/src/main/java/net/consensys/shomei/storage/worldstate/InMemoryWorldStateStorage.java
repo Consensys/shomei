@@ -98,10 +98,11 @@ public class InMemoryWorldStateStorage extends InMemoryStorage
     // Also explicitly tombstone the storage-trie root key (= prefix itself) so that
     // LayeredWorldStateStorage does not fall back to the parent's storage trie root,
     // causing loadStorageTrie() to use createTrie() and get a clean empty trie.
-    getTrieNodeStorage().entrySet().stream()
-        .filter(e -> e.getKey().size() >= prefix.size()
-            && e.getKey().slice(0, prefix.size()).equals(prefix))
-        .forEach(e -> getTrieNodeStorage().put(e.getKey(), Optional.empty()));
+    // Keys are collected into a list first to avoid mutating the map during iteration.
+    new ArrayList<>(getTrieNodeStorage().keySet()).stream()
+        .filter(k -> k.size() >= prefix.size()
+            && k.slice(0, prefix.size()).equals(prefix))
+        .forEach(k -> getTrieNodeStorage().put(k, Optional.empty()));
     getTrieNodeStorage().put(prefix, Optional.empty());
   }
 }
