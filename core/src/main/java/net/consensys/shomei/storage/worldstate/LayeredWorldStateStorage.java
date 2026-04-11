@@ -62,28 +62,73 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
   @Override
   public Range getNearestKeys(final Bytes hkey) {
 
-    final Range parentRange = parent.getNearestKeys(hkey);
-
-    // --- Center: check overlay directly, then parent ---
-    Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode;
+    // --- Center: check overlay ---
     final Optional<FlattenedLeaf> overlayCenter = getFlatLeafStorage().get(hkey);
+    Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode;
     if (overlayCenter != null && overlayCenter.isPresent()) {
       centerNode = Optional.of(Map.entry(hkey, overlayCenter.get()));
     } else if (overlayCenter != null && overlayCenter.isEmpty()) {
-      centerNode = Optional.empty();
+      centerNode = Optional.empty(); // tombstoned in overlay
     } else {
+      centerNode = null; // not in overlay; check parent below
+    }
+
+    // --- Try parent first for complete range ---
+    // Parent can fail when hkey is outside the key-space of any entry in the parent
+    // (e.g., a fresh account storage trie with HEAD/TAIL only in our overlay, but the
+    // parent snapshot has no entries for this storage prefix yet).
+    final Range parentRange;
+    try {
+      parentRange = parent.getNearestKeys(hkey);
+    } catch (RuntimeException e) {
+      // Parent has no entries near hkey — build range solely from overlay.
+      return buildOverlayOnlyRange(hkey, centerNode);
+    }
+
+    if (centerNode == null) {
       centerNode = parentRange.getCenterNode();
     }
 
     // --- Left: closest key < hkey ---
-    final Map.Entry<Bytes, FlattenedLeaf> leftNode =
-            resolveLeftNode(hkey, parentRange);
+    final Map.Entry<Bytes, FlattenedLeaf> leftNode = resolveLeftNode(hkey, parentRange);
 
     // --- Right: closest key > hkey ---
-    final Map.Entry<Bytes, FlattenedLeaf> rightNode =
-            resolveRightNode(hkey, parentRange);
+    final Map.Entry<Bytes, FlattenedLeaf> rightNode = resolveRightNode(hkey, parentRange);
 
     return new Range(leftNode, centerNode, rightNode);
+  }
+
+  /**
+   * Build a Range using only entries present in the overlay (no parent call).
+   * Called when the parent throws — e.g., the parent snapshot has no entries with keys ≤
+   * {@code hkey} (fresh storage namespace, account trie entries are all lexicographically
+   * greater).  The overlay must supply both a left and a right bound (HEAD/TAIL from
+   * {@link net.consensys.shomei.trie.ZKTrie#createTrie}) for this to succeed.
+   */
+  private Range buildOverlayOnlyRange(
+      final Bytes hkey, final Optional<Map.Entry<Bytes, FlattenedLeaf>> precomputedCenter) {
+
+    Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode =
+        precomputedCenter != null ? precomputedCenter : Optional.empty();
+
+    Map.Entry<Bytes, Optional<FlattenedLeaf>> rawLeft = getFlatLeafStorage().lowerEntry(hkey);
+    while (rawLeft != null && rawLeft.getValue().isEmpty()) {
+      rawLeft = getFlatLeafStorage().lowerEntry(rawLeft.getKey());
+    }
+
+    Map.Entry<Bytes, Optional<FlattenedLeaf>> rawRight = getFlatLeafStorage().higherEntry(hkey);
+    while (rawRight != null && rawRight.getValue().isEmpty()) {
+      rawRight = getFlatLeafStorage().higherEntry(rawRight.getKey());
+    }
+
+    if (rawLeft == null || rawRight == null) {
+      throw new RuntimeException("not found leaf index");
+    }
+
+    return new Range(
+        Map.entry(rawLeft.getKey(), rawLeft.getValue().get()),
+        centerNode,
+        Map.entry(rawRight.getKey(), rawRight.getValue().get()));
   }
 
   private Map.Entry<Bytes, FlattenedLeaf> resolveLeftNode(
@@ -100,9 +145,19 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
       overlayLeft = getFlatLeafStorage().lowerEntry(overlayLeft.getKey());
     }
 
-    if (overlayLeft != null && overlayLeft.getValue().isPresent()
-            && overlayLeft.getKey().compareTo(parentLeft.getKey()) > 0) {
-      return Map.entry(overlayLeft.getKey(), overlayLeft.getValue().get());
+    if (overlayLeft != null && overlayLeft.getValue().isPresent()) {
+      // Prefer overlay over parent if overlay is closer to hkey.
+      if (overlayLeft.getKey().compareTo(parentLeft.getKey()) > 0) {
+        return Map.entry(overlayLeft.getKey(), overlayLeft.getValue().get());
+      }
+      // Also prefer overlay if the parent entry is not actually to the LEFT of hkey.
+      // This happens when getValidParentNode walks tombstoned entries from one storage
+      // namespace into a different namespace (e.g., account-trie entries at 0x7FFF…
+      // after all storage entries for a prefix were tombstoned), producing a key that
+      // is ≥ hkey and therefore invalid as a left neighbour.
+      if (parentLeft.getKey().compareTo(hkey) >= 0) {
+        return Map.entry(overlayLeft.getKey(), overlayLeft.getValue().get());
+      }
     }
 
     return parentLeft;
@@ -122,8 +177,15 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
       overlayRight = getFlatLeafStorage().higherEntry(overlayRight.getKey());
     }
 
-    if (overlayRight != null && overlayRight.getKey().compareTo(parentRight.getKey()) < 0) {
-      return Map.entry(overlayRight.getKey(), overlayRight.getValue().get());
+    if (overlayRight != null && overlayRight.getValue().isPresent()) {
+      // Prefer overlay over parent if overlay is closer to hkey.
+      if (overlayRight.getKey().compareTo(parentRight.getKey()) < 0) {
+        return Map.entry(overlayRight.getKey(), overlayRight.getValue().get());
+      }
+      // Also prefer overlay if the parent entry is not actually to the RIGHT of hkey.
+      if (parentRight.getKey().compareTo(hkey) <= 0) {
+        return Map.entry(overlayRight.getKey(), overlayRight.getValue().get());
+      }
     }
 
     return parentRight;
@@ -139,6 +201,12 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
   /**
    * Walk through parent storage to find a node that hasn't been deleted in the overlay.
+   *
+   * <p>The walk is bounded by {@code Bytes.EMPTY} (the canonical "no left neighbor" sentinel used
+   * throughout the codebase) and exits early if the parent throws — which can happen when the
+   * current key is at the very beginning of the parent's key-space and has no further left
+   * neighbour.  In that case the caller ({@link #resolveLeftNode} / {@link #resolveRightNode})
+   * will fall back to the overlay's own bounding entry.
    */
   private Map.Entry<Bytes, FlattenedLeaf> getValidParentNode(
           final Bytes initialKey,
@@ -149,7 +217,14 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
     FlattenedLeaf currentValue = initialValue;
 
     while (isDeletedInOverlay(currentKey) && !currentKey.equals(Bytes.EMPTY)) {
-      final Range nextRange = parent.getNearestKeys(currentKey);
+      final Range nextRange;
+      try {
+        nextRange = parent.getNearestKeys(currentKey);
+      } catch (RuntimeException e) {
+        // Parent has no entries at/near currentKey (boundary of its key-space).
+        // Stop walking; the caller will prefer the overlay bound over this entry.
+        break;
+      }
 
       if (searchLeft) {
         final Bytes nextKey = nextRange.getLeftNodeKey();
