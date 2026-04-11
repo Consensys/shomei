@@ -14,9 +14,12 @@ package net.consensys.shomei.storage.worldstate;
 
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
+import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -33,13 +36,48 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
   private final WorldStateStorage parent;
 
+  /**
+   * Tracks storage prefixes (8-byte big-endian leafIndex) for which
+   * {@link #removeStorageForAccount} was called on this overlay.
+   *
+   * <p>{@link InMemoryWorldStateStorage#removeStorageForAccount} only tombstones entries that are
+   * already in the overlay's own flat-leaf and trie-node maps; entries that exist <em>only</em> in
+   * the parent would otherwise remain visible via the normal parent-fallback reads.  By recording
+   * the deleted prefix here we can block that fallback for the affected storage namespace.
+   */
+  private final Set<Bytes> deletedStoragePrefixes = new HashSet<>();
+
   public LayeredWorldStateStorage(final WorldStateStorage parent) {
     super();
     this.parent = parent;
   }
 
+  /**
+   * Returns {@code true} when {@code key} belongs to a storage namespace (leafIndex prefix) that
+   * has been fully deleted on this overlay via {@link #removeStorageForAccount}.
+   */
+  private boolean isInDeletedStoragePrefix(final Bytes key) {
+    return key.size() >= Long.BYTES
+        && deletedStoragePrefixes.contains(key.slice(0, Long.BYTES));
+  }
+
+  /**
+   * Overrides the base implementation to also record the deleted prefix in
+   * {@link #deletedStoragePrefixes}, blocking parent fallback for any flat-leaf or trie-node
+   * belonging to this account's storage namespace.
+   */
+  @Override
+  public void removeStorageForAccount(final long leafIndex) {
+    deletedStoragePrefixes.add(Bytes.wrap(Longs.toByteArray(leafIndex)));
+    super.removeStorageForAccount(leafIndex);
+  }
+
   @Override
   public Optional<FlattenedLeaf> getFlatLeaf(final Bytes key) {
+    // Block parent fallback for storage namespaces that have been fully deleted on this overlay.
+    if (isInDeletedStoragePrefix(key)) {
+      return Optional.empty();
+    }
     // null  = key not in overlay at all → ask parent
     // Optional.empty() = key explicitly deleted in overlay → return empty
     // Optional.of(val) = key exists in overlay → return value
@@ -61,6 +99,14 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
   @Override
   public Range getNearestKeys(final Bytes hkey) {
+
+    // When the queried key belongs to a deleted storage namespace, the parent's entries for that
+    // prefix must not appear as neighbors — they belong to storage that was fully removed on this
+    // overlay.  The only valid entries are those the overlay itself wrote (HEAD/TAIL sentinels from
+    // createTrie(), plus any new slots written in the current block).
+    if (isInDeletedStoragePrefix(hkey)) {
+      return buildOverlayOnlyRange(hkey, Optional.empty());
+    }
 
     // --- Center: check overlay ---
     final Optional<FlattenedLeaf> overlayCenter = getFlatLeafStorage().get(hkey);
@@ -294,11 +340,10 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
     @Override
     public void removeStorageForAccount(final long leafIndex) {
-      // Delegates to InMemoryWorldStateStorage.removeStorageForAccount(), which:
-      // - soft-deletes flat leaf entries in the overlay (Optional.empty() tombstones)
-      // - soft-deletes trie node entries in the overlay
-      // - explicitly tombstones the storage-trie root key so that getTrieNode() does
-      //   not fall back to the parent's root, ensuring createTrie() is used for fresh state
+      // Delegates to LayeredWorldStateStorage.removeStorageForAccount(), which:
+      // - records the prefix in deletedStoragePrefixes (blocks parent fallback for that range)
+      // - then calls super (InMemoryWorldStateStorage) to tombstone any overlay entries and
+      //   the storage-trie root key (ensuring createTrie() is used rather than loadTrie())
       delegate.removeStorageForAccount(leafIndex);
     }
   }
