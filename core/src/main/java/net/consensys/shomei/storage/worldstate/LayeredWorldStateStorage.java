@@ -74,18 +74,20 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
   @Override
   public Optional<FlattenedLeaf> getFlatLeaf(final Bytes key) {
-    // Block parent fallback for storage namespaces that have been fully deleted on this overlay.
-    if (isInDeletedStoragePrefix(key)) {
-      return Optional.empty();
-    }
-    // null  = key not in overlay at all → ask parent
+    // Check overlay first — entries written after removeStorageForAccount (e.g. HEAD/TAIL from
+    // createTrie, or new slot values from putWithTrace) must remain visible.
+    // null  = key not in overlay at all → apply deleted-prefix guard then ask parent
     // Optional.empty() = key explicitly deleted in overlay → return empty
     // Optional.of(val) = key exists in overlay → return value
     final Optional<FlattenedLeaf> overlayValue = getFlatLeafStorage().get(key);
-    if (overlayValue == null) {
-      return parent.getFlatLeaf(key);
+    if (overlayValue != null) {
+      return overlayValue;
     }
-    return overlayValue;
+    // Block parent fallback for storage namespaces fully removed on this overlay.
+    if (isInDeletedStoragePrefix(key)) {
+      return Optional.empty();
+    }
+    return parent.getFlatLeaf(key);
   }
 
   @Override
@@ -102,10 +104,16 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
     // When the queried key belongs to a deleted storage namespace, the parent's entries for that
     // prefix must not appear as neighbors — they belong to storage that was fully removed on this
-    // overlay.  The only valid entries are those the overlay itself wrote (HEAD/TAIL sentinels from
-    // createTrie(), plus any new slots written in the current block).
+    // overlay.  Use only overlay entries (HEAD/TAIL sentinels from createTrie(), plus any new
+    // slots written in the current block).  Check the overlay for the center key explicitly so
+    // that entries written after removeStorageForAccount are correctly reflected.
     if (isInDeletedStoragePrefix(hkey)) {
-      return buildOverlayOnlyRange(hkey, Optional.empty());
+      final Optional<FlattenedLeaf> overlayCenter = getFlatLeafStorage().get(hkey);
+      final Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode =
+          (overlayCenter != null && overlayCenter.isPresent())
+              ? Optional.of(Map.entry(hkey, overlayCenter.get()))
+              : Optional.empty();
+      return buildOverlayOnlyRange(hkey, centerNode);
     }
 
     // --- Center: check overlay ---
