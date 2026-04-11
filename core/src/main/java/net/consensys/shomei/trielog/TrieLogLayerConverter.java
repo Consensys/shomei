@@ -540,17 +540,12 @@ public class TrieLogLayerConverter {
       storageRoot = ZKTrie.DEFAULT_TRIE_ROOT;
       in.skipNext();
     } else {
-      final Bytes32 newEvmStorageRoot = in.readBytes32();
+      in.readBytes32(); // newEvmStorageRoot — consumed but not used; see comment below
       // For rollback: always use priorAccount.account.getStorageRoot() (= state-N ZK root).
       //   Storage unchanged: state-N root == state-(N-1) root → no-op in loadStorageTrie.
       //   Storage changed:   loadStorageTrie needs state-N root to load the current trie;
       //                      updateSlots will overwrite the root after applying reverse ops.
-      // Unlike the forward path, we never emit null here.
-      if (!priorAccount.evmStorageRoot.equals(newEvmStorageRoot)) {
-        storageRoot = priorAccount.account.getStorageRoot();
-      } else {
-        storageRoot = priorAccount.account.getStorageRoot();
-      }
+      storageRoot = priorAccount.account.getStorageRoot();
     }
     in.skipNext(); // skip keccak codeHash
     in.leaveList();

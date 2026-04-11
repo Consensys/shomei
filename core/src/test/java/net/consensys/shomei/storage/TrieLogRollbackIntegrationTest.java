@@ -13,6 +13,8 @@
 package net.consensys.shomei.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
@@ -139,6 +141,11 @@ public class TrieLogRollbackIntegrationTest {
    * Loads blocks 0–33 into a real RocksDB-backed {@link ZkWorldStateArchive}, caching a snapshot
    * for each block, then for every non-head block N asserts:
    *
+   * <p><b>Note:</b> because every block is snapshot-cached, {@link
+   * ZkWorldStateArchive#rollBackToBlock} always returns a cache hit and the multi-step rollback
+   * path is never exercised here. See {@link #multiStepRollbackProducesCorrectStateRoots} for
+   * a test that actually drives the rollback logic.</p>
+   *
    * <ol>
    *   <li>Rolling back to N yields the same state root and nextFreeNode as the cached snapshot.
    *   <li>Trie log N+1 decodes successfully against the rolled-back worldstate N — the prior-value
@@ -246,5 +253,66 @@ public class TrieLogRollbackIntegrationTest {
               nextEntry.blockNumber(), blockNum, nextEntry.blockNumber())
           .isEqualTo(cachedStateRoots.get(i + 1));
     }
+  }
+
+  /**
+   * Verifies that multi-step rollback (from head with no cached snapshots) produces the same
+   * state roots as the single-step cached rollback — the path exercised by a restarted node.
+   *
+   * <p>The existing {@link #rolledBackWorldStateMatchesCachedWorldState} test always hits the
+   * snapshot cache, so the rollback logic is never reached. This test clears the cache after
+   * recording reference state roots, then re-runs rollback for blocks 27 and 28 to confirm
+   * the multi-step path is correct.
+   *
+   * <p>Note: the production SELFDESTRUCT failure reported against block 27 is NOT reproducible
+   * with this 34-block dataset because the account deletion occurs further along the chain
+   * (beyond block 33). The limitation is documented in
+   * {@code ZkWorldStateArchive.rollBackToBlock}: when an account is absent from the head
+   * snapshot because it was deleted between the target block and head, reconstruction fails
+   * with an {@link IllegalStateException} containing "SELFDESTRUCT".
+   */
+  @Test
+  void multiStepRollbackProducesCorrectStateRoots() throws Exception {
+    final List<TrieLogEntry> entries = parseTrieLogDat();
+    assertThat(entries).isNotEmpty();
+
+    final TrieLogManager trieLogManager = provider.getTrieLogManager();
+
+    // ---- Step 1: persist and import all blocks WITH snapshot caching ----
+    final TrieLogManager.TrieLogManagerUpdater trieLogUpdater = trieLogManager.updater();
+    for (final TrieLogEntry entry : entries) {
+      final Bytes32 blockHash = extractBlockHash(entry.rawRlp());
+      trieLogUpdater.saveTrieLog(
+          new TrieLogIdentifier(entry.blockNumber(), blockHash), entry.rawRlp());
+    }
+    trieLogUpdater.commit();
+
+    for (final TrieLogEntry entry : entries) {
+      final Bytes32 blockHash = extractBlockHash(entry.rawRlp());
+      archive.importBlock(
+          new TrieLogIdentifier(entry.blockNumber(), blockHash),
+          /* shouldGenerateTrace= */ false,
+          /* isSnapshotGenerationNeeded= */ true);
+    }
+
+    // Record reference state roots for blocks 27 and 28 from the cached snapshots
+    final Bytes32 block28Root =
+        archive.getCachedWorldState(28L).orElseThrow().getStateRootHash();
+    final Bytes32 block27Root =
+        archive.getCachedWorldState(27L).orElseThrow().getStateRootHash();
+
+    // ---- Step 2: clear the snapshot cache to force genuine multi-step rollback ----
+    archive.getCachedWorldStates().clear();
+    assertThat(archive.getCachedWorldStates()).isEmpty();
+
+    // Multi-step rollback from head (33) to block 28 — processes trielogs 33→29
+    assertThat(archive.rollBackToBlock(28).getStateRootHash())
+        .as("multi-step rollback to block 28 state root")
+        .isEqualTo(block28Root);
+
+    // Multi-step rollback from head (33) to block 27 — processes trielogs 33→28
+    assertThat(archive.rollBackToBlock(27).getStateRootHash())
+        .as("multi-step rollback to block 27 state root")
+        .isEqualTo(block27Root);
   }
 }

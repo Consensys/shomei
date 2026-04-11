@@ -181,9 +181,8 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
     when(besuSimulateClient.simulateTransaction(eq(7L), anyString()))
         .thenReturn(CompletableFuture.completedFuture(createMockTrieLogHex()));
     when(worldStateArchive.getTrieLogLayerConverter()).thenReturn(trieLogLayerConverter);
-    when(trieLogLayerConverter.decodeTrieLog(any(), any())).thenReturn(trieLogLayer);
-
-    // getOrLoadWorldState throws MissingTrieLogException for an uncacheable block
+    // getOrLoadWorldState throws before decodeTrieLog is called (it's an argument expression),
+    // so no decodeTrieLog stub is needed here.
     doThrow(new MissingTrieLogException(7L)).when(worldStateArchive).getOrLoadWorldState(7L);
 
     final JsonRpcRequestContext request = request(8L, createTestTransactionRlp());
