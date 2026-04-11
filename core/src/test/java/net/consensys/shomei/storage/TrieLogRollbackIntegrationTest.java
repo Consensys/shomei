@@ -13,6 +13,7 @@
 package net.consensys.shomei.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.services.storage.rocksdb.configuration.RocksDBConfigurationBuilder;
@@ -262,12 +263,12 @@ public class TrieLogRollbackIntegrationTest {
    * recording reference state roots, then re-runs rollback for blocks 27 and 28 to confirm
    * the multi-step path is correct.
    *
-   * <p>Note: the production SELFDESTRUCT failure reported against block 27 is NOT reproducible
-   * with this 34-block dataset because the account deletion occurs further along the chain
-   * (beyond block 33). The limitation is documented in
-   * {@code ZkWorldStateArchive.rollBackToBlock}: when an account is absent from the head
-   * snapshot because it was deleted between the target block and head, reconstruction fails
-   * with an {@link IllegalStateException} containing "SELFDESTRUCT".
+   * <p>Block 27 (0x1b) calls contract {@code 0x0150...}, which selfdestructs during that call.
+   * Rolling back to block 28 and 27 succeeds because those rollbacks only unwind trie logs
+   * 33→29 and 33→28 respectively — block 27's trie log is never touched.  Rolling back to
+   * block 26 requires unwinding block 27's trie log, which contains the {@code 0x0150...}
+   * deletion, and fails with the SELFDESTRUCT exception documented in
+   * {@link #rollBackToBlock26FailsDueToSelfDestructInBlock27}.
    */
   @Test
   void multiStepRollbackProducesCorrectStateRoots() throws Exception {
@@ -312,5 +313,55 @@ public class TrieLogRollbackIntegrationTest {
     assertThat(archive.rollBackToBlock(27).getStateRootHash())
         .as("multi-step rollback to block 27 state root")
         .isEqualTo(block27Root);
+  }
+
+  /**
+   * Asserts that rolling back to block 26 fails with an {@link IllegalStateException} containing
+   * "SELFDESTRUCT".
+   *
+   * <p>Block 27 (0x1b) calls contract {@code 0x0150...}, which selfdestructs during that call.
+   * After block 27, the account is absent from every subsequent state snapshot up to the head
+   * (block 33) because it is never recreated.
+   *
+   * <p>Rolling back to block 26 requires unwinding block 27's trie log.  When
+   * {@link net.consensys.shomei.trielog.TrieLogLayerConverter#decodeTrieLogForRollback} processes
+   * the {@code 0x0150...} account entry it finds a non-null prior (the account existed before
+   * block 27) but the account is absent from the rolling state (selfdestructed and never
+   * restored) — the unsupported rollback-across-deletion path.
+   *
+   * <p>This test documents the known limitation: classic SELFDESTRUCT of a pre-existing account
+   * cannot be reversed by the current rollback implementation.
+   */
+  @Test
+  void rollBackToBlock26FailsDueToSelfDestructInBlock27() throws Exception {
+    final List<TrieLogEntry> entries = parseTrieLogDat();
+    assertThat(entries).isNotEmpty();
+
+    final TrieLogManager trieLogManager = provider.getTrieLogManager();
+
+    final TrieLogManager.TrieLogManagerUpdater trieLogUpdater = trieLogManager.updater();
+    for (final TrieLogEntry entry : entries) {
+      final Bytes32 blockHash = extractBlockHash(entry.rawRlp());
+      trieLogUpdater.saveTrieLog(
+          new TrieLogIdentifier(entry.blockNumber(), blockHash), entry.rawRlp());
+    }
+    trieLogUpdater.commit();
+
+    for (final TrieLogEntry entry : entries) {
+      final Bytes32 blockHash = extractBlockHash(entry.rawRlp());
+      archive.importBlock(
+          new TrieLogIdentifier(entry.blockNumber(), blockHash),
+          /* shouldGenerateTrace= */ false,
+          /* isSnapshotGenerationNeeded= */ true);
+    }
+
+    // Clear cache so rollback is forced to unwind trie logs from head (block 33).
+    archive.getCachedWorldStates().clear();
+
+    // Rolling back to block 26 must process block 27's trie log, which contains the
+    // SELFDESTRUCT of 0x0150... — absent from all states between block 27 and head.
+    assertThatThrownBy(() -> archive.rollBackToBlock(26))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("SELFDESTRUCT");
   }
 }
