@@ -24,9 +24,9 @@ import net.consensys.shomei.worldview.ZkEvmWorldState;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -36,6 +36,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.hyperledger.besu.ethereum.rlp.RLPInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -314,24 +315,25 @@ public class ZkWorldStateArchive implements Closeable {
               + headWorldState.getBlockNumber());
     }
 
-    // 3. Load trie logs from startBlockNumber down to targetBlockNumber+1 (inclusive).
-    //    Also load the trie log for targetBlockNumber itself to obtain its block hash.
-    final List<TrieLogLayer> trieLogsToUndo = new ArrayList<>();
-    for (long blockNum = startBlockNumber; blockNum > targetBlockNumber; blockNum--) {
+    // 3. Pre-load raw trie logs and extract block hashes.
+    //    Blocks startBlockNumber → targetBlockNumber+1: raw bytes for interleaved decode+rollback.
+    //    Block targetBlockNumber: only its hash is needed for the final commit.
+    final Map<Long, Bytes> rawLogs = new HashMap<>();
+    final Map<Long, Bytes32> blockHashes = new HashMap<>();
+    for (long blockNum = startBlockNumber; blockNum >= targetBlockNumber; blockNum--) {
       final Optional<Bytes> rawLog = trieLogManager.getTrieLog(blockNum);
       if (rawLog.isEmpty()) {
-        throw new MissingTrieLogException(blockNum);
+        if (blockNum > targetBlockNumber) {
+          throw new MissingTrieLogException(blockNum);
+        }
+        blockHashes.put(blockNum, Bytes32.ZERO);
+        continue;
       }
-      trieLogsToUndo.add(trieLogLayerConverter.decodeTrieLog(RLP.input(rawLog.get())));
+      rawLogs.put(blockNum, rawLog.get());
+      final RLPInput hashInput = RLP.input(rawLog.get());
+      hashInput.enterList();
+      blockHashes.put(blockNum, hashInput.readBytes32());
     }
-    // Load the target block's trie log to obtain its block hash for the final commit.
-    final Bytes32 targetBlockHash =
-        trieLogManager
-            .getTrieLog(targetBlockNumber)
-            .map(RLP::input)
-            .map(trieLogLayerConverter::decodeTrieLog)
-            .map(TrieLogLayer::getBlockHash)
-            .orElse(Bytes32.ZERO);
 
     // 4. Create an ephemeral layered world state on top of the base snapshot.
     final LayeredWorldStateStorage layeredStorage = new LayeredWorldStateStorage(baseStorage);
@@ -339,25 +341,26 @@ public class ZkWorldStateArchive implements Closeable {
     final ZkEvmWorldState rollingState =
         new ZkEvmWorldState(layeredStorage, ephemeralTraceManager);
 
-    // 5. Apply rollbacks in descending block order.
-    //    trieLogsToUndo[0] = startBlockNumber, trieLogsToUndo[last] = targetBlockNumber+1
-    for (int i = 0; i < trieLogsToUndo.size(); i++) {
-      final TrieLogLayer layer = trieLogsToUndo.get(i);
+    // 5. Interleaved decode + rollback: process one block at a time so that each decode
+    //    sees the correct rolling state (representing the block being rolled back from).
+    //    decodeTrieLogForRollback reads the rolling-state account for ZK storage root and
+    //    code hash without validating nonce/balance against the wrong snapshot.
+    for (long blockNum = startBlockNumber; blockNum > targetBlockNumber; blockNum--) {
+      final TrieLogLayer layer =
+          trieLogLayerConverter.decodeTrieLogForRollback(
+              RLP.input(rawLogs.get(blockNum)),
+              rollingState.getZkEvmWorldStateStorage());
       rollingState.getAccumulator().rollBack(layer);
-      final long priorBlockNumber = layer.getBlockNumber() - 1;
-      // Block hash: use the next layer's hash, or the preloaded target hash for the final step.
-      final Bytes32 priorBlockHash =
-          (i + 1 < trieLogsToUndo.size())
-              ? trieLogsToUndo.get(i + 1).getBlockHash()
-              : targetBlockHash;
-      rollingState.commit(priorBlockNumber, priorBlockHash, false);
+      final long priorBlockNumber = blockNum - 1;
+      rollingState.commit(
+          priorBlockNumber, blockHashes.getOrDefault(priorBlockNumber, Bytes32.ZERO), false);
     }
 
     LOG.atDebug()
         .setMessage("Rolled back from block {} to block {} in {} steps")
         .addArgument(startBlockNumber)
         .addArgument(targetBlockNumber)
-        .addArgument(trieLogsToUndo.size())
+        .addArgument(startBlockNumber - targetBlockNumber)
         .log();
 
     return rollingState;
