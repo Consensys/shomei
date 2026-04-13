@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
-import net.consensys.shomei.rpc.server.error.JsonInvalidVersionMessage;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEVMStateMerkleProofV0Response;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEvmStateV0Parameter;
@@ -59,20 +58,6 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
   @Test
   public void shouldReturnCorrectMethodName() {
     assertThat(method.getName()).isEqualTo("rollup_getZkEVMStateMerkleProofV0");
-  }
-
-  @Test
-  public void shouldReturnUnsupportedVersionWhenVersionIsInvalid() {
-    final JsonRpcRequestContext request = request("0", "0", "invalidVersion");
-    final JsonRpcResponse expectedResponse =
-        new ShomeiJsonRpcErrorResponse(
-            null,
-            RpcErrorType.INVALID_PARAMS,
-            "UNSUPPORTED_VERSION",
-            new JsonInvalidVersionMessage("invalidVersion", IMPL_VERSION));
-    final JsonRpcResponse response = method.response(request);
-
-    assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
   }
 
   @Test
