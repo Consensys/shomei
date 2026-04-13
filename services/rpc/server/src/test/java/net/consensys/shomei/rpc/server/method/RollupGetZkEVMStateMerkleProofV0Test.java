@@ -89,6 +89,34 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
   }
 
   @Test
+  public void shouldReturnValidResponseWhenZkStateManagerVersionOmitted() {
+    ZKTrie accountStateTrie =
+        ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
+
+    Bytes trace =
+        Trace.serialize(
+            List.of(
+                accountStateTrie.readWithTrace(
+                        KECCAK_HASH_ZERO, PoseidonSafeBytesUtils.safeByte32(KECCAK_HASH_ZERO))));
+
+    when(traceManager.getZkStateRootHash(anyLong()))
+        .thenReturn(Optional.of(accountStateTrie.getTopRootHash()));
+    when(traceManager.getTrace(anyLong())).thenReturn(Optional.of(trace));
+    final JsonRpcRequestContext request = request("0", "0", null);
+    final JsonRpcResponse expectedResponse =
+        new JsonRpcSuccessResponse(
+            null,
+            new RollupGetZkEVMStateMerkleProofV0Response(
+                accountStateTrie.getTopRootHash().toHexString(),
+                accountStateTrie.getTopRootHash().toHexString(),
+                List.of(Trace.deserialize(RLP.input(trace))),
+                IMPL_VERSION));
+    final JsonRpcResponse response = method.response(request);
+
+    assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
+  }
+
+  @Test
   public void shouldReturnValidResponseWhenTraceAvailable() {
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));

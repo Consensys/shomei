@@ -27,7 +27,8 @@ public class RollupGetZkEvmStateV0Parameter {
   public RollupGetZkEvmStateV0Parameter(
       @JsonProperty("startBlockNumber") final String startBlockNumber,
       @JsonProperty("endBlockNumber") final String endBlockNumber,
-      @JsonProperty("zkStateManagerVersion") final String zkStateManagerVersion) {
+      @JsonProperty(value = "zkStateManagerVersion", required = false)
+          final String zkStateManagerVersion) {
     this.startBlockNumber = startBlockNumber;
     this.endBlockNumber = endBlockNumber;
     this.zkStateManagerVersion = zkStateManagerVersion;
