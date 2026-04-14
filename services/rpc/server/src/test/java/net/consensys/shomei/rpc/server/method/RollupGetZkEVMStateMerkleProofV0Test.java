@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
-import net.consensys.shomei.rpc.server.error.JsonInvalidVersionMessage;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEVMStateMerkleProofV0Response;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEvmStateV0Parameter;
@@ -62,20 +61,6 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
   }
 
   @Test
-  public void shouldReturnUnsupportedVersionWhenVersionIsInvalid() {
-    final JsonRpcRequestContext request = request("0", "0", "invalidVersion");
-    final JsonRpcResponse expectedResponse =
-        new ShomeiJsonRpcErrorResponse(
-            null,
-            RpcErrorType.INVALID_PARAMS,
-            "UNSUPPORTED_VERSION",
-            new JsonInvalidVersionMessage("invalidVersion", IMPL_VERSION));
-    final JsonRpcResponse response = method.response(request);
-
-    assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
-  }
-
-  @Test
   public void shouldReturnBlockMissingWhenTraceUnavailable() {
     final JsonRpcRequestContext request = request("0", "0", IMPL_VERSION);
     final JsonRpcResponse expectedResponse =
@@ -83,6 +68,34 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
             null,
             RpcErrorType.INVALID_PARAMS,
             "BLOCK_MISSING_IN_CHAIN - block %d is missing".formatted(0));
+    final JsonRpcResponse response = method.response(request);
+
+    assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
+  }
+
+  @Test
+  public void shouldReturnValidResponseWhenZkStateManagerVersionOmitted() {
+    ZKTrie accountStateTrie =
+        ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
+
+    Bytes trace =
+        Trace.serialize(
+            List.of(
+                accountStateTrie.readWithTrace(
+                        KECCAK_HASH_ZERO, PoseidonSafeBytesUtils.safeByte32(KECCAK_HASH_ZERO))));
+
+    when(traceManager.getZkStateRootHash(anyLong()))
+        .thenReturn(Optional.of(accountStateTrie.getTopRootHash()));
+    when(traceManager.getTrace(anyLong())).thenReturn(Optional.of(trace));
+    final JsonRpcRequestContext request = request("0", "0", null);
+    final JsonRpcResponse expectedResponse =
+        new JsonRpcSuccessResponse(
+            null,
+            new RollupGetZkEVMStateMerkleProofV0Response(
+                accountStateTrie.getTopRootHash().toHexString(),
+                accountStateTrie.getTopRootHash().toHexString(),
+                List.of(Trace.deserialize(RLP.input(trace))),
+                IMPL_VERSION));
     final JsonRpcResponse response = method.response(request);
 
     assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
