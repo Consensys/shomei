@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2025
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.model;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,19 +62,46 @@ class TrieLogElementTest {
   }
 
   @Test
-  void trieLogIdentifierHasCorrectValues() throws Exception {
+  void syncingFieldMapsToInitialSync() throws Exception {
+    Map<String, Object> map = new LinkedHashMap<>();
+    map.put("blockNumber", 0);
+    map.put(
+        "blockHash",
+        "0xe534c5c55dddaac9ae23a939aa52a877f1f78b9fffbee6f313244ff35228996b");
+    map.put("trieLog", "0xdeadbeef");
+    map.put("syncing", true);
+
+    TrieLogElement element = MAPPER.convertValue(map, TrieLogElement.class);
+
+    assertThat(element.blockNumber()).isEqualTo(0L);
+    assertThat(element.isInitialSync()).isTrue();
+  }
+
+  @Test
+  void syncingAbsentDefaultsToFalse() throws Exception {
     String json =
         "{\"blockNumber\":100,"
             + "\"blockHash\":\"0x0000000000000000000000000000000000000000000000000000000000000001\","
             + "\"trieLog\":\"0x\"}";
 
     TrieLogElement element = MAPPER.readValue(json, TrieLogElement.class);
-    var identifier = element.getTrieLogIdentifier();
 
-    assertThat(identifier.blockNumber()).isEqualTo(100L);
-    assertThat(identifier.blockHash())
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0x0000000000000000000000000000000000000000000000000000000000000001"));
+    assertThat(element.isInitialSync()).isFalse();
+    assertThat(element.getTrieLogIdentifier().blockNumber()).isEqualTo(100L);
+  }
+
+  @Test
+  void unknownFieldsAreIgnored() throws Exception {
+    Map<String, Object> map = new LinkedHashMap<>();
+    map.put("blockNumber", 1);
+    map.put(
+        "blockHash",
+        "0x0000000000000000000000000000000000000000000000000000000000000001");
+    map.put("trieLog", "0x");
+    map.put("someUnknownField", "value");
+
+    TrieLogElement element = MAPPER.convertValue(map, TrieLogElement.class);
+
+    assertThat(element.blockNumber()).isEqualTo(1L);
   }
 }

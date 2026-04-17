@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,17 +10,19 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.model;
+
 
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.apache.tuweni.bytes.Bytes32;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class TrieLogElement {
 
   private Long blockNumber;
@@ -36,10 +38,11 @@ public class TrieLogElement {
       @JsonProperty("blockHash")
           @JsonDeserialize(using = JsonTraceParser.Bytes32Deserializer.class)
           final Bytes32 blockHash,
-      @JsonProperty("trieLog") final String trieLog) {
+      @JsonProperty("trieLog") final String trieLog,
+      @JsonProperty("syncing") final Boolean syncing) {
     this.blockNumber = blockNumber;
     this.blockHash = blockHash;
-    this.isInitialSync = false;
+    this.isInitialSync = syncing != null && syncing;
     this.trieLog = trieLog;
   }
 

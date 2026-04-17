@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2026
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.zkevm.HashProvider.KECCAK_HASH_ZERO;
@@ -50,6 +49,8 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcRespon
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.hyperledger.besu.ethereum.core.Transaction;
+import org.hyperledger.besu.ethereum.core.encoding.EncodingContext;
+import org.hyperledger.besu.ethereum.core.encoding.TransactionEncoder;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,7 +59,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
+public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
 
   @Mock public ZkWorldStateArchive worldStateArchive;
   @Mock public BesuSimulateClient besuSimulateClient;
@@ -68,7 +69,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
   @Mock public TrieLogLayer trieLogLayer;
   @Mock public ZkEvmWorldState mockZkWorldState;
 
-  public RollupGetVirtualZkEVMStateMerkleProofV0 method;
+  public RollupGetVirtualZkEVMStateMerkleProofV1 method;
 
   // private static final String TEST_ACCOUNT_ADDRESS = "f17f52151EbEF6C7334FAD080c5704D77216b732";
   private static final String TEST_ACCOUNT_PRIVATE_KEY =
@@ -76,7 +77,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
 
   @BeforeEach
   public void setup() {
-    method = new RollupGetVirtualZkEVMStateMerkleProofV0(worldStateArchive, besuSimulateClient);
+    method = new RollupGetVirtualZkEVMStateMerkleProofV1(worldStateArchive, besuSimulateClient);
   }
 
   /**
@@ -103,12 +104,12 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
             .chainId(BigInteger.ONE)
             .signAndBuild(keyPair);
 
-    return transaction.encoded().toHexString();
+    return TransactionEncoder.encodeOpaqueBytes(transaction, EncodingContext.POOLED_TRANSACTION).toHexString();
   }
 
   @Test
   public void shouldReturnCorrectMethodName() {
-    assertThat(method.getName()).isEqualTo("rollup_getVirtualZkEVMStateMerkleProofV0");
+    assertThat(method.getName()).isEqualTo("rollup_getVirtualZkEVMStateMerkleProofV1");
   }
 
   @Test
@@ -210,7 +211,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0Test {
     return new JsonRpcRequestContext(
         new JsonRpcRequest(
             "2.0",
-            "rollup_getVirtualZkEVMStateMerkleProofV0",
+            "rollup_getVirtualZkEVMStateMerkleProofV1",
             new Object[] {
                 new RollupGetVirtualZkEvmStateMerkleProofV0Parameter(
                     String.valueOf(blockNumber), transactionRlp)
