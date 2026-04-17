@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,11 +10,10 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei;
 
 import static net.consensys.shomei.util.TestFixtureGenerator.createDumDigest;
-import static net.consensys.shomei.util.bytes.MimcSafeBytes.unsafeFromBytes;
+import static net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils.unsafeFromBytes;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
@@ -22,7 +21,8 @@ import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 import net.consensys.shomei.trie.proof.MerkleProof;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 import net.consensys.zkevm.HashProvider;
 
 import java.io.IOException;
@@ -52,7 +52,8 @@ public class WorldstateProofTest {
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
 
-    final MerkleProof proof = accountStateTrie.getProof(hkey, MimcSafeBytes.safeByte32(key));
+    final MerkleProof proof =
+        accountStateTrie.getProof(hkey, PoseidonSafeBytesUtils.safeByte32(key));
 
     assertThat(JSON_OBJECT_MAPPER.writeValueAsString(proof))
         .isEqualToIgnoringWhitespace(getResources("testGetProofForMissingKey.json"));
@@ -61,8 +62,8 @@ public class WorldstateProofTest {
   @Test
   public void testGetProofForAvailableKey() throws IOException {
 
-    final MimcSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
-    final MimcSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
+    final PoseidonSafeBytes<Bytes> key = unsafeFromBytes(createDumDigest(36));
+    final PoseidonSafeBytes<Bytes> value = unsafeFromBytes(createDumDigest(32));
     final Bytes32 hkey = HashProvider.trieHash(key);
 
     ZKTrie accountStateTrie =

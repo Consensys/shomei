@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
@@ -19,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 
-import net.consensys.shomei.rpc.server.error.JsonInvalidVersionMessage;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEVMStateMerkleProofV0Response;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEvmStateV0Parameter;
@@ -28,7 +26,7 @@ import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.trace.Trace;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytesUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -63,20 +61,6 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
   }
 
   @Test
-  public void shouldReturnUnsupportedVersionWhenVersionIsInvalid() {
-    final JsonRpcRequestContext request = request("0", "0", "invalidVersion");
-    final JsonRpcResponse expectedResponse =
-        new ShomeiJsonRpcErrorResponse(
-            null,
-            RpcErrorType.INVALID_PARAMS,
-            "UNSUPPORTED_VERSION",
-            new JsonInvalidVersionMessage("invalidVersion", IMPL_VERSION));
-    final JsonRpcResponse response = method.response(request);
-
-    assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
-  }
-
-  @Test
   public void shouldReturnBlockMissingWhenTraceUnavailable() {
     final JsonRpcRequestContext request = request("0", "0", IMPL_VERSION);
     final JsonRpcResponse expectedResponse =
@@ -90,6 +74,34 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
   }
 
   @Test
+  public void shouldReturnValidResponseWhenZkStateManagerVersionOmitted() {
+    ZKTrie accountStateTrie =
+        ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
+
+    Bytes trace =
+        Trace.serialize(
+            List.of(
+                accountStateTrie.readWithTrace(
+                        KECCAK_HASH_ZERO, PoseidonSafeBytesUtils.safeByte32(KECCAK_HASH_ZERO))));
+
+    when(traceManager.getZkStateRootHash(anyLong()))
+        .thenReturn(Optional.of(accountStateTrie.getTopRootHash()));
+    when(traceManager.getTrace(anyLong())).thenReturn(Optional.of(trace));
+    final JsonRpcRequestContext request = request("0", "0", null);
+    final JsonRpcResponse expectedResponse =
+        new JsonRpcSuccessResponse(
+            null,
+            new RollupGetZkEVMStateMerkleProofV0Response(
+                accountStateTrie.getTopRootHash().toHexString(),
+                accountStateTrie.getTopRootHash().toHexString(),
+                List.of(Trace.deserialize(RLP.input(trace))),
+                IMPL_VERSION));
+    final JsonRpcResponse response = method.response(request);
+
+    assertThat(response).usingRecursiveComparison().isEqualTo(expectedResponse);
+  }
+
+  @Test
   public void shouldReturnValidResponseWhenTraceAvailable() {
     ZKTrie accountStateTrie =
         ZKTrie.createTrie(new AccountTrieRepositoryWrapper(new InMemoryWorldStateStorage()));
@@ -97,7 +109,8 @@ public class RollupGetZkEVMStateMerkleProofV0Test {
     Bytes trace =
         Trace.serialize(
             List.of(
-                accountStateTrie.readWithTrace(KECCAK_HASH_ZERO, MimcSafeBytes.safeByte32(KECCAK_HASH_ZERO))));
+                accountStateTrie.readWithTrace(
+                        KECCAK_HASH_ZERO, PoseidonSafeBytesUtils.safeByte32(KECCAK_HASH_ZERO))));
 
     when(traceManager.getZkStateRootHash(anyLong()))
         .thenReturn(Optional.of(accountStateTrie.getTopRootHash()));

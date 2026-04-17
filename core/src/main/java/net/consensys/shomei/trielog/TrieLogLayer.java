@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,15 +10,13 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.trielog;
 
 import static com.google.common.base.Preconditions.checkState;
 
 import net.consensys.shomei.ZkAccount;
 import net.consensys.shomei.ZkValue;
-import net.consensys.shomei.util.bytes.MimcSafeBytes;
-import net.consensys.zkevm.HashProvider;
+import net.consensys.shomei.util.bytes.PoseidonSafeBytes;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -90,17 +88,19 @@ public class TrieLogLayer {
   }
 
   public AccountKey addAccountChange(
-      final MimcSafeBytes<Bytes> address,
+      final PoseidonSafeBytes<Bytes> address,
       final ZkAccount oldValue,
       final ZkAccount newValue,
       final boolean isCleared) {
-    final AccountKey accountKey = new AccountKey(HashProvider.trieHash(address), address);
+    final AccountKey accountKey = new AccountKey(address.hash(), address);
     addAccountChange(accountKey, oldValue, newValue, isCleared);
     return accountKey;
   }
 
   public AccountKey addAccountChange(
-          final MimcSafeBytes<Bytes> address, final ZkAccount oldValue, final ZkAccount newValue) {
+      final PoseidonSafeBytes<Bytes> address,
+      final ZkAccount oldValue,
+      final ZkAccount newValue) {
     return addAccountChange(address, oldValue, newValue, false);
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,8 +10,8 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei;
+
 
 import net.consensys.shomei.cli.option.DataStorageOption;
 import net.consensys.shomei.cli.option.HashFunctionOption;
@@ -39,6 +39,7 @@ import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.vertx.core.Vertx;
+import io.vertx.ext.web.client.WebClient;
 import org.apache.tuweni.bytes.Bytes32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +86,10 @@ public class Runner {
 
     this.besuSimulateClient =
         new BesuSimulateClient(
-            vertx, jsonRpcOption.getBesuRpcHttpHost(), jsonRpcOption.getBesuRHttpPort());
+            vertx,
+            WebClient.create(vertx),
+            jsonRpcOption.getBesuRpcHttpHost(),
+            jsonRpcOption.getBesuRHttpPort());
 
     final FullSyncRules fullSyncRules =
         new FullSyncRules(

@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,9 +10,9 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.cli.option;
 
+import java.util.Locale;
 import java.util.Set;
 
 import org.apache.logging.log4j.Level;
@@ -34,6 +34,7 @@ public class LoggingLevelOption {
 
   private static final Set<String> ACCEPTED_VALUES =
       Set.of("OFF", "ERROR", "WARN", "INFO", "DEBUG", "TRACE", "ALL");
+
   /** The Picocli CommandSpec. Visible for testing. Injected by Picocli framework at runtime. */
   @Spec CommandSpec spec;
 
@@ -49,8 +50,8 @@ public class LoggingLevelOption {
       paramLabel = "<LOG VERBOSITY LEVEL>",
       description = "Logging verbosity levels: OFF, ERROR, WARN, INFO, DEBUG, TRACE, ALL")
   public void setLogLevel(final String logLevel) {
-    if (ACCEPTED_VALUES.contains(logLevel.toUpperCase())) {
-      this.logLevel = Level.getLevel(logLevel.toUpperCase());
+    if (ACCEPTED_VALUES.contains(logLevel.toUpperCase(Locale.getDefault()))) {
+      this.logLevel = Level.getLevel(logLevel.toUpperCase(Locale.getDefault()));
     } else {
       throw new CommandLine.ParameterException(
           spec.commandLine(), "Unknown logging value: " + logLevel);

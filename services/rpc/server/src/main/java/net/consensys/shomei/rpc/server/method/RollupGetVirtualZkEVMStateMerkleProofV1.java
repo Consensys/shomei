@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2026
+ * Copyright Consensys Software Inc., 2026
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
@@ -33,12 +32,12 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSucces
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.hyperledger.besu.ethereum.rlp.RLP;
 
-public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
+public class RollupGetVirtualZkEVMStateMerkleProofV1 implements JsonRpcMethod {
 
   final ZkWorldStateArchive worldStateArchive;
   final BesuSimulateClient besuSimulateClient;
 
-  public RollupGetVirtualZkEVMStateMerkleProofV0(
+  public RollupGetVirtualZkEVMStateMerkleProofV1(
       final ZkWorldStateArchive worldStateArchive, final BesuSimulateClient besuSimulateClient) {
     this.worldStateArchive = worldStateArchive;
     this.besuSimulateClient = besuSimulateClient;
@@ -46,7 +45,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV0 implements JsonRpcMethod {
 
   @Override
   public String getName() {
-    return ShomeiRpcMethod.ROLLUP_GET_VIRTUAL_ZKEVM_STATE_MERKLE_PROOF_V0.getMethodName();
+    return ShomeiRpcMethod.ROLLUP_GET_VIRTUAL_ZKEVM_STATE_MERKLE_PROOF_V1.getMethodName();
   }
 
   @Override

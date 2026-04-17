@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2025
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -10,7 +10,6 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-
 package net.consensys.shomei.rpc.server.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -28,7 +27,8 @@ public class RollupGetZkEvmStateV0Parameter {
   public RollupGetZkEvmStateV0Parameter(
       @JsonProperty("startBlockNumber") final String startBlockNumber,
       @JsonProperty("endBlockNumber") final String endBlockNumber,
-      @JsonProperty("zkStateManagerVersion") final String zkStateManagerVersion) {
+      @JsonProperty(value = "zkStateManagerVersion", required = false)
+          final String zkStateManagerVersion) {
     this.startBlockNumber = startBlockNumber;
     this.endBlockNumber = endBlockNumber;
     this.zkStateManagerVersion = zkStateManagerVersion;
