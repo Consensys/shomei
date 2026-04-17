@@ -28,11 +28,10 @@ import java.util.stream.Collectors;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.ext.web.client.WebClient;
-import io.vertx.ext.web.client.WebClientOptions;
 import org.apache.tuweni.bytes.Bytes;
-import org.hyperledger.besu.datatypes.BytesHolder;
 import org.hyperledger.besu.ethereum.core.Transaction;
-import org.hyperledger.besu.ethereum.rlp.BytesValueRLPInput;
+import org.hyperledger.besu.ethereum.core.encoding.EncodingContext;
+import org.hyperledger.besu.ethereum.core.encoding.TransactionDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,10 +56,12 @@ public class BesuSimulateClient {
   private final int besuHttpPort;
 
   public BesuSimulateClient(
-      final Vertx vertx, final String besuHttpHost, final int besuHttpPort) {
+      final Vertx vertx,
+      final WebClient webClient,
+      final String besuHttpHost,
+      final int besuHttpPort) {
     this.vertx = vertx;
-    final WebClientOptions options = new WebClientOptions();
-    this.webClient = WebClient.create(vertx, options);
+    this.webClient = webClient;
     this.besuHttpHost = besuHttpHost;
     this.besuHttpPort = besuHttpPort;
   }
@@ -81,10 +82,9 @@ public class BesuSimulateClient {
     final int requestId = RANDOM.nextInt();
 
     try {
-      // Decode the RLP transaction to extract fields
       final Bytes transactionBytes = Bytes.fromHexString(transactionRlp);
       final Transaction transaction =
-          Transaction.readFrom(new BytesValueRLPInput(transactionBytes, false));
+          TransactionDecoder.decodeOpaqueBytes(transactionBytes, EncodingContext.POOLED_TRANSACTION);
 
       // Create block overrides with parent block number
       final Map<String, String> blockOverrides =
@@ -93,8 +93,8 @@ public class BesuSimulateClient {
       // Extract transaction fields for the call
       final String chainId =
           transaction.getChainId().map(cid -> "0x" + cid.toString(16)).orElse(null);
-      final String from = transaction.getSender().toHexString();
-      final String to = transaction.getTo().map(address -> address.toHexString()).orElse(null);
+      final String from = transaction.getSender().getBytes().toHexString();
+      final String to = transaction.getTo().map(address -> address.getBytes().toHexString()).orElse(null);
       final String gas = "0x" + Long.toHexString(transaction.getGasLimit());
       final String value = transaction.getValue().toHexString();
       final String nonce = "0x" + Long.toHexString(transaction.getNonce());
@@ -127,7 +127,7 @@ public class BesuSimulateClient {
                           .map(
                               entry -> {
                                 final Map<String, Object> accessEntry = new HashMap<>();
-                                accessEntry.put("address", entry.address().toHexString());
+                                accessEntry.put("address", entry.address().getBytes().toHexString());
                                 accessEntry.put(
                                     "storageKeys",
                                     entry.storageKeys().stream()
@@ -142,7 +142,7 @@ public class BesuSimulateClient {
       final List<String> blobVersionedHashes =
           transaction.getBlobsWithCommitments().isPresent()
               ? transaction.getBlobsWithCommitments().get().getVersionedHashes().stream()
-                  .map(BytesHolder::toHexString)
+                  .map((versionedHash) -> versionedHash.getBytes().toHexString())
                   .collect(Collectors.toList())
               : null;
 
@@ -211,12 +211,12 @@ public class BesuSimulateClient {
                   if (responseBody.getResult() != null
                       && !responseBody.getResult().isEmpty()) {
                     final SimulateV1Response.BlockResult blockResult =
-                        responseBody.getResult().get(0);
+                        responseBody.getResult().getFirst();
 
                     // Check if any calls in the block result have errors
                     if (blockResult.getCalls() != null && !blockResult.getCalls().isEmpty()) {
                       final SimulateV1Response.CallResult firstCall =
-                          blockResult.getCalls().get(0);
+                          blockResult.getCalls().getFirst();
                       if (firstCall.getError() != null) {
                         final String errorMessage =
                             String.format(

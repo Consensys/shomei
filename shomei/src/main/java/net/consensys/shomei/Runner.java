@@ -39,6 +39,7 @@ import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.vertx.core.Vertx;
+import io.vertx.ext.web.client.WebClient;
 import org.apache.tuweni.bytes.Bytes32;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +86,10 @@ public class Runner {
 
     this.besuSimulateClient =
         new BesuSimulateClient(
-            vertx, jsonRpcOption.getBesuRpcHttpHost(), jsonRpcOption.getBesuRHttpPort());
+            vertx,
+            WebClient.create(vertx),
+            jsonRpcOption.getBesuRpcHttpHost(),
+            jsonRpcOption.getBesuRHttpPort());
 
     final FullSyncRules fullSyncRules =
         new FullSyncRules(

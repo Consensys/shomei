@@ -49,6 +49,8 @@ import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcRespon
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.JsonRpcSuccessResponse;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.response.RpcErrorType;
 import org.hyperledger.besu.ethereum.core.Transaction;
+import org.hyperledger.besu.ethereum.core.encoding.EncodingContext;
+import org.hyperledger.besu.ethereum.core.encoding.TransactionEncoder;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,7 +104,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
             .chainId(BigInteger.ONE)
             .signAndBuild(keyPair);
 
-    return transaction.encoded().toHexString();
+    return TransactionEncoder.encodeOpaqueBytes(transaction, EncodingContext.POOLED_TRANSACTION).toHexString();
   }
 
   @Test
