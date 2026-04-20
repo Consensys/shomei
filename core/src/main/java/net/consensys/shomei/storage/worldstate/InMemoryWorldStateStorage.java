@@ -15,10 +15,13 @@ package net.consensys.shomei.storage.worldstate;
 
 import net.consensys.shomei.trie.storage.InMemoryStorage;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.google.common.primitives.Longs;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 /** In memory implementation of {@link WorldStateStorage}. */
@@ -80,5 +83,26 @@ public class InMemoryWorldStateStorage extends InMemoryStorage
   @Override
   public void setBlockNumber(final long blockNumber) {
     this.currentBlockNumber = Optional.of(blockNumber);
+  }
+
+  @Override
+  public void removeStorageForAccount(final long leafIndex) {
+    final Bytes prefix = Bytes.wrap(Longs.toByteArray(leafIndex));
+    // Soft-delete all flat leaf entries whose keys start with this prefix.
+    // Optional.empty() tombstones are skipped by getNearestKeys() and, in
+    // LayeredWorldStateStorage, they shadow the parent's entries.
+    new ArrayList<>(getFlatLeafStorage().tailMap(prefix).keySet()).stream()
+        .takeWhile(k -> k.size() >= prefix.size() && k.slice(0, prefix.size()).equals(prefix))
+        .forEach(k -> getFlatLeafStorage().put(k, Optional.empty()));
+    // Soft-delete matching trie node entries in the overlay.
+    // Also explicitly tombstone the storage-trie root key (= prefix itself) so that
+    // LayeredWorldStateStorage does not fall back to the parent's storage trie root,
+    // causing loadStorageTrie() to use createTrie() and get a clean empty trie.
+    // Keys are collected into a list first to avoid mutating the map during iteration.
+    new ArrayList<>(getTrieNodeStorage().keySet()).stream()
+        .filter(k -> k.size() >= prefix.size()
+            && k.slice(0, prefix.size()).equals(prefix))
+        .forEach(k -> getTrieNodeStorage().put(k, Optional.empty()));
+    getTrieNodeStorage().put(prefix, Optional.empty());
   }
 }

@@ -14,9 +14,12 @@ package net.consensys.shomei.storage.worldstate;
 
 import net.consensys.shomei.trie.model.FlattenedLeaf;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
+import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
@@ -33,57 +36,208 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
   private final WorldStateStorage parent;
 
+  /**
+   * Tracks storage prefixes (8-byte big-endian leafIndex) for which
+   * {@link #removeStorageForAccount} was called on this overlay.
+   *
+   * <p>{@link InMemoryWorldStateStorage#removeStorageForAccount} only tombstones entries that are
+   * already in the overlay's own flat-leaf and trie-node maps; entries that exist <em>only</em> in
+   * the parent would otherwise remain visible via the normal parent-fallback reads.  By recording
+   * the deleted prefix here we can block that fallback for the affected storage namespace.
+   */
+  private final Set<Bytes> deletedStoragePrefixes = new HashSet<>();
+
   public LayeredWorldStateStorage(final WorldStateStorage parent) {
     super();
     this.parent = parent;
   }
 
+  /**
+   * Returns {@code true} when {@code key} belongs to a storage namespace (leafIndex prefix) that
+   * has been fully deleted on this overlay via {@link #removeStorageForAccount}.
+   */
+  private boolean isInDeletedStoragePrefix(final Bytes key) {
+    return key.size() >= Long.BYTES
+        && deletedStoragePrefixes.contains(key.slice(0, Long.BYTES));
+  }
+
+  /**
+   * Overrides the base implementation to also record the deleted prefix in
+   * {@link #deletedStoragePrefixes}, blocking parent fallback for any flat-leaf or trie-node
+   * belonging to this account's storage namespace.
+   */
+  @Override
+  public void removeStorageForAccount(final long leafIndex) {
+    deletedStoragePrefixes.add(Bytes.wrap(Longs.toByteArray(leafIndex)));
+    super.removeStorageForAccount(leafIndex);
+  }
+
   @Override
   public Optional<FlattenedLeaf> getFlatLeaf(final Bytes key) {
-    // null  = key not in overlay at all → ask parent
+    // Check overlay first — entries written after removeStorageForAccount (e.g. HEAD/TAIL from
+    // createTrie, or new slot values from putWithTrace) must remain visible.
+    // null  = key not in overlay at all → apply deleted-prefix guard then ask parent
     // Optional.empty() = key explicitly deleted in overlay → return empty
     // Optional.of(val) = key exists in overlay → return value
     final Optional<FlattenedLeaf> overlayValue = getFlatLeafStorage().get(key);
-    if (overlayValue == null) {
-      return parent.getFlatLeaf(key);
+    if (overlayValue != null) {
+      return overlayValue;
     }
-    return overlayValue;
+    // Block parent fallback for storage namespaces fully removed on this overlay.
+    if (isInDeletedStoragePrefix(key)) {
+      return Optional.empty();
+    }
+    return parent.getFlatLeaf(key);
   }
 
   @Override
   public Optional<Bytes> getTrieNode(final Bytes location, final Bytes nodeHash) {
+    // Check overlay first — entries written after removeStorageForAccount must remain visible.
+    // The trie root key ({leafIndex}, 8 bytes) is explicitly tombstoned by removeStorageForAccount
+    // so it is always found here and never falls through.  Internal node keys ({leafIndex}{path})
+    // are not individually tombstoned, so they need the deleted-prefix guard below.
     final Optional<Bytes> overlayValue = getTrieNodeStorage().get(location);
-    if (overlayValue == null) {
-      return parent.getTrieNode(location, nodeHash);
+    if (overlayValue != null) {
+      return overlayValue;
     }
-    return overlayValue;
+    // Block parent fallback for storage namespaces fully removed on this overlay.
+    if (isInDeletedStoragePrefix(location)) {
+      return Optional.empty();
+    }
+    return parent.getTrieNode(location, nodeHash);
   }
 
   @Override
   public Range getNearestKeys(final Bytes hkey) {
 
-    final Range parentRange = parent.getNearestKeys(hkey);
+    // When the queried key belongs to a deleted storage namespace, the parent's entries for that
+    // prefix must not appear as neighbors — they belong to storage that was fully removed on this
+    // overlay.  Scan only overlay entries, and constrain left/right to the same 8-byte storage
+    // prefix so that neighbours from other accounts' namespaces cannot bleed through.
+    if (isInDeletedStoragePrefix(hkey)) {
+      return buildPrefixScopedOverlayRange(hkey);
+    }
 
-    // --- Center: check overlay directly, then parent ---
-    Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode;
+    // --- Center: check overlay ---
     final Optional<FlattenedLeaf> overlayCenter = getFlatLeafStorage().get(hkey);
+    Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode;
     if (overlayCenter != null && overlayCenter.isPresent()) {
       centerNode = Optional.of(Map.entry(hkey, overlayCenter.get()));
     } else if (overlayCenter != null && overlayCenter.isEmpty()) {
-      centerNode = Optional.empty();
+      centerNode = Optional.empty(); // tombstoned in overlay
     } else {
+      centerNode = null; // not in overlay; check parent below
+    }
+
+    // --- Try parent first for complete range ---
+    // Parent can fail when hkey is outside the key-space of any entry in the parent
+    // (e.g., a fresh account storage trie with HEAD/TAIL only in our overlay, but the
+    // parent snapshot has no entries for this storage prefix yet).
+    final Range parentRange;
+    try {
+      parentRange = parent.getNearestKeys(hkey);
+    } catch (RuntimeException e) {
+      // Parent has no entries near hkey — build range solely from overlay.
+      return buildOverlayOnlyRange(hkey, centerNode);
+    }
+
+    if (centerNode == null) {
       centerNode = parentRange.getCenterNode();
     }
 
     // --- Left: closest key < hkey ---
-    final Map.Entry<Bytes, FlattenedLeaf> leftNode =
-            resolveLeftNode(hkey, parentRange);
+    final Map.Entry<Bytes, FlattenedLeaf> leftNode = resolveLeftNode(hkey, parentRange);
 
     // --- Right: closest key > hkey ---
-    final Map.Entry<Bytes, FlattenedLeaf> rightNode =
-            resolveRightNode(hkey, parentRange);
+    final Map.Entry<Bytes, FlattenedLeaf> rightNode = resolveRightNode(hkey, parentRange);
 
     return new Range(leftNode, centerNode, rightNode);
+  }
+
+  /**
+   * Build a Range using only overlay entries scoped to the same 8-byte storage prefix as
+   * {@code hkey}.
+   *
+   * <p>Called when {@code hkey} belongs to a deleted storage namespace.  Constraining the search
+   * to the same prefix prevents left/right neighbours from a different account's storage namespace
+   * (or from the account trie) from bleeding through as bounds.
+   */
+  private Range buildPrefixScopedOverlayRange(final Bytes hkey) {
+    final Bytes prefix = hkey.slice(0, Long.BYTES);
+
+    final Optional<FlattenedLeaf> overlayCenter = getFlatLeafStorage().get(hkey);
+    final Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode =
+        (overlayCenter != null && overlayCenter.isPresent())
+            ? Optional.of(Map.entry(hkey, overlayCenter.get()))
+            : Optional.empty();
+
+    Map.Entry<Bytes, Optional<FlattenedLeaf>> rawLeft = getFlatLeafStorage().lowerEntry(hkey);
+    while (rawLeft != null) {
+      final Bytes k = rawLeft.getKey();
+      if (k.size() < prefix.size() || !k.slice(0, prefix.size()).equals(prefix)) {
+        rawLeft = null;
+        break;
+      }
+      if (rawLeft.getValue().isPresent()) {
+        break;
+      }
+      rawLeft = getFlatLeafStorage().lowerEntry(k);
+    }
+
+    Map.Entry<Bytes, Optional<FlattenedLeaf>> rawRight = getFlatLeafStorage().higherEntry(hkey);
+    while (rawRight != null) {
+      final Bytes k = rawRight.getKey();
+      if (k.size() < prefix.size() || !k.slice(0, prefix.size()).equals(prefix)) {
+        rawRight = null;
+        break;
+      }
+      if (rawRight.getValue().isPresent()) {
+        break;
+      }
+      rawRight = getFlatLeafStorage().higherEntry(k);
+    }
+
+    if (rawLeft == null || rawRight == null) {
+      throw new RuntimeException("not found leaf index");
+    }
+
+    return new Range(
+        Map.entry(rawLeft.getKey(), rawLeft.getValue().get()),
+        centerNode,
+        Map.entry(rawRight.getKey(), rawRight.getValue().get()));
+  }
+
+  /**
+   * Build a Range using only entries present in the overlay (no parent call).
+   * Called when the parent throws — e.g., the parent snapshot has no entries with keys ≤
+   * {@code hkey} (fresh storage namespace, account trie entries are all lexicographically
+   * greater).  The overlay must supply both a left and a right bound (HEAD/TAIL from
+   * {@link net.consensys.shomei.trie.ZKTrie#createTrie}) for this to succeed.
+   */
+  private Range buildOverlayOnlyRange(
+      final Bytes hkey, final Optional<Map.Entry<Bytes, FlattenedLeaf>> precomputedCenter) {
+
+    Optional<Map.Entry<Bytes, FlattenedLeaf>> centerNode =
+        precomputedCenter != null ? precomputedCenter : Optional.empty();
+
+    Map.Entry<Bytes, Optional<FlattenedLeaf>> rawLeft = getFlatLeafStorage().lowerEntry(hkey);
+    while (rawLeft != null && rawLeft.getValue().isEmpty()) {
+      rawLeft = getFlatLeafStorage().lowerEntry(rawLeft.getKey());
+    }
+
+    Map.Entry<Bytes, Optional<FlattenedLeaf>> rawRight = getFlatLeafStorage().higherEntry(hkey);
+    while (rawRight != null && rawRight.getValue().isEmpty()) {
+      rawRight = getFlatLeafStorage().higherEntry(rawRight.getKey());
+    }
+
+    if (rawLeft == null || rawRight == null) {
+      throw new RuntimeException("not found leaf index");
+    }
+
+    return new Range(
+        Map.entry(rawLeft.getKey(), rawLeft.getValue().get()),
+        centerNode,
+        Map.entry(rawRight.getKey(), rawRight.getValue().get()));
   }
 
   private Map.Entry<Bytes, FlattenedLeaf> resolveLeftNode(
@@ -100,9 +254,19 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
       overlayLeft = getFlatLeafStorage().lowerEntry(overlayLeft.getKey());
     }
 
-    if (overlayLeft != null && overlayLeft.getValue().isPresent()
-            && overlayLeft.getKey().compareTo(parentLeft.getKey()) > 0) {
-      return Map.entry(overlayLeft.getKey(), overlayLeft.getValue().get());
+    if (overlayLeft != null && overlayLeft.getValue().isPresent()) {
+      // Prefer overlay over parent if overlay is closer to hkey.
+      if (overlayLeft.getKey().compareTo(parentLeft.getKey()) > 0) {
+        return Map.entry(overlayLeft.getKey(), overlayLeft.getValue().get());
+      }
+      // Also prefer overlay if the parent entry is not actually to the LEFT of hkey.
+      // This happens when getValidParentNode walks tombstoned entries from one storage
+      // namespace into a different namespace (e.g., account-trie entries at 0x7FFF…
+      // after all storage entries for a prefix were tombstoned), producing a key that
+      // is ≥ hkey and therefore invalid as a left neighbour.
+      if (parentLeft.getKey().compareTo(hkey) >= 0) {
+        return Map.entry(overlayLeft.getKey(), overlayLeft.getValue().get());
+      }
     }
 
     return parentLeft;
@@ -122,8 +286,15 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
       overlayRight = getFlatLeafStorage().higherEntry(overlayRight.getKey());
     }
 
-    if (overlayRight != null && overlayRight.getKey().compareTo(parentRight.getKey()) < 0) {
-      return Map.entry(overlayRight.getKey(), overlayRight.getValue().get());
+    if (overlayRight != null && overlayRight.getValue().isPresent()) {
+      // Prefer overlay over parent if overlay is closer to hkey.
+      if (overlayRight.getKey().compareTo(parentRight.getKey()) < 0) {
+        return Map.entry(overlayRight.getKey(), overlayRight.getValue().get());
+      }
+      // Also prefer overlay if the parent entry is not actually to the RIGHT of hkey.
+      if (parentRight.getKey().compareTo(hkey) <= 0) {
+        return Map.entry(overlayRight.getKey(), overlayRight.getValue().get());
+      }
     }
 
     return parentRight;
@@ -139,6 +310,12 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
 
   /**
    * Walk through parent storage to find a node that hasn't been deleted in the overlay.
+   *
+   * <p>The walk is bounded by {@code Bytes.EMPTY} (the canonical "no left neighbor" sentinel used
+   * throughout the codebase) and exits early if the parent throws — which can happen when the
+   * current key is at the very beginning of the parent's key-space and has no further left
+   * neighbour.  In that case the caller ({@link #resolveLeftNode} / {@link #resolveRightNode})
+   * will fall back to the overlay's own bounding entry.
    */
   private Map.Entry<Bytes, FlattenedLeaf> getValidParentNode(
           final Bytes initialKey,
@@ -149,7 +326,14 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
     FlattenedLeaf currentValue = initialValue;
 
     while (isDeletedInOverlay(currentKey) && !currentKey.equals(Bytes.EMPTY)) {
-      final Range nextRange = parent.getNearestKeys(currentKey);
+      final Range nextRange;
+      try {
+        nextRange = parent.getNearestKeys(currentKey);
+      } catch (RuntimeException e) {
+        // Parent has no entries at/near currentKey (boundary of its key-space).
+        // Stop walking; the caller will prefer the overlay bound over this entry.
+        break;
+      }
 
       if (searchLeft) {
         final Bytes nextKey = nextRange.getLeftNodeKey();
@@ -215,6 +399,15 @@ public class LayeredWorldStateStorage extends InMemoryWorldStateStorage {
     @Override
     public void setBlockNumber(final long blockNumber) {
       delegate.setBlockNumber(blockNumber);
+    }
+
+    @Override
+    public void removeStorageForAccount(final long leafIndex) {
+      // Delegates to LayeredWorldStateStorage.removeStorageForAccount(), which:
+      // - records the prefix in deletedStoragePrefixes (blocks parent fallback for that range)
+      // - then calls super (InMemoryWorldStateStorage) to tombstone any overlay entries and
+      //   the storage-trie root key (ensuring createTrie() is used rather than loadTrie())
+      delegate.removeStorageForAccount(leafIndex);
     }
   }
 

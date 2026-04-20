@@ -71,6 +71,12 @@ public class SnapshotPersistedWorldStateStorage extends PersistedWorldStateStora
       }
 
       @Override
+      public void removeStorageForAccount(final long leafIndex) {
+        // no-op: snapshot storage is read-only; the overlay (LayeredWorldStateStorage)
+        // handles storage cleanup via tombstones in its own updater.
+      }
+
+      @Override
       public void commit() {
         // no-op.  Snapshot storage is not committed.
       }

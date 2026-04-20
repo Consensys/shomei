@@ -24,7 +24,6 @@ import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trie.storage.AccountTrieRepositoryWrapper;
 import net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper;
 import net.consensys.shomei.trie.storage.TrieStorage;
-import net.consensys.shomei.trie.storage.TrieStorage.TrieUpdater;
 import net.consensys.shomei.trie.trace.Trace;
 import net.consensys.shomei.trielog.AccountKey;
 import net.consensys.shomei.trielog.StorageSlotKey;
@@ -123,7 +122,8 @@ public class ZkEvmWorldState {
 
   record State(Bytes32 stateRoot, List<Trace> traces) {}
 
-  private State generateNewState(final TrieUpdater updater, final boolean generateTrace) {
+  private State generateNewState(
+      final WorldStateStorage.WorldStateUpdater updater, final boolean generateTrace) {
     final ZKTrie zkAccountTrie =
         loadAccountTrie(new AccountTrieRepositoryWrapper(zkEvmWorldStateStorage, updater));
     final List<Trace> traces = updateAccounts(zkAccountTrie, updater, generateTrace);
@@ -132,7 +132,9 @@ public class ZkEvmWorldState {
   }
 
   private List<Trace> updateAccounts(
-      final ZKTrie zkAccountTrie, final TrieUpdater updater, final boolean generateTrace) {
+      final ZKTrie zkAccountTrie,
+      final WorldStateStorage.WorldStateUpdater updater,
+      final boolean generateTrace) {
     final List<Trace> traces = new ArrayList<>();
     accumulator.getAccountsToUpdate().entrySet().stream()
         .sorted(Map.Entry.comparingByKey())
@@ -150,7 +152,7 @@ public class ZkEvmWorldState {
       final AccountKey accountKey,
       final ZkValue<ZkAccount> accountValue,
       final ZKTrie zkAccountTrie,
-      final TrieUpdater updater,
+      final WorldStateStorage.WorldStateUpdater updater,
       final boolean generateTrace) {
     final List<Trace> traces = new ArrayList<>();
 
@@ -176,19 +178,28 @@ public class ZkEvmWorldState {
         zkAccountTrie.decrementNextFreeNode();
       }
       if (accountValue.getPrior() != null) {
+        // Retrieve the leaf index BEFORE removing the account from the trie; after removal
+        // getLeafIndex() returns empty and we would lose the storage prefix.
+        final long leafIndex =
+            zkAccountTrie.getLeafIndex(accountKey.accountHash()).orElseThrow();
+        // Delete all storage (flat leaves + trie nodes) for this account leaf.
+        // For LayeredWorldStateStorage this writes tombstones into the overlay so that
+        // parent-snapshot entries are no longer visible.
+        updater.removeStorageForAccount(leafIndex);
         traces.add(zkAccountTrie.removeWithTrace(accountKey.accountHash(), accountKey.address()));
-        // TODO remove all slots from storage : if we not do that the rollback will not work
-        // get index leaf from DB and delete all keys starting by HKEY+index in trie branch
       }
     }
 
-    // check selfdestruct
-    if (!accountValue.isRollforward()
-        && accountValue.isRecreated()) { // decrement again in case of selfdestruct
+    // Post-Cancun (EIP-6780): SELFDESTRUCT only destroys contracts created within the same
+    // transaction, so isRecreated() (prior!=null AND updated!=null AND isCleared) cannot occur
+    // for pre-existing contracts and is effectively dead code on Linea mainnet.
+    // The block above already handles the removal and storage cleanup for isRecreated() in the
+    // backward direction.  We keep a second nextFreeNode decrement here to restore the NFN to
+    // the original account's slot (A' was at NFN-1, A was at NFN-2 before the block).
+    if (!accountValue.isRollforward() && accountValue.isRecreated()) {
       zkAccountTrie.decrementNextFreeNode();
-      zkAccountTrie.removeWithTrace(accountKey.accountHash(), accountKey.address());
-      // TODO remove all slots from storage : if we not do that the rollback will not work
-      // get index leaf from DB and delete all keys starting by HKEY+index in trie branch
+      // Note: the account (A') was already removed by the isCleared block above.
+      // Block 3 (update/insert) will re-insert the original account (A) at the decremented NFN.
     }
 
     // check update and insert
@@ -217,7 +228,7 @@ public class ZkEvmWorldState {
       final AccountKey accountKey,
       final long accountLeafIndex,
       final ZkValue<ZkAccount> accountValue,
-      final TrieUpdater updater) {
+      final WorldStateStorage.WorldStateUpdater updater) {
     final List<Trace> traces = new ArrayList<>();
     final Map<StorageSlotKey, ZkValue<UInt256>> storageToRead =
         accumulator.getStorageToUpdate().get(accountKey);
@@ -253,7 +264,7 @@ public class ZkEvmWorldState {
       final AccountKey accountKey,
       final long accountLeafIndex,
       final ZkValue<ZkAccount> accountValue,
-      final TrieUpdater updater) {
+      final WorldStateStorage.WorldStateUpdater updater) {
     final List<Trace> traces = new ArrayList<>();
     final Map<StorageSlotKey, ZkValue<UInt256>> storageToUpdate =
         accumulator.getStorageToUpdate().get(accountKey);

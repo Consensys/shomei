@@ -26,6 +26,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +36,7 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.ethereum.rlp.RLP;
+import org.hyperledger.besu.ethereum.rlp.RLPInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -181,26 +183,67 @@ public class ZkWorldStateArchive implements Closeable {
   public record VirtualTraceResult(List<List<Trace>> traces, Bytes32 zkEndStateRootHash) {}
 
   /**
+   * Returns a {@link ZkEvmWorldState} for the given block number, loading it via rollback if it is
+   * not cached. Cache hits are returned immediately; uncached blocks are reconstructed by rolling
+   * back from the nearest available forward snapshot.
+   *
+   * @param blockNumber the target block number
+   * @return world state at {@code blockNumber}
+   * @throws MissingTrieLogException if any required trie log is absent during rollback
+   * @throws IllegalStateException if {@code blockNumber} exceeds the current head
+   */
+  public ZkEvmWorldState getOrLoadWorldState(final long blockNumber)
+      throws MissingTrieLogException {
+    // 1. Cache hit
+    final Optional<ZkEvmWorldState> cached = getCachedWorldState(blockNumber);
+    if (cached.isPresent()) {
+      return cached.get();
+    }
+    // 2. Head state
+    if (blockNumber == getCurrentBlockNumber()) {
+      return headWorldState;
+    }
+    // 3. Reconstruct via rollback from the nearest forward snapshot
+    return rollBackToBlock(blockNumber);
+  }
+
+  /**
    * Generate a virtual trace from a trielog without persisting state changes.
    * This is used for simulating transactions on a virtual block.
    *
    * @param parentBlockNumber the parent block number on which to base the virtual state
    * @param trieLogLayer the trielog to apply
    * @return the generated trace and resulting state root hash
-   * @throws IllegalStateException if the worldstate for the parent block is not cached
+   * @throws MissingTrieLogException if the worldstate for the parent block cannot be reconstructed
    */
   public VirtualTraceResult generateVirtualTrace(
-      final long parentBlockNumber, final TrieLogLayer trieLogLayer) {
-    // Get the cached worldstate for the parent block
-    final WorldStateStorage parentStorage = cachedWorldStates.entrySet().stream()
-        .filter(entry -> entry.getKey().blockNumber().equals(parentBlockNumber))
-        .map(Map.Entry::getValue)
-        .findFirst()
-        .orElseThrow(() -> new IllegalStateException(
-            "Worldstate for parent block " + parentBlockNumber + " is not cached"));
+      final long parentBlockNumber,
+      final TrieLogLayer trieLogLayer) throws MissingTrieLogException {
+
+    // Get or reconstruct the worldstate for the parent block
+    final WorldStateStorage parentStorage =
+        getOrLoadWorldState(parentBlockNumber).getZkEvmWorldStateStorage();
+
+    return generateVirtualTrace(parentBlockNumber, trieLogLayer, parentStorage);
+  }
+
+  /**
+   * Generate a virtual trace from a trielog without persisting state changes.
+   * This is used for simulating transactions on a virtual block.  Overload
+   * using a passed worldstate storage to prevent double lookup / rollback.
+   *
+   * @param parentBlockNumber the parent block number on which to base the virtual state
+   * @param trieLogLayer the trielog to apply
+   * @param parentStorage parent worlstate storage to use, useful to prevent double rolling of state
+   * @return the generated trace and resulting state root hash
+   */
+  public VirtualTraceResult generateVirtualTrace(
+      final long parentBlockNumber,
+      final TrieLogLayer trieLogLayer,
+      final WorldStateStorage parentStorage) {
 
     // Create a layered storage that overlays in-memory writes on top of the parent snapshot
-    // This ensures we don't modify the cached parent state during simulation
+    // This ensures we don't modify the parent state during simulation
     try (final WorldStateStorage virtualStorage = new LayeredWorldStateStorage(parentStorage)) {
       // Use an in-memory trace manager that won't persist to disk
       final TraceManager ephemeralTraceManager = new InMemoryStorageProvider().getTraceManager();
@@ -232,13 +275,112 @@ public class ZkWorldStateArchive implements Closeable {
       return new VirtualTraceResult(
           List.of(Trace.deserialize(RLP.input(traceBytes.get()))),
           zkEndStateRootHash);
+    } catch (IllegalStateException e) {
+      throw e;
     } catch (Exception e) {
-      if (e instanceof IllegalStateException) {
-        throw (IllegalStateException) e;
-      }
       throw new IllegalStateException(
           "Failed to generate virtual trace for parent block " + parentBlockNumber, e);
     }
+  }
+
+  /**
+   * Returns an ephemeral {@link ZkEvmWorldState} representing the state at {@code
+   * targetBlockNumber} by rolling back from the nearest available forward snapshot.
+   *
+   * <p>The rollback is performed on a {@link LayeredWorldStateStorage} overlay so the head state
+   * and all cached snapshots remain unmodified.
+   *
+   * <p>The caller is responsible for not holding a reference to the returned state past the point
+   * where its parent snapshot may be evicted from the LRU cache.
+   *
+   * @param targetBlockNumber the block number to roll back to
+   * @return ephemeral world state at {@code targetBlockNumber}
+   * @throws MissingTrieLogException if any required trie log is absent
+   * @throws IllegalStateException if {@code targetBlockNumber} &ge; the current head block
+   */
+  public ZkEvmWorldState rollBackToBlock(final long targetBlockNumber)
+      throws MissingTrieLogException {
+
+    // 1. Direct cache hit: return an ephemeral wrapper around the cached snapshot
+    final Optional<ZkEvmWorldState> cached = getCachedWorldState(targetBlockNumber);
+    if (cached.isPresent()) {
+      return cached.get();
+    }
+
+    // 2. Locate the nearest forward snapshot (smallest cached block > targetBlockNumber).
+    //    Fall back to a live snapshot of the head state if nothing is cached ahead.
+    final WorldStateStorage baseStorage;
+    final long startBlockNumber;
+
+    final TrieLogIdentifier searchKey =
+        new TrieLogIdentifier(targetBlockNumber, Bytes32.ZERO);
+    final Map.Entry<TrieLogIdentifier, WorldStateStorage> forwardEntry =
+        cachedWorldStates.higherEntry(searchKey);
+
+    if (forwardEntry != null) {
+      baseStorage = forwardEntry.getValue(); // already a read-only snapshot
+      startBlockNumber = forwardEntry.getKey().blockNumber();
+    } else if (headWorldState.getBlockNumber() > targetBlockNumber) {
+      // No cached snapshot ahead of target; take a live snapshot of the head state.
+      baseStorage = headWorldStateStorage.snapshot();
+      startBlockNumber = headWorldState.getBlockNumber();
+    } else {
+      throw new IllegalStateException(
+          "Cannot roll back to block "
+              + targetBlockNumber
+              + ": target is >= current head "
+              + headWorldState.getBlockNumber());
+    }
+
+    // 3. Pre-load raw trie logs and extract block hashes.
+    //    Blocks startBlockNumber → targetBlockNumber+1: raw bytes for interleaved decode+rollback.
+    //    Block targetBlockNumber: only its hash is needed for the final commit.
+    final Map<Long, Bytes> rawLogs = new HashMap<>();
+    final Map<Long, Bytes32> blockHashes = new HashMap<>();
+    for (long blockNum = startBlockNumber; blockNum >= targetBlockNumber; blockNum--) {
+      final Optional<Bytes> rawLog = trieLogManager.getTrieLog(blockNum);
+      if (rawLog.isEmpty()) {
+        if (blockNum > targetBlockNumber) {
+          throw new MissingTrieLogException(blockNum);
+        }
+        blockHashes.put(blockNum, Bytes32.ZERO);
+        continue;
+      }
+      rawLogs.put(blockNum, rawLog.get());
+      final RLPInput hashInput = RLP.input(rawLog.get());
+      hashInput.enterList();
+      blockHashes.put(blockNum, hashInput.readBytes32());
+    }
+
+    // 4. Create an ephemeral layered world state on top of the base snapshot.
+    final LayeredWorldStateStorage layeredStorage = new LayeredWorldStateStorage(baseStorage);
+    final TraceManager ephemeralTraceManager = new InMemoryStorageProvider().getTraceManager();
+    final ZkEvmWorldState rollingState =
+        new ZkEvmWorldState(layeredStorage, ephemeralTraceManager);
+
+    // 5. Interleaved decode + rollback: process one block at a time so that each decode
+    //    sees the correct rolling state (representing the block being rolled back from).
+    //    decodeTrieLogForRollback reads the rolling-state account for ZK storage root and
+    //    code hash without validating nonce/balance against the wrong snapshot.
+    for (long blockNum = startBlockNumber; blockNum > targetBlockNumber; blockNum--) {
+      final TrieLogLayer layer =
+          trieLogLayerConverter.decodeTrieLogForRollback(
+              RLP.input(rawLogs.get(blockNum)),
+              rollingState.getZkEvmWorldStateStorage());
+      rollingState.getAccumulator().rollBack(layer);
+      final long priorBlockNumber = blockNum - 1;
+      rollingState.commit(
+          priorBlockNumber, blockHashes.getOrDefault(priorBlockNumber, Bytes32.ZERO), false);
+    }
+
+    LOG.atDebug()
+        .setMessage("Rolled back from block {} to block {} in {} steps")
+        .addArgument(startBlockNumber)
+        .addArgument(targetBlockNumber)
+        .addArgument(startBlockNumber - targetBlockNumber)
+        .log();
+
+    return rollingState;
   }
 
   public ZkEvmWorldState getHeadWorldState() {

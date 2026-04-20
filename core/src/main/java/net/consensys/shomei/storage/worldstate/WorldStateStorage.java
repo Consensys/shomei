@@ -75,5 +75,17 @@ public interface WorldStateStorage extends TrieStorage, AutoCloseable {
     void setBlockHash(final Bytes32 blockHash);
 
     void setBlockNumber(final long blockNumber);
+
+    /**
+     * Removes all flat leaf entries and trie node entries whose keys are prefixed by the 8-byte
+     * big-endian encoding of {@code leafIndex}. This is the prefix used by {@link
+     * net.consensys.shomei.trie.storage.StorageTrieRepositoryWrapper} for per-account storage.
+     *
+     * <p>Must be called before removing the account from the account trie, while the leaf index
+     * is still retrievable via {@code ZKTrie.getLeafIndex()}.
+     *
+     * @param leafIndex the account's leaf index in the sparse merkle trie
+     */
+    void removeStorageForAccount(long leafIndex);
   }
 }
