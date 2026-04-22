@@ -13,10 +13,8 @@
 package net.consensys.shomei.rpc.server.method;
 
 import static net.consensys.shomei.rpc.server.ShomeiVersion.IMPL_VERSION;
-import static net.consensys.shomei.rpc.server.ShomeiVersion.TEST_VERSION;
 
 import net.consensys.shomei.rpc.server.ShomeiRpcMethod;
-import net.consensys.shomei.rpc.server.error.JsonInvalidVersionMessage;
 import net.consensys.shomei.rpc.server.error.ShomeiJsonRpcErrorResponse;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEVMStateMerkleProofV0Response;
 import net.consensys.shomei.rpc.server.model.RollupGetZkEvmStateV0Parameter;
@@ -58,14 +56,6 @@ public class RollupGetZkEVMStateMerkleProofV0 implements JsonRpcMethod {
       param = requestContext.getRequiredParameter(0, RollupGetZkEvmStateV0Parameter.class);
     } catch (JsonRpcParameter.JsonRpcParameterException e) {
       throw new RuntimeException(e);
-    }
-    if (!TEST_VERSION.equals(param.getZkStateManagerVersion())
-        && !IMPL_VERSION.equals(param.getZkStateManagerVersion())) {
-      return new ShomeiJsonRpcErrorResponse(
-          requestContext.getRequest().getId(),
-          RpcErrorType.INVALID_PARAMS,
-          "UNSUPPORTED_VERSION",
-          new JsonInvalidVersionMessage(param.getZkStateManagerVersion(), IMPL_VERSION));
     }
 
     final List<List<Trace>> traces = new ArrayList<>();

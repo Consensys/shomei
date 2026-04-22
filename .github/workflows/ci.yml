@@ -63,7 +63,7 @@ jobs:
         run: ./gradlew --no-daemon clean compileJava compileTestJava assemble
 
       - name: Upload workspace
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: workspace
           retention-days: 1
@@ -103,7 +103,7 @@ jobs:
         run: ./gradlew --no-daemon build
 
       - name: Store distribution artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: distribution
           path: build/distributions/
@@ -170,10 +170,10 @@ jobs:
           persist-credentials: false
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - uses: actions/download-artifact@v4
         with:
@@ -255,10 +255,10 @@ jobs:
           persist-credentials: false
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - uses: actions/download-artifact@v4
         with:
@@ -330,7 +330,7 @@ jobs:
       # Create release tag and attach the distribution
       - name: Shomei Release
         id: release
-        uses: softprops/action-gh-release@v2.2.1
+        uses: softprops/action-gh-release@v3.0.0
         with:
           files: |
             build/distributions/shomei-${{ needs.assemble.outputs.publish-version }}.tar.gz
