@@ -76,7 +76,8 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1 implements JsonRpcMethod {
       }
 
       // do not have it in cache
-      if (worldStateArchive.getCachedWorldState(parentBlockNumber).isEmpty()) {
+      final var optWorldState = worldStateArchive.getCachedWorldState(parentBlockNumber);
+      if (optWorldState.isEmpty()) {
         return new ShomeiJsonRpcErrorResponse(
             requestContext.getRequest().getId(),
             RpcErrorType.INVALID_PARAMS,
@@ -91,7 +92,8 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1 implements JsonRpcMethod {
 
       // Decode the trielog
       final TrieLogLayer trieLogLayer =
-          worldStateArchive.getTrieLogLayerConverter().decodeTrieLog(RLP.input(trieLogBytes));
+          worldStateArchive.getTrieLogLayerConverter().decodeTrieLog(
+              RLP.input(trieLogBytes), optWorldState.get().getZkEvmWorldStateStorage());
 
       // Apply the virtual trielog and generate the trace
       // This generates a trace without persisting the state

@@ -42,13 +42,18 @@ public class SimulateV1Request extends JsonRpcRequest {
     @JsonProperty("returnTrieLog")
     private final boolean returnTrieLog;
 
+    @JsonProperty("traceBlockImport")
+    private final boolean traceBlockImport;
+
     public SimulateV1Params(
         final List<BlockStateCall> blockStateCalls,
         final boolean validation,
-        final boolean returnTrieLog) {
+        final boolean returnTrieLog,
+        final boolean traceBlockImport) {
       this.blockStateCalls = blockStateCalls;
       this.validation = validation;
       this.returnTrieLog = returnTrieLog;
+      this.traceBlockImport = traceBlockImport;
     }
 
     public List<BlockStateCall> getBlockStateCalls() {
@@ -61,6 +66,10 @@ public class SimulateV1Request extends JsonRpcRequest {
 
     public boolean isReturnTrieLog() {
       return returnTrieLog;
+    }
+
+    public boolean isTraceBlockImport() {
+      return traceBlockImport;
     }
   }
 

@@ -172,7 +172,7 @@ public class BesuSimulateClient {
 
     // Create params with returnTrieLog=true
     final SimulateV1Request.SimulateV1Params params =
-        new SimulateV1Request.SimulateV1Params(List.of(blockStateCall), true, true);
+        new SimulateV1Request.SimulateV1Params(List.of(blockStateCall), true, true, true);
 
     // Specify the parent block number as the block parameter for simulation context
     final String blockParameter = "0x" + Long.toHexString(parentBlockNumber);
