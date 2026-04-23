@@ -71,7 +71,7 @@ public class JsonTraceParser {
                   public void serialize(
                       Hash node, JsonGenerator jsonGen, SerializerProvider serProv)
                       throws IOException {
-                    jsonGen.writeString(node.toHexString());
+                    jsonGen.writeString(node.getBytes().toHexString());
                   }
                 }),
         new SimpleModule()

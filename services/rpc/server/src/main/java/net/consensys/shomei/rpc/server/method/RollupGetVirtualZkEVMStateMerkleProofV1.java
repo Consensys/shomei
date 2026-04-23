@@ -62,6 +62,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1 implements JsonRpcMethod {
     final long blockNumber = param.getBlockNumber();
     final long parentBlockNumber = blockNumber - 1;
     final String transactionRlp = param.getTransaction();
+    final var timestamp = param.getTimestamp();
 
 
     try {
@@ -85,7 +86,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1 implements JsonRpcMethod {
       // Call eth_simulateV1 to get the trielog for the virtual block
       // Simulate on top of parentBlockNumber state to build virtual block at blockNumber
       final String trieLogHex =
-          besuSimulateClient.simulateTransaction(parentBlockNumber, transactionRlp).join();
+          besuSimulateClient.simulateTransaction(parentBlockNumber, transactionRlp, timestamp).join();
       final Bytes trieLogBytes = Bytes.fromHexString(trieLogHex);
 
       // Decode the trielog
