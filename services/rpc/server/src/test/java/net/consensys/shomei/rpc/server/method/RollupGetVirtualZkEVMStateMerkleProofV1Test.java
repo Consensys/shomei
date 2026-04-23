@@ -148,7 +148,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
 
     // Mock the trielog layer converter
     when(worldStateArchive.getTrieLogLayerConverter()).thenReturn(trieLogLayerConverter);
-    when(trieLogLayerConverter.decodeTrieLog(any())).thenReturn(trieLogLayer);
+    when(trieLogLayerConverter.decodeTrieLog(any(), any())).thenReturn(trieLogLayer);
 
     // Mock virtual trace generation
     final List<List<Trace>> mockTraces = List.of(List.of());
