@@ -134,7 +134,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
     final String testTxRlp = createTestTransactionRlp();
 
     // Mock the BesuSimulateClient to return a trielog
-    when(besuSimulateClient.simulateTransaction(eq(7L), eq(testTxRlp)))
+    when(besuSimulateClient.simulateTransaction(eq(7L), eq(testTxRlp), any()))
         .thenReturn(CompletableFuture.completedFuture(mockTrieLogHex));
 
     // Mock world state archive behavior
@@ -173,7 +173,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
     when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
 
     // Mock simulation failure
-    when(besuSimulateClient.simulateTransaction(anyLong(), anyString()))
+    when(besuSimulateClient.simulateTransaction(anyLong(), anyString(), any()))
         .thenReturn(
             CompletableFuture.failedFuture(new RuntimeException("Simulation failed")));
 
@@ -195,7 +195,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
 
     // Mock simulation returning a detailed error from eth_simulateV1
     final String detailedErrorMessage = "eth_simulateV1 error [code=-32000]: insufficient funds";
-    when(besuSimulateClient.simulateTransaction(anyLong(), anyString()))
+    when(besuSimulateClient.simulateTransaction(anyLong(), anyString(), any()))
         .thenReturn(CompletableFuture.failedFuture(new RuntimeException(detailedErrorMessage)));
 
     final JsonRpcRequestContext request = request(8L, createTestTransactionRlp());
@@ -214,7 +214,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
             "rollup_getVirtualZkEVMStateMerkleProofV1",
             new Object[] {
                 new RollupGetVirtualZkEvmStateMerkleProofV0Parameter(
-                    String.valueOf(blockNumber), transactionRlp)
+                    String.valueOf(blockNumber), transactionRlp, null)
             }));
   }
 

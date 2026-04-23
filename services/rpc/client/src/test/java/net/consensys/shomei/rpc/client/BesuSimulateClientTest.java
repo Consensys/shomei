@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import net.consensys.shomei.rpc.client.model.SimulateV1Response;
 
 import java.math.BigInteger;
+import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 
 import io.vertx.core.AsyncResult;
@@ -151,7 +152,8 @@ public class BesuSimulateClientTest {
     final String txRlp =
         TransactionEncoder.encodeOpaqueBytes(eip1559Tx, EncodingContext.POOLED_TRANSACTION)
             .toHexString();
-    final CompletableFuture<String> future = client.simulateTransaction(7L, txRlp);
+    final CompletableFuture<String> future =
+        client.simulateTransaction(7L, txRlp, OptionalLong.empty());
 
     final String trieLog = future.get();
     assertThat(trieLog).isEqualTo(MOCK_TRIELOG);
@@ -177,7 +179,8 @@ public class BesuSimulateClientTest {
     final String txRlp =
         TransactionEncoder.encodeOpaqueBytes(legacyTx, EncodingContext.POOLED_TRANSACTION)
             .toHexString();
-    final CompletableFuture<String> future = client.simulateTransaction(7L, txRlp);
+    final CompletableFuture<String> future =
+        client.simulateTransaction(7L, txRlp, OptionalLong.empty());
 
     final String trieLog = future.get();
     assertThat(trieLog).isEqualTo(MOCK_TRIELOG);

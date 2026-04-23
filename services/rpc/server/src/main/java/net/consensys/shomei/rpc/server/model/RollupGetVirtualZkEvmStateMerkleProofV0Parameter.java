@@ -12,6 +12,8 @@
  */
 package net.consensys.shomei.rpc.server.model;
 
+import java.util.OptionalLong;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -21,12 +23,16 @@ public class RollupGetVirtualZkEvmStateMerkleProofV0Parameter {
 
   private final String transaction;
 
+  private final OptionalLong timestamp;
+
   @JsonCreator
   public RollupGetVirtualZkEvmStateMerkleProofV0Parameter(
       @JsonProperty("blockNumber") final String blockNumber,
-      @JsonProperty("transaction") final String transaction) {
+      @JsonProperty("transaction") final String transaction,
+      @JsonProperty("timestamp") final Long timestamp) {
     this.blockNumber = blockNumber;
     this.transaction = transaction;
+    this.timestamp = timestamp != null ? OptionalLong.of(timestamp) : OptionalLong.empty();
   }
 
   public long getBlockNumber() {
@@ -37,6 +43,10 @@ public class RollupGetVirtualZkEvmStateMerkleProofV0Parameter {
     return transaction;
   }
 
+  public OptionalLong getTimestamp() {
+    return timestamp;
+  }
+
   @Override
   public String toString() {
     return "RollupGetVirtualZkEvmStateMerkleProofV0Parameter{"
@@ -45,6 +55,8 @@ public class RollupGetVirtualZkEvmStateMerkleProofV0Parameter {
         + ", transaction='"
         + transaction
         + '\''
+        + ", timestamp="
+        + timestamp
         + '}';
   }
 }

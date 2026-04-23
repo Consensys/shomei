@@ -16,6 +16,8 @@ package net.consensys.shomei.rpc.model;
 import net.consensys.shomei.observer.TrieLogObserver.TrieLogIdentifier;
 import net.consensys.shomei.trie.json.JsonTraceParser;
 
+import java.util.OptionalLong;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -26,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 public class TrieLogElement {
 
   private Long blockNumber;
+  private OptionalLong timestamp = OptionalLong.empty();
   private Bytes32 blockHash;
   private boolean isInitialSync;
   private String trieLog;
@@ -35,12 +38,14 @@ public class TrieLogElement {
   @JsonCreator
   public TrieLogElement(
       @JsonProperty("blockNumber") final Long blockNumber,
+      @JsonProperty("timestamp") final Long timestamp,
       @JsonProperty("blockHash")
           @JsonDeserialize(using = JsonTraceParser.Bytes32Deserializer.class)
           final Bytes32 blockHash,
       @JsonProperty("trieLog") final String trieLog,
       @JsonProperty("syncing") final Boolean syncing) {
     this.blockNumber = blockNumber;
+    this.timestamp = timestamp != null ? OptionalLong.of(timestamp) : OptionalLong.empty();
     this.blockHash = blockHash;
     this.isInitialSync = syncing != null && syncing;
     this.trieLog = trieLog;
@@ -48,6 +53,10 @@ public class TrieLogElement {
 
   public Long blockNumber() {
     return blockNumber;
+  }
+
+  public OptionalLong timestamp() {
+    return timestamp;
   }
 
   public Bytes32 blockHash() {
@@ -68,9 +77,11 @@ public class TrieLogElement {
 
   @Override
   public String toString() {
-    return "SendRawTrieLogParameter{"
+    return "TrieLogElement{"
         + "blockNumber="
         + blockNumber
+        + ", timestamp="
+        + timestamp.orElse(0L)
         + ", blockHash="
         + blockHash
         + ", isInitialSync="

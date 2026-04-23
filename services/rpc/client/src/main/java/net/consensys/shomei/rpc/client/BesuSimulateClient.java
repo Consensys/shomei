@@ -17,10 +17,10 @@ import net.consensys.shomei.rpc.client.model.SimulateV1Response;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -76,7 +76,9 @@ public class BesuSimulateClient {
   }
 
   public CompletableFuture<String> simulateTransaction(
-      final long parentBlockNumber, final String transactionRlp) {
+      final long parentBlockNumber,
+      final String transactionRlp,
+      final OptionalLong timestamp) {
 
     final CompletableFuture<String> completableFuture = new CompletableFuture<>();
     final int requestId = RANDOM.nextInt();
@@ -86,9 +88,10 @@ public class BesuSimulateClient {
       final Transaction transaction =
           TransactionDecoder.decodeOpaqueBytes(transactionBytes, EncodingContext.POOLED_TRANSACTION);
 
-      // Create block overrides with parent block number
-      final Map<String, String> blockOverrides =
-          Collections.singletonMap("number", "0x" + Long.toHexString(parentBlockNumber + 1));
+      // Create block overrides with block number and optional timestamp
+      final Map<String, String> blockOverrides = new HashMap<>();
+      blockOverrides.put("number", "0x" + Long.toHexString(parentBlockNumber + 1));
+      timestamp.ifPresent(ts -> blockOverrides.put("time", "0x" + Long.toHexString(ts)));
 
       // Extract transaction fields for the call
       final String chainId =
