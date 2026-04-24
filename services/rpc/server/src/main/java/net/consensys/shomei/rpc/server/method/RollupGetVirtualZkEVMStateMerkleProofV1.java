@@ -67,14 +67,14 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1 implements JsonRpcMethod {
     final String transactionRlp = param.getTransaction();
     var timestamp = param.getTimestamp();
 
-    // If no timestamp provided by caller, extract it from the stored trie log RLP
-    if (timestamp.isEmpty()) {
-      timestamp = worldStateArchive.getTrieLogManager().getTrieLog(blockNumber)
-          .map(rlpBytes -> TrieLogLayerConverter.extractTimestamp(RLP.input(rlpBytes)))
-          .orElse(OptionalLong.empty());
-    }
-
     try {
+
+      // If no timestamp provided by caller, extract it from the stored trie log RLP
+      if (timestamp.isEmpty()) {
+        timestamp = worldStateArchive.getTrieLogManager().getTrieLog(blockNumber)
+            .map(rlpBytes -> TrieLogLayerConverter.extractTimestamp(RLP.input(rlpBytes)))
+            .orElse(OptionalLong.empty());
+      }
 
       // blockNumber represents the virtual block we want to build, fail early if we do not have it
       if (worldStateArchive.getTrieLogManager().getTrieLog(parentBlockNumber).isEmpty()) {
