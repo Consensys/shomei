@@ -115,7 +115,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
   @Test
   public void shouldReturnBlockMissingWhenParentBlockUnavailable() {
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
-    when(trieLogManager.getTrieLog(7L)).thenReturn(Optional.empty());
+    when(trieLogManager.getTrieLog(anyLong())).thenReturn(Optional.empty());
 
     final JsonRpcRequestContext request = request(8L, createTestTransactionRlp());
     final JsonRpcResponse response = method.response(request);
@@ -139,6 +139,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
 
     // Mock world state archive behavior
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(8L)).thenReturn(Optional.empty()); // No stored trie log for timestamp
     when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01"))); // Parent block exists
     when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
@@ -168,6 +169,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
   @Test
   public void shouldReturnErrorWhenSimulationFails() {
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(8L)).thenReturn(Optional.empty());
     when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
     when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
@@ -189,6 +191,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
   @Test
   public void shouldReturnErrorWithDetailsWhenSimulationReturnsError() {
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(8L)).thenReturn(Optional.empty());
     when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
     when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));

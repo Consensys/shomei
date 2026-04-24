@@ -22,6 +22,9 @@ import net.consensys.shomei.rpc.server.model.RollupGetVirtualZkEvmStateMerklePro
 import net.consensys.shomei.storage.ZkWorldStateArchive;
 import net.consensys.shomei.trie.ZKTrie;
 import net.consensys.shomei.trielog.TrieLogLayer;
+import net.consensys.shomei.trielog.TrieLogLayerConverter;
+
+import java.util.OptionalLong;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.ethereum.api.jsonrpc.internal.JsonRpcRequestContext;
@@ -62,8 +65,14 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1 implements JsonRpcMethod {
     final long blockNumber = param.getBlockNumber();
     final long parentBlockNumber = blockNumber - 1;
     final String transactionRlp = param.getTransaction();
-    final var timestamp = param.getTimestamp();
+    var timestamp = param.getTimestamp();
 
+    // If no timestamp provided by caller, extract it from the stored trie log RLP
+    if (timestamp.isEmpty()) {
+      timestamp = worldStateArchive.getTrieLogManager().getTrieLog(blockNumber)
+          .map(rlpBytes -> TrieLogLayerConverter.extractTimestamp(RLP.input(rlpBytes)))
+          .orElse(OptionalLong.empty());
+    }
 
     try {
 

@@ -27,6 +27,7 @@ import net.consensys.zkevm.HashProvider;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -180,6 +181,34 @@ public class TrieLogLayerConverter {
     trieLogLayer.freeze();
 
     return trieLogLayer;
+  }
+
+  /**
+   * Extracts the optional timestamp from trie log RLP bytes without fully decoding.
+   * The RLP format is: [blockHash, blockNumber, [account1], ..., zkCompare?, timestamp?]
+   * The timestamp is the last trailing scalar, after the optional zkTraceComparisonFeature int.
+   */
+  public static OptionalLong extractTimestamp(final RLPInput input) {
+    input.enterList();
+    input.skipNext(); // blockHash
+    input.skipNext(); // blockNumber
+
+    // Skip all account entry lists
+    while (!input.isEndOfCurrentList() && input.nextIsList()) {
+      input.skipNext();
+    }
+
+    // First trailing scalar: zkTraceComparisonFeature (optional)
+    if (input.isEndOfCurrentList()) {
+      return OptionalLong.empty();
+    }
+    input.skipNext(); // zkCompare
+
+    // Second trailing scalar: timestamp (optional)
+    if (input.isEndOfCurrentList()) {
+      return OptionalLong.empty();
+    }
+    return OptionalLong.of(input.readLongScalar());
   }
 
   record PriorAccount(ZkAccount account, Bytes32 evmStorageRoot, Optional<Long> index) {}

@@ -17,11 +17,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import net.consensys.shomei.storage.worldstate.InMemoryWorldStateStorage;
 
+import java.util.OptionalLong;
+
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.datatypes.Address;
 import org.hyperledger.besu.datatypes.Wei;
 import org.hyperledger.besu.ethereum.rlp.BytesValueRLPInput;
+import org.hyperledger.besu.ethereum.rlp.BytesValueRLPOutput;
 import org.junit.jupiter.api.Test;
 
 public class TrieLogLayerConverterTest {
@@ -46,5 +50,81 @@ public class TrieLogLayerConverterTest {
     assertThat(mockAccount.get().getNonce()).isEqualTo(UInt256.ZERO);
     assertThat(mockAccount.get().getBalance()).isEqualTo(Wei.fromEth(1));
     assertThat(mockAccount.get().getCodeHash().getOriginalUnsafeValue()).isEqualTo(KECCAK_HASH_EMPTY);
+  }
+
+  @Test
+  public void extractTimestampFromRlpWithTimestamp() {
+    // Build RLP: [blockHash, blockNumber, zkCompare, timestamp]
+    final BytesValueRLPOutput output = new BytesValueRLPOutput();
+    output.startList();
+    output.writeBytes(Bytes32.ZERO); // blockHash
+    output.writeLongScalar(42L); // blockNumber
+    // no account entries (lists)
+    output.writeInt(0); // zkTraceComparisonFeature
+    output.writeLongScalar(1714000000L); // timestamp
+    output.endList();
+
+    OptionalLong result = TrieLogLayerConverter.extractTimestamp(
+        new BytesValueRLPInput(output.encoded(), false));
+    assertThat(result).isPresent();
+    assertThat(result.getAsLong()).isEqualTo(1714000000L);
+  }
+
+  @Test
+  public void extractTimestampFromRlpWithoutTimestamp() {
+    // Build RLP: [blockHash, blockNumber, zkCompare] — no timestamp
+    final BytesValueRLPOutput output = new BytesValueRLPOutput();
+    output.startList();
+    output.writeBytes(Bytes32.ZERO); // blockHash
+    output.writeLongScalar(42L); // blockNumber
+    output.writeInt(0); // zkTraceComparisonFeature only
+    output.endList();
+
+    OptionalLong result = TrieLogLayerConverter.extractTimestamp(
+        new BytesValueRLPInput(output.encoded(), false));
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  public void extractTimestampFromRlpWithNoTrailingFields() {
+    // Build RLP: [blockHash, blockNumber] — no trailing fields at all
+    final BytesValueRLPOutput output = new BytesValueRLPOutput();
+    output.startList();
+    output.writeBytes(Bytes32.ZERO); // blockHash
+    output.writeLongScalar(42L); // blockNumber
+    output.endList();
+
+    OptionalLong result = TrieLogLayerConverter.extractTimestamp(
+        new BytesValueRLPInput(output.encoded(), false));
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  public void extractTimestampFromRlpWithAccountEntriesAndTimestamp() {
+    // Build RLP: [blockHash, blockNumber, [accountList], zkCompare, timestamp]
+    final BytesValueRLPOutput output = new BytesValueRLPOutput();
+    output.startList();
+    output.writeBytes(Bytes32.ZERO); // blockHash
+    output.writeLongScalar(100L); // blockNumber
+    // one account entry (a list)
+    output.startList();
+    output.writeBytes(Bytes.fromHexString("0xdeadbeef"));
+    output.endList();
+    output.writeInt(24); // zkTraceComparisonFeature
+    output.writeLongScalar(1714123456L); // timestamp
+    output.endList();
+
+    OptionalLong result = TrieLogLayerConverter.extractTimestamp(
+        new BytesValueRLPInput(output.encoded(), false));
+    assertThat(result).isPresent();
+    assertThat(result.getAsLong()).isEqualTo(1714123456L);
+  }
+
+  @Test
+  public void extractTimestampFromExistingFixtureReturnsEmpty() {
+    // The existing fixture doesn't have a timestamp
+    OptionalLong result = TrieLogLayerConverter.extractTimestamp(
+        new BytesValueRLPInput(Bytes.fromHexString(TRIELOG_FIXTURE), false));
+    assertThat(result).isEmpty();
   }
 }
