@@ -190,25 +190,29 @@ public class TrieLogLayerConverter {
    */
   public static OptionalLong extractTimestamp(final RLPInput input) {
     input.enterList();
-    input.skipNext(); // blockHash
-    input.skipNext(); // blockNumber
+    try {
+      input.skipNext(); // blockHash
+      input.skipNext(); // blockNumber
 
-    // Skip all account entry lists
-    while (!input.isEndOfCurrentList() && input.nextIsList()) {
-      input.skipNext();
-    }
+      // Skip all account entry lists
+      while (!input.isEndOfCurrentList() && input.nextIsList()) {
+        input.skipNext();
+      }
 
-    // First trailing scalar: zkTraceComparisonFeature (optional)
-    if (input.isEndOfCurrentList()) {
-      return OptionalLong.empty();
-    }
-    input.skipNext(); // zkCompare
+      // First trailing scalar: zkTraceComparisonFeature (optional)
+      if (input.isEndOfCurrentList()) {
+        return OptionalLong.empty();
+      }
+      input.skipNext(); // zkCompare
 
-    // Second trailing scalar: timestamp (optional)
-    if (input.isEndOfCurrentList()) {
-      return OptionalLong.empty();
+      // Second trailing scalar: timestamp (optional)
+      if (input.isEndOfCurrentList()) {
+        return OptionalLong.empty();
+      }
+      return OptionalLong.of(input.readLongScalar());
+    } finally {
+      input.leaveListLenient();
     }
-    return OptionalLong.of(input.readLongScalar());
   }
 
   record PriorAccount(ZkAccount account, Bytes32 evmStorageRoot, Optional<Long> index) {}
