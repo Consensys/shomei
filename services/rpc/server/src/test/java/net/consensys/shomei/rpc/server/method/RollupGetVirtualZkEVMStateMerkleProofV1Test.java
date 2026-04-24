@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import net.consensys.shomei.rpc.client.BesuSimulateClient;
@@ -34,9 +35,11 @@ import net.consensys.shomei.worldview.ZkEvmWorldState;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.crypto.KeyPair;
 import org.hyperledger.besu.crypto.SignatureAlgorithm;
 import org.hyperledger.besu.crypto.SignatureAlgorithmFactory;
@@ -115,7 +118,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
   @Test
   public void shouldReturnBlockMissingWhenParentBlockUnavailable() {
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
-    when(trieLogManager.getTrieLog(7L)).thenReturn(Optional.empty());
+    when(trieLogManager.getTrieLog(anyLong())).thenReturn(Optional.empty());
 
     final JsonRpcRequestContext request = request(8L, createTestTransactionRlp());
     final JsonRpcResponse response = method.response(request);
@@ -139,6 +142,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
 
     // Mock world state archive behavior
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(8L)).thenReturn(Optional.empty()); // No stored trie log for timestamp
     when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01"))); // Parent block exists
     when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
@@ -168,6 +172,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
   @Test
   public void shouldReturnErrorWhenSimulationFails() {
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(8L)).thenReturn(Optional.empty());
     when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
     when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
@@ -189,6 +194,7 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
   @Test
   public void shouldReturnErrorWithDetailsWhenSimulationReturnsError() {
     when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(8L)).thenReturn(Optional.empty());
     when(trieLogManager.getTrieLog(7L))
         .thenReturn(Optional.of(Bytes.fromHexString("0x01")));
     when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
@@ -205,6 +211,51 @@ public class RollupGetVirtualZkEVMStateMerkleProofV1Test {
     final ShomeiJsonRpcErrorResponse errorResponse = (ShomeiJsonRpcErrorResponse) response;
     assertThat(errorResponse.getError().getCode()).isEqualTo(RpcErrorType.INTERNAL_ERROR.getCode());
     assertThat(errorResponse.getJsonError().message()).contains("Error processing virtual block");
+  }
+
+  @Test
+  public void shouldExtractTimestampFromStoredTrieLogWhenRequestOmitsIt() throws Exception {
+    // Build an RLP trie log that contains a timestamp as the last trailing scalar
+    final BytesValueRLPOutput trieLogOutput = new BytesValueRLPOutput();
+    trieLogOutput.startList();
+    trieLogOutput.writeBytes(Bytes32.ZERO); // blockHash
+    trieLogOutput.writeLongScalar(8L); // blockNumber
+    // no account entries
+    trieLogOutput.writeInt(0); // zkTraceComparisonFeature
+    trieLogOutput.writeLongScalar(1714000000L); // timestamp
+    trieLogOutput.endList();
+    final Bytes storedTrieLogBytes = trieLogOutput.encoded();
+
+    final String mockTrieLogHex = createMockTrieLogHex();
+    final String testTxRlp = createTestTransactionRlp();
+
+    // Stub trieLogManager: blockNumber=8 returns the stored trie log with timestamp
+    when(worldStateArchive.getTrieLogManager()).thenReturn(trieLogManager);
+    when(trieLogManager.getTrieLog(8L)).thenReturn(Optional.of(storedTrieLogBytes));
+    when(trieLogManager.getTrieLog(7L)).thenReturn(Optional.of(Bytes.fromHexString("0x01")));
+    when(worldStateArchive.getCachedWorldState(7L)).thenReturn(Optional.of(mockZkWorldState));
+
+    when(besuSimulateClient.simulateTransaction(eq(7L), eq(testTxRlp), eq(OptionalLong.of(1714000000L))))
+        .thenReturn(CompletableFuture.completedFuture(mockTrieLogHex));
+
+    when(worldStateArchive.getTraceManager()).thenReturn(traceManager);
+    when(traceManager.getZkStateRootHash(7L)).thenReturn(Optional.of(KECCAK_HASH_ZERO));
+    when(worldStateArchive.getTrieLogLayerConverter()).thenReturn(trieLogLayerConverter);
+    when(trieLogLayerConverter.decodeTrieLog(any(), any())).thenReturn(trieLogLayer);
+
+    final List<List<Trace>> mockTraces = List.of(List.of());
+    final ZkWorldStateArchive.VirtualTraceResult mockResult =
+        new ZkWorldStateArchive.VirtualTraceResult(mockTraces, KECCAK_HASH_ZERO);
+    when(worldStateArchive.generateVirtualTrace(eq(7L), any(TrieLogLayer.class)))
+        .thenReturn(mockResult);
+
+    // Request with no timestamp (null)
+    final JsonRpcRequestContext request = request(8L, testTxRlp);
+    final JsonRpcResponse response = method.response(request);
+
+    assertThat(response).isInstanceOf(JsonRpcSuccessResponse.class);
+    // Verify simulateTransaction was invoked with the extracted timestamp
+    verify(besuSimulateClient).simulateTransaction(eq(7L), eq(testTxRlp), eq(OptionalLong.of(1714000000L)));
   }
 
   private JsonRpcRequestContext request(final long blockNumber, final String transactionRlp) {
