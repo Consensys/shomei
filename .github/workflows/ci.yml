@@ -188,7 +188,7 @@ jobs:
           docker-repo: "consensys/linea-shomei"
 
       - name: Build and export to docker
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         env:
           DOCKER_BUILD_SUMMARY: false
         with:
@@ -280,7 +280,7 @@ jobs:
           password: ${{ secrets.DOCKER_PAT_RW }}
 
       - name: Build and push to registry
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         if: steps.docker-metadata.outputs.push == 'true'
         with:
           platforms: linux/amd64,linux/arm64
