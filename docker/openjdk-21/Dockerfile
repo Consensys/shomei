@@ -19,8 +19,8 @@ ARG TAR_FILE
 # Validate that the TAR_FILE argument is provided
 RUN if [ -z "$TAR_FILE" ]; then echo "TAR_FILE build argument is required" && exit 1; fi
 
-RUN groupadd --system shomei && \
-    useradd --system --gid shomei --home-dir /opt/shomei --create-home --shell /usr/sbin/nologin shomei && \
+RUN groupadd --gid 1001 shomei && \
+    useradd --uid 1001 --gid 1001 --home-dir /opt/shomei --create-home --shell /usr/sbin/nologin shomei && \
     chmod 0755 /opt/shomei
 
 WORKDIR /opt/shomei
