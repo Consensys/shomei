@@ -1,12 +1,6 @@
 ---
 # runtime docker tests for interfaces & ports
-#port:
-#  tcp:8888:
-#    listening: true
-#    ip:
-#      - 0.0.0.0
 command:
   port_8888_open:
-    exec: "nc -zv 127.0.0.1 8888"  # Replace with your IP and port
+    exec: "bash -c ':</dev/tcp/127.0.0.1/8888'"
     exit-status: 0
-
