@@ -4,8 +4,7 @@
 .idea
 *.iml
 *.log
-**/build
-!build
+**/build/**
 !build/distributions
 !build/distributions/*.tar.gz
 tmp
