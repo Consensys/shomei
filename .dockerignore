@@ -1,0 +1,13 @@
+.git
+.github
+.gradle
+.idea
+*.iml
+*.log
+**/build/**
+!build/distributions
+!build/distributions/*.tar.gz
+tmp
+out
+target
+node_modules

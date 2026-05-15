@@ -1,5 +1,6 @@
+# syntax=docker/dockerfile:1.7
 
-FROM ubuntu:24.04
+FROM eclipse-temurin:21-jre-noble
 ARG VERSION="dev"
 ARG BUILD_DATE
 ARG VCS_REF
@@ -18,23 +19,18 @@ ARG TAR_FILE
 # Validate that the TAR_FILE argument is provided
 RUN if [ -z "$TAR_FILE" ]; then echo "TAR_FILE build argument is required" && exit 1; fi
 
-RUN apt-get update  && \
-    apt-get install --no-install-recommends -q --assume-yes ca-certificates ca-certificates-java jq openjdk-21-jdk-headless libjemalloc-dev \
-    curl wget net-tools netcat-traditional adduser iputils-ping && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*  
-    
-RUN adduser --disabled-password --gecos "" --home /opt/shomei shomei && \
-    chown shomei:shomei /opt/shomei && chmod 0755 /opt/shomei
+RUN groupadd --gid 1001 shomei && \
+    useradd --uid 1001 --gid 1001 --home-dir /opt/shomei --create-home --shell /usr/sbin/nologin shomei && \
+    chmod 0755 /opt/shomei
 
-USER shomei
 WORKDIR /opt/shomei
 
-COPY --chown=shomei:shomei ${TAR_FILE} /tmp/shomei.tar.gz
 # Extract the tar.gz file and rename the directory
-RUN mkdir -p /opt/shomei && \
+RUN --mount=type=bind,source=${TAR_FILE},target=/tmp/shomei.tar.gz,ro \
     tar -xzf /tmp/shomei.tar.gz -C /opt/shomei --strip-components=1 && \
-    rm /tmp/shomei.tar.gz && chown -R shomei:shomei /opt/shomei
+    chown -R shomei:shomei /opt/shomei
+
+USER shomei
 
 # Expose services ports
 # 8888 HTTP JSON-RPC
@@ -46,7 +42,6 @@ ENV OTEL_RESOURCE_ATTRIBUTES="service.name=shomei,service.version=$VERSION"
 ENV OLDPATH="${PATH}"
 ENV PATH="/opt/shomei/bin:${OLDPATH}"
 
-HEALTHCHECK --start-period=5s --interval=5s --timeout=1s --retries=10 CMD bash -c "[ -f /tmp/pid ]"
+HEALTHCHECK --start-period=5s --interval=5s --timeout=1s --retries=10 CMD bash -c ':</dev/tcp/127.0.0.1/8888'
 
 ENTRYPOINT ["/opt/shomei/bin/shomei"]
-
